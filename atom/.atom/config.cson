@@ -1,0 +1,68 @@
+"*":
+  "atom-beautify":
+    html:
+      default_beautifier: "Pretty Diff"
+      indent_size: 2
+      preserve_newlines: false
+  "atom-ide-ui":
+    "atom-ide-code-format":
+      formatOnSave: true
+    "atom-ide-diagnostics-ui":
+      autoVisibility: true
+      showDirectoryColumn: true
+    use: {}
+  core:
+    autoHideMenuBar: true
+    disabledPackages: [
+      "github"
+      "spell-check"
+      "linter"
+    ]
+    telemetryConsent: "limited"
+    titleBar: "hidden"
+  editor:
+    fontFamily: "\"Fira Code\""
+    fontSize: 16
+    invisibles: {}
+    showInvisibles: true
+    softWrap: true
+  "exception-reporting":
+    userId: "e55cc812-438c-4cfa-a9b8-a78cdae94846"
+  "file-icons":
+    coloured: false
+    onChanges: true
+  "fuzzy-finder":
+    ignoredNames: [
+      "node_modules"
+    ]
+    scoringSystem: "fast"
+    useRipGrep: true
+  "language-babel":
+    taggedTemplateGrammar: [
+      "\"(?<=<style jsx>{)|(?<=<style jsx global>{)\":source.css.styled"
+    ]
+  linter:
+    disabledProviders: [
+      "RuboCop"
+    ]
+  "linter-ui-default":
+    panelHeight: 196
+    showDecorations: false
+    showPanel: true
+  "one-dark-ui": {}
+  "one-light-ui": {}
+  "prettier-atom":
+    formatOnSaveOptions:
+      enabled: true
+      showInStatusBar: true
+    prettierOptions:
+      parser: "flow"
+  "spell-check":
+    locales: [
+      "en-GB"
+    ]
+  tabs:
+    enableVcsColoring: true
+  "tree-view": {}
+  welcome:
+    showOnStartup: false
