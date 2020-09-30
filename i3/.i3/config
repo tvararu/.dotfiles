@@ -178,6 +178,8 @@ mode "$mode_system" {
   bindsym Escape mode "default"
 }
 
+bindsym $mod+Ctrl+q exec --no-startup-id i3exit suspend, mode "default"
+
 # Resize window (you can also use the mouse for that)
 bindsym $mod+r mode "resize"
 mode "resize" {
