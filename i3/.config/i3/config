@@ -261,7 +261,7 @@ bar {
   colors {
     background $term_background
     statusline $term_foreground
-    separator  $term_foreground
+    separator  $term_color8
 
 #                      border  backgr. text
     focused_workspace  $term_foreground $term_foreground $term_background
@@ -277,7 +277,7 @@ bindsym $mod+$alt+m bar mode toggle
 
 # Theme colors
 # class                 border  backgr. text    indic.   child_border
-client.focused          $term_background $term_background $term_foreground $term_color8
+client.focused          $term_foreground $term_foreground $term_background $term_color8
 client.focused_inactive $term_background $term_background $term_color8 $term_background
 client.unfocused        $term_background $term_background $term_color8 $term_color1
 client.urgent           $term_color1 $term_color1 $term_foreground $term_color1
