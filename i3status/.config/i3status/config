@@ -16,7 +16,7 @@ general {
 
 # order += "ipv6"
 order += "cpu_usage"
-order += "memory"
+# order += "memory"
 # order += "disk /"
 # order += "disk /home"
 # order += "wireless _first_"
