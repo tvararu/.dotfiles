@@ -152,7 +152,7 @@ for_window [class="(?i)virtualbox"] floating enable border normal
 for_window [class="Xfburn"] floating enable
 
 # switch to workspace with urgent window automatically
-for_window [urgent=latest] focus
+# for_window [urgent=latest] focus
 
 # reload the configuration file
 bindsym $mod+Shift+c reload
@@ -268,7 +268,7 @@ bar {
     active_workspace   $term_background $term_background $term_foreground
     inactive_workspace $term_background $term_background $term_foreground
     binding_mode       $term_foreground $term_background $term_foreground
-    urgent_workspace   $term_color1 $term_color9 $term_background
+    urgent_workspace   $term_color9 $term_color9 $term_background
   }
 }
 
@@ -277,9 +277,9 @@ bindsym $mod+$alt+m bar mode toggle
 
 # Theme colors
 # class                 border  backgr. text    indic.   child_border
-client.focused          $term_foreground $term_foreground $term_background $term_color8
-client.focused_inactive $term_background $term_background $term_foreground $term_background
-client.unfocused        $term_background $term_background $term_foreground $term_background
+client.focused          $term_background $term_background $term_foreground $term_color8
+client.focused_inactive $term_background $term_background $term_color8 $term_background
+client.unfocused        $term_background $term_background $term_color8 $term_color1
 client.urgent           $term_color1 $term_color1 $term_foreground $term_color1
 client.placeholder      #000000 #0c0c0c #ffffff #000000
 
