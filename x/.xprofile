@@ -1,0 +1,4 @@
+#!/bin/sh
+
+(sleep 5s && xset r rate 200 75) &
+(sleep 5s && setxkbmap -option caps:super && killall xcape 2>/dev/null; xcape -e 'Super_L=Escape') &
