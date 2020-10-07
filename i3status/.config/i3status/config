@@ -7,6 +7,7 @@
 # If the above line is not correctly displayed, fix your editor first!
 
 general {
+  output_format = "i3bar"
   colors = true
   interval = 1
   color_good = "#2AA198"
@@ -14,40 +15,11 @@ general {
   color_degraded = "#DC322F"
 }
 
-# order += "ipv6"
 order += "cpu_usage"
-# order += "memory"
-# order += "disk /"
-# order += "disk /home"
-# order += "wireless _first_"
-# order += "ethernet _first_"
-# order += "load"
 order += "tztime local"
 
 cpu_usage {
   format = " %usage "
-}
-
-load {
-  format = " load %1min "
-  # max_threshold = 0.3
-}
-
-disk "/" {
-  # format = " hdd %avail "
-  format = " ⛁ %avail "
-}
-
-ethernet _first_ {
-  # if you use %speed, i3status requires root privileges
-  format_up = " %speed "
-  format_down = " no lan "
-}
-
-memory {
-  format = " %used "
-  threshold_degraded = "1G"
-  format_degraded = "MEMORY < %available"
 }
 
 tztime local {
