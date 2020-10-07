@@ -1,4 +1,4 @@
-# Manjaro dotfiles
+# Arch dotfiles
 
 ```bash
 $ ./install.sh
