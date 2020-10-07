@@ -16,6 +16,9 @@ call plug#end()
 " Use syntax highlighting
 syntax on
 
+" Use utf-8 encoding for everything
+set encoding=utf-8
+
 " Show line numbers in gutter
 set number
 
