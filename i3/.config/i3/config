@@ -1,18 +1,28 @@
 # i3 config file (v4)
 
+# Basic bindings
 set $alt Mod1
 set $mod Mod4
 
+# Borders
 default_border normal
 default_floating_border normal
-
 hide_edge_borders none
-
-focus_follows_mouse no
-
 bindsym $mod+n border none
 bindsym $mod+m border pixel 1
 bindsym $mod+comma border normal
+
+# Imported
+exec --no-startup-id xss-lock --transfer-sleep-lock -- i3lock --nofork
+
+# # Use pactl to adjust volume in PulseAudio.
+# set $refresh_i3status killall -SIGUSR1 i3status
+# bindsym XF86AudioRaiseVolume exec --no-startup-id pactl set-sink-volume @DEFAULT_SINK@ +10% && $refresh_i3status
+# bindsym XF86AudioLowerVolume exec --no-startup-id pactl set-sink-volume @DEFAULT_SINK@ -10% && $refresh_i3status
+# bindsym XF86AudioMute exec --no-startup-id pactl set-sink-mute @DEFAULT_SINK@ toggle && $refresh_i3status
+# bindsym XF86AudioMicMute exec --no-startup-id pactl set-source-mute @DEFAULT_SOURCE@ toggle && $refresh_i3status
+
+focus_follows_mouse no
 
 font xft:mono 11
 
@@ -20,15 +30,17 @@ floating_modifier $mod
 
 bindsym $mod+Return exec st
 bindsym $mod+q kill
-bindsym $mod+space exec --no-startup-id dmenu_recency
+# bindsym $mod+space exec --no-startup-id dmenu_recency
+bindsym $mod+space exec --no-startup-id dmenu_run
 # bindsym $mod+Shift+z exec --no-startup-id morc_menu
 
 ################################################################################################
 ## sound-section - DO NOT EDIT if you wish to automatically upgrade Alsa -> Pulseaudio later! ##
 ################################################################################################
 
-exec --no-startup-id volumeicon
-bindsym $mod+Ctrl+m exec terminal -e 'alsamixer'
+# exec --no-startup-id volumeicon
+# bindsym $mod+Ctrl+m exec terminal -e 'alsamixer'
+
 #exec --no-startup-id pulseaudio
 #exec --no-startup-id pa-applet
 #bindsym $mod+Ctrl+m exec pavucontrol
@@ -202,20 +214,20 @@ mode "resize" {
 }
 
 # Autostart applications
-exec --no-startup-id /usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1
-exec --no-startup-id nitrogen --restore
+# exec --no-startup-id /usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1
+# exec --no-startup-id nitrogen --restore
 exec --no-startup-id nm-applet
-exec --no-startup-id xfce4-power-manager
-exec --no-startup-id pamac-tray
-exec --no-startup-id clipit
-exec --no-startup-id start_conky_green
-exec_always --no-startup-id fix_xcursor
+# exec --no-startup-id xfce4-power-manager
+# exec --no-startup-id pamac-tray
+# exec --no-startup-id clipit
+# exec --no-startup-id start_conky_green
+# exec_always --no-startup-id fix_xcursor
 
-exec --no-startup-id xrandr --output DisplayPort-1 --set TearFree on
-exec --no-startup-id xrandr --rate 75
-exec --no-startup-id redshift-gtk
-exec --no-startup-id solaar --window=hide
-exec --no-startup-id flameshot
+# exec --no-startup-id xrandr --output DisplayPort-1 --set TearFree on
+# exec --no-startup-id xrandr --rate 75
+# exec --no-startup-id redshift-gtk
+# exec --no-startup-id solaar --window=hide
+# exec --no-startup-id flameshot
 
 # Color palette used for the terminal ( ~/.Xresources file )
 # Colors are gathered based on the documentation:
