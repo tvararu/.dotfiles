@@ -60,7 +60,9 @@ LOCALES=("en_GB.UTF-8 UTF-8")
 LOCALE_CONF=("en_GB:en")
 KEYMAP="KEYMAP=us"
 KEYLAYOUT="us"
-KEYVARIANT="mac_intl"
+KEYMODEL="apple"
+KEYVARIANT="mac"
+KEYOPTIONS="caps:super"
 HOSTNAME="arch"
 
 BOOTLOADER="grub"
