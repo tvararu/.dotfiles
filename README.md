@@ -167,6 +167,19 @@ devices: ({
 $ systemctl enable --now logid.service
 ```
 
+### `dmenu_recency`
+
+The i3 config is set up to use `dmenu_recency`, which comes from [dmenu-manjaro](https://gitlab.manjaro.org/packages/community/dmenu-manjaro).
+
+To install:
+
+```bash
+$ yay -R dmenu
+$ git clone https://gitlab.manjaro.org/packages/community/dmenu-manjaro
+$ cd dmenu-manjaro
+$ makepkg -si
+```
+
 ## License
 
 Public domain.
