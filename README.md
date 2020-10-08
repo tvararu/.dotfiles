@@ -114,12 +114,12 @@ Auto power-on after boot:
 $ sudo vim /etc/bluetooth/main.conf # Scroll to end
 [Policy]
 AutoEnable=true
+$ systemctl enable --now bluetooth.service
 ```
 
 Use `bluetoothctl` to detect, pair, trust, and connect to peripherals:
 
 ```bash
-$ systemctl start bluetooth.service
 $ bluetoothctl
 > power on
 > paired-devices
@@ -143,7 +143,7 @@ devices: ({
   name: "Wireless Mouse MX Master";
   hiresscroll: { hires: true; invert: true; target: false; };
 });
-$ systemctl start logid.service
+$ systemctl enable --now logid.service
 ```
 
 ## License
