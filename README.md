@@ -108,6 +108,14 @@ $ xrandr --rate 75
 
 ### Bluetooth
 
+Auto power-on after boot:
+
+```bash
+$ sudo vim /etc/bluetooth/main.conf # Scroll to end
+[Policy]
+AutoEnable=true
+```
+
 Use `bluetoothctl` to detect, pair, trust, and connect to peripherals:
 
 ```bash
