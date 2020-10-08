@@ -107,6 +107,24 @@ $ xrandr --rate 75
 $ xrandr --output DisplayPort-0 --set TearFree on
 ```
 
+To persist past restart:
+
+```bash
+$ sudo vim /etc/X11/xorg.conf.d/10-monitor.conf
+Section "Device"
+  Identifier "AMD"
+  Driver     "amdgpu"
+  Option     "TearFree" "true"
+EndSection
+
+Section "Monitor"
+  Identifier "DisplayPort-0"
+  Option     "Primary" "true"
+  Modeline   "2560x1440@75" 296.00 2560 2568 2600 2666 1440 1443 1448 1481 +hsync -vsync
+  Option     "PreferredMode" "2560x1440@75"
+EndSection
+```
+
 ### Bluetooth
 
 Auto power-on after boot:
