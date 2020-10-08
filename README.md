@@ -100,10 +100,11 @@ options snd_hda_intel index=1
 
 ### Screen tearing
 
-Firefox and other apps tear the screen when scrolling or otherwise changing large sections of the screen. Bumping the refresh rate from the default 60Hz to 75Hz fixes it:
+Firefox and other apps tear the screen when scrolling or otherwise changing large sections of the screen. Bumping the refresh rate from the default 60Hz to 75Hz and enabling FreeSync fixes it:
 
 ```bash
 $ xrandr --rate 75
+$ xrandr --output DisplayPort-0 --set TearFree on
 ```
 
 ### Bluetooth
