@@ -41,7 +41,7 @@ Get the [latest image](https://www.archlinux.org/download/) and `dd` it to a USB
 
 ```bash
 $ diskutil list
-$ diskutil unmoutDisk /dev/diskX
+$ diskutil unmountDisk /dev/diskX
 $ sudo dd if=arch.iso of=/dev/rdiskX bs=1M
 ```
 
@@ -91,7 +91,7 @@ $ stow --restow */ # Installs remaining dotfiles
 
 ### Audio
 
-Arch selects the GPU as the default sound card. To switch to the motherboard soundcard:
+Arch selects the GPU as the default sound card. To switch to the motherboard sound card:
 
 ```bash
 $ sudo vim /etc/modprobe.d/default.conf
