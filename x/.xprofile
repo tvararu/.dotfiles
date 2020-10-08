@@ -1,4 +1,4 @@
 #!/bin/sh
 
-(sleep 5s && xset r rate 200 75) &
-(sleep 5s && killall xcape 2>/dev/null; xcape -e 'Super_L=Escape') &
+xset r rate 200 75
+killall xcape 2>/dev/null; xcape -e 'Super_L=Escape'
