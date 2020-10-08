@@ -40,12 +40,12 @@ Boots fine in factory settings (secure boot is disabled), I then made these chan
 Get the [latest image](https://www.archlinux.org/download/) and `dd` it to a USB drive (macOS specific instructions):
 
 ```bash
-diskutil list
-diskutil unmoutDisk /dev/diskX
-sudo dd if=arch.iso of=/dev/rdiskX bs=1M
+$ diskutil list
+$ diskutil unmoutDisk /dev/diskX
+$ sudo dd if=arch.iso of=/dev/rdiskX bs=1M
 ```
 
-I then use https://github.com/picodotdev/alis to configure and install the base system with the following options:
+I then use [alis](https://github.com/picodotdev/alis) to configure and install the base system with the following options:
 
 ```bash
 KEYS="us"
