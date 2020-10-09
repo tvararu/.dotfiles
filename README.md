@@ -192,6 +192,17 @@ $ cd dmenu-manjaro
 $ makepkg -si
 ```
 
+### `grub`
+
+Add the following options to the grub config:
+
+```bash
+$ sudo vim /etc/default/grub
+GRUB_CMDLINE_LINUX_DEFAULT="quiet loglevel=3"
+GRUB_ENABLE_CRYPTODISK=y
+$ sudo grub-mkconfig -o /boot/grub/grub.cfg
+```
+
 ## License
 
 Public domain.
