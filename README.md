@@ -203,6 +203,14 @@ GRUB_ENABLE_CRYPTODISK=y
 $ sudo grub-mkconfig -o /boot/grub/grub.cfg
 ```
 
+### `xscreensaver`
+
+To cache Aerial videos offline:
+
+```bash
+$ yay -Sy aerial-2k-videos
+```
+
 ## License
 
 Public domain.
