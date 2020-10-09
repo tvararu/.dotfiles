@@ -13,7 +13,7 @@ bindsym $mod+m border pixel 1
 bindsym $mod+comma border normal
 
 # Imported
-exec --no-startup-id xss-lock --transfer-sleep-lock -- i3lock --nofork
+exec --no-startup-id xss-lock --transfer-sleep-lock -- i3lock --nofork --color=333333
 
 # # Use pactl to adjust volume in PulseAudio.
 # set $refresh_i3status killall -SIGUSR1 i3status
@@ -183,7 +183,7 @@ bindsym $mod+Shift+r restart
 bindsym $mod+0 mode "$mode_system"
 set $mode_system (l)ock, (e)xit, (s)uspend, (r)eboot, (u)efi reboot, (p)oweroff
 mode "$mode_system" {
-  bindsym l exec --no-startup-id i3lock, mode "default"
+  bindsym l exec --no-startup-id i3lock --nofork --color=333333, mode "default"
   bindsym s exec --no-startup-id systemctl suspend, mode "default"
   bindsym e exec --no-startup-id i3-msg exit, mode "default"
   bindsym r exec --no-startup-id systemctl reboot, mode "default"
@@ -195,7 +195,7 @@ mode "$mode_system" {
   bindsym Escape mode "default"
 }
 
-bindsym $mod+Ctrl+q exec --no-startup-id systemctl suspend, mode "default"
+bindsym $mod+Ctrl+q exec --no-startup-id i3lock --nofork --color=333333, mode "default"
 
 # Resize window (you can also use the mouse for that)
 bindsym $mod+r mode "resize"
