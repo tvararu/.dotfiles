@@ -117,6 +117,7 @@ Section "Device"
   Identifier "AMD"
   Driver     "amdgpu"
   Option     "TearFree" "true"
+  Option     "VariableRefresh" "true"
 EndSection
 
 Section "Monitor"
