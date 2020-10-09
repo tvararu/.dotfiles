@@ -76,6 +76,17 @@ AUR="yay"
 
 ## Installing dotfiles and programs
 
+Enable multilib packages:
+
+```bash
+$ sudo vim /etc/pacman.conf
+[multilib]
+Include = /etc/pacman.d/mirrorlist
+$ sudo pacman -Syu
+```
+
+Then:
+
 ```bash
 $ sudo pacman -U https://archive.archlinux.org/packages/s/stow/stow-2.2.2-5-any.pkg.tar.xz # Older version until https://github.com/aspiers/stow/issues/65 is resolved
 $ cd
