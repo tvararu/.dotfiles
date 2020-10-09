@@ -22,8 +22,8 @@ exec --no-startup-id xss-lock --transfer-sleep-lock -- i3lock --nofork
 # bindsym XF86AudioMute exec --no-startup-id pactl set-sink-mute @DEFAULT_SINK@ toggle && $refresh_i3status
 # bindsym XF86AudioMicMute exec --no-startup-id pactl set-source-mute @DEFAULT_SOURCE@ toggle && $refresh_i3status
 
-bindsym XF86AudioRaiseVolume exec --no-startup-id amixer set Master 0.75dB+
-bindsym XF86AudioLowerVolume exec --no-startup-id amixer set Master 0.75dB-
+bindsym XF86AudioRaiseVolume exec --no-startup-id amixer set Master 1.50dB+
+bindsym XF86AudioLowerVolume exec --no-startup-id amixer set Master 1.50dB-
 bindsym XF86AudioMute exec --no-startup-id amixer set Master toggle
 
 focus_follows_mouse no
