@@ -12,3 +12,4 @@ yay -Sy openssh
 yay -Sy atom
 yay -Sy logiops onboard bluez bluez-utils cheese alsa xorg-xrandr
 yay -Sy lib32-mesa lib32-vulkan-radeon lib32-libva-mesa-driver mesa-vdpau lib32-mesa-vdpau
+yay -Sy gnome-themes-extra
