@@ -56,7 +56,7 @@ SWAP_SIZE="2048"
 REFLECTOR="true"
 REFLECTOR_COUNTRIES=("United Kingdom")
 TIMEZONE="/usr/share/zoneinfo/Europe/London"
-LOCALES=("en_GB.UTF-8 UTF-8")
+LOCALES=("en_GB.UTF-8 UTF-8" "en_US.UTF-8 UTF-8")
 LOCALE_CONF=("en_GB:en")
 KEYMAP="KEYMAP=us"
 KEYLAYOUT="us"
