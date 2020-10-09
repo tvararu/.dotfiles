@@ -1,7 +1,6 @@
 #!/bin/sh
 
 yay -Sy firefox vim
-yay -Sy network-manager-applet
 yay -Sy xss-lock
 yay -Sy dunst
 yay -Sy st-luke-git libxft-bgra-git
