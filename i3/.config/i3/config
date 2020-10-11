@@ -8,6 +8,10 @@ focus_follows_mouse no
 floating_modifier $mod
 workspace_auto_back_and_forth yes
 
+# Autostart
+exec --no-startup-id redshift-gtk
+exec --no-startup-id flameshot
+
 # Borders
 default_border normal
 default_floating_border normal
@@ -15,6 +19,12 @@ hide_edge_borders none
 bindsym $mod+n border none
 bindsym $mod+m border pixel 1
 bindsym $mod+comma border normal
+
+# Gaps
+gaps inner 14
+gaps outer -2
+smart_gaps on
+smart_borders on
 
 # Locking
 set $lock i3lock --nofork --color=333333
@@ -33,6 +43,10 @@ bindsym XF86AudioMute exec --no-startup-id amixer set Master toggle
 bindsym $mod+Return exec st
 bindsym $mod+q kill
 bindsym $mod+space exec --no-startup-id dmenu_recency
+
+# Reload and restart
+bindsym $mod+Shift+c reload
+bindsym $mod+Shift+r restart
 
 # Focus and movement
 bindsym $mod+h focus left
@@ -132,9 +146,59 @@ for_window [class="Timeset-gui"] floating enable border normal
 for_window [class="(?i)virtualbox"] floating enable border normal
 for_window [class="Xfburn"] floating enable
 
-# Reload and restart
-bindsym $mod+Shift+c reload
-bindsym $mod+Shift+r restart
+# Xresources colors
+set_from_resource $term_background background
+set_from_resource $term_foreground foreground
+set_from_resource $term_color0     color0
+set_from_resource $term_color1     color1
+set_from_resource $term_color2     color2
+set_from_resource $term_color3     color3
+set_from_resource $term_color4     color4
+set_from_resource $term_color5     color5
+set_from_resource $term_color6     color6
+set_from_resource $term_color7     color7
+set_from_resource $term_color8     color8
+set_from_resource $term_color9     color9
+set_from_resource $term_color10    color10
+set_from_resource $term_color11    color11
+set_from_resource $term_color12    color12
+set_from_resource $term_color13    color13
+set_from_resource $term_color14    color14
+set_from_resource $term_color15    color15
+
+# Theme colors
+# class                 border           backgr.          text             indic.           child_border
+client.focused          $term_foreground $term_foreground $term_background $term_color8
+client.focused_inactive $term_background $term_background $term_color8     $term_background
+client.unfocused        $term_background $term_background $term_color8     $term_color1
+client.urgent           $term_color1     $term_color1     $term_foreground $term_color1
+client.placeholder      #000000          #0c0c0c          #ffffff          #000000
+client.background       $term_background
+
+# Status bar
+bindsym $mod+$alt+m bar mode toggle
+bar {
+	i3bar_command i3bar
+	status_command i3status
+	position bottom
+
+	bindsym button4 nop
+	bindsym button5 nop
+	strip_workspace_numbers yes
+
+  colors {
+    background $term_background
+    statusline $term_foreground
+    separator  $term_color8
+
+#                      border           backgr.          text
+    focused_workspace  $term_foreground $term_foreground $term_background
+    active_workspace   $term_background $term_background $term_foreground
+    inactive_workspace $term_background $term_background $term_foreground
+    binding_mode       $term_foreground $term_background $term_foreground
+    urgent_workspace   $term_color9     $term_color9     $term_background
+  }
+}
 
 # System management mode
 bindsym $mod+0 mode "$mode_system"
@@ -168,67 +232,3 @@ mode "resize" {
   bindsym Return mode "default"
   bindsym Escape mode "default"
 }
-
-# Applications
-exec --no-startup-id redshift-gtk
-exec --no-startup-id flameshot
-
-# Xresources colors
-set_from_resource $term_background background
-set_from_resource $term_foreground foreground
-set_from_resource $term_color0     color0
-set_from_resource $term_color1     color1
-set_from_resource $term_color2     color2
-set_from_resource $term_color3     color3
-set_from_resource $term_color4     color4
-set_from_resource $term_color5     color5
-set_from_resource $term_color6     color6
-set_from_resource $term_color7     color7
-set_from_resource $term_color8     color8
-set_from_resource $term_color9     color9
-set_from_resource $term_color10    color10
-set_from_resource $term_color11    color11
-set_from_resource $term_color12    color12
-set_from_resource $term_color13    color13
-set_from_resource $term_color14    color14
-set_from_resource $term_color15    color15
-
-# Status bar
-bar {
-	i3bar_command i3bar
-	status_command i3status
-	position bottom
-
-	bindsym button4 nop
-	bindsym button5 nop
-	strip_workspace_numbers yes
-
-  colors {
-    background $term_background
-    statusline $term_foreground
-    separator  $term_color8
-
-#                      border           backgr.          text
-    focused_workspace  $term_foreground $term_foreground $term_background
-    active_workspace   $term_background $term_background $term_foreground
-    inactive_workspace $term_background $term_background $term_foreground
-    binding_mode       $term_foreground $term_background $term_foreground
-    urgent_workspace   $term_color9     $term_color9     $term_background
-  }
-}
-bindsym $mod+$alt+m bar mode toggle
-
-# Theme colors
-# class                 border           backgr.          text             indic.           child_border
-client.focused          $term_foreground $term_foreground $term_background $term_color8
-client.focused_inactive $term_background $term_background $term_color8     $term_background
-client.unfocused        $term_background $term_background $term_color8     $term_color1
-client.urgent           $term_color1     $term_color1     $term_foreground $term_color1
-client.placeholder      #000000          #0c0c0c          #ffffff          #000000
-client.background       $term_background
-
-# Gaps
-gaps inner 14
-gaps outer -2
-smart_gaps on
-smart_borders on
