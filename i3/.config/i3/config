@@ -17,9 +17,9 @@ exec --no-startup-id nitrogen --restore
 default_border normal
 default_floating_border normal
 hide_edge_borders none
-bindsym $mod+n border none
-bindsym $mod+m border pixel 1
-bindsym $mod+comma border normal
+bindsym $mod+Shift+n border none
+bindsym $mod+Shift+m border pixel 1
+bindsym $mod+Shift+comma border normal
 
 # Gaps
 gaps inner 14
@@ -76,7 +76,7 @@ bindsym $mod+Shift+q split toggle
 bindsym $mod+Shift+t layout tabbed
 bindsym $mod+Shift+e layout toggle split
 
-bindsym $mod+f focus mode_toggle
+bindsym $mod+Shift+d focus mode_toggle
 bindsym $mod+Shift+f floating toggle
 bindsym $mod+Shift+s sticky toggle
 bindsym $mod+Shift+p focus parent
@@ -91,14 +91,14 @@ set $ws6 6
 set $ws7 7
 set $ws8 8
 
-bindsym $mod+1 workspace $ws1
-bindsym $mod+2 workspace $ws2
-bindsym $mod+3 workspace $ws3
-bindsym $mod+4 workspace $ws4
-bindsym $mod+5 workspace $ws5
-bindsym $mod+6 workspace $ws6
-bindsym $mod+7 workspace $ws7
-bindsym $mod+8 workspace $ws8
+bindsym $mod+Shift+1 workspace $ws1
+bindsym $mod+Shift+2 workspace $ws2
+bindsym $mod+Shift+3 workspace $ws3
+bindsym $mod+Shift+4 workspace $ws4
+bindsym $mod+Shift+5 workspace $ws5
+bindsym $mod+Shift+6 workspace $ws6
+bindsym $mod+Shift+7 workspace $ws7
+bindsym $mod+Shift+8 workspace $ws8
 
 bindsym $mod+Ctrl+1 move container to workspace $ws1
 bindsym $mod+Ctrl+2 move container to workspace $ws2
@@ -108,15 +108,6 @@ bindsym $mod+Ctrl+5 move container to workspace $ws5
 bindsym $mod+Ctrl+6 move container to workspace $ws6
 bindsym $mod+Ctrl+7 move container to workspace $ws7
 bindsym $mod+Ctrl+8 move container to workspace $ws8
-
-bindsym $mod+Shift+1 move container to workspace $ws1; workspace $ws1
-bindsym $mod+Shift+2 move container to workspace $ws2; workspace $ws2
-bindsym $mod+Shift+3 move container to workspace $ws3; workspace $ws3
-bindsym $mod+Shift+4 move container to workspace $ws4; workspace $ws4
-bindsym $mod+Shift+5 move container to workspace $ws5; workspace $ws5
-bindsym $mod+Shift+6 move container to workspace $ws6; workspace $ws6
-bindsym $mod+Shift+7 move container to workspace $ws7; workspace $ws7
-bindsym $mod+Shift+8 move container to workspace $ws8; workspace $ws8
 
 # Application specific overrides
 for_window [title="alsamixer"] floating enable border pixel 1
