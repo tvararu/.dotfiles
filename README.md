@@ -62,7 +62,7 @@ KEYMAP="KEYMAP=us"
 KEYLAYOUT="us"
 KEYMODEL="apple"
 KEYVARIANT="mac"
-KEYOPTIONS="caps:super"
+KEYOPTIONS=""
 HOSTNAME="arch"
 
 BOOTLOADER="grub"
@@ -209,6 +209,18 @@ To cache Aerial videos offline:
 
 ```bash
 $ yay -Sy aerial-2k-videos
+```
+
+### `xkeysnail`
+
+To use macOS style keybindings globally in apps, you need to allow `xkeysnail` to run as root:
+
+```bash
+$ sudo groupadd -f uinput
+$ sudo gpasswd -a $USER input
+$ sudo vim /etc/udev/rules.d/70-xkeysnail.rules
+KERNEL=="uinput", GROUP="uinput", MODE="0660", OPTIONS+="static_node=uinput"
+KERNEL=="event[0-9]*", GROUP="uinput", MODE="0660"
 ```
 
 ## License

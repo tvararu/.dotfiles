@@ -35,6 +35,7 @@ yay -Sy alsa \
   ttf-fira-code \
   vim \
   xcape \
+  xkeysnail \
   xorg-xrandr \
   xorg-xrdb \
   xorg-xset \
