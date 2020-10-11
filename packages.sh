@@ -20,6 +20,7 @@ yay -Sy alsa \
   libxft-bgra-git \
   logiops \
   mesa-vdpau \
+  nitrogen \
   onboard \
   openssh \
   otf-libertinus \
