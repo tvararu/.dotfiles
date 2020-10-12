@@ -24,6 +24,8 @@ define_keymap(lambda wm_class: wm_class not in ("St"), {
   K("Super-KEY_7"): K("C-KEY_7"),
   K("Super-KEY_8"): K("C-KEY_8"),
   K("Super-KEY_9"): K("C-KEY_9"),
+  K("C-e"): K("C-DOWN"),
+  K("C-a"): K("C-UP"),
 }, "Global")
 
 define_keymap(re.compile("St"), {
