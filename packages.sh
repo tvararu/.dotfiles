@@ -20,6 +20,7 @@ yay -Sy alsa \
   lib32-vulkan-radeon \
   libxft-bgra-git \
   logiops \
+  man-db \
   mesa-vdpau \
   nfs-utils \
   nitrogen \
