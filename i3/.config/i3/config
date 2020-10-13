@@ -29,7 +29,7 @@ smart_borders on
 
 # Locking
 set $lock betterlockscreen --lock
-exec --no-startup-id xidlehook --not-when-fullscreen --timer 600 "$lock" ""
+exec --no-startup-id xidlehook --not-when-fullscreen --timer 1800 "$lock" ""
 bindsym $mod+Ctrl+q exec --no-startup-id $lock, mode "default"
 
 # Media and volume
