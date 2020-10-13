@@ -20,6 +20,7 @@ yay -Sy alsa \
   libxft-bgra-git \
   logiops \
   mesa-vdpau \
+  nfs-utils \
   nitrogen \
   onboard \
   openssh \
@@ -31,6 +32,7 @@ yay -Sy alsa \
   steam \
   telegram-desktop \
   tex-gyre-fonts \
+  tig \
   ttf-apple-emoji \
   ttf-fira-code \
   vim \
