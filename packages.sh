@@ -3,6 +3,7 @@
 yay -Sy alsa \
   asdf-vm \
   atom \
+  betterlockscreen \
   bluez \
   bluez-utils \
   cheese \
@@ -37,10 +38,10 @@ yay -Sy alsa \
   ttf-fira-code \
   vim \
   xcape \
+  xidlehook \
   xkeysnail \
   xorg-xrandr \
   xorg-xrdb \
   xorg-xset \
   xscreensaver \
-  xscreensaver-aerial \
-  xss-lock
+  xscreensaver-aerial

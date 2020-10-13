@@ -223,6 +223,14 @@ KERNEL=="uinput", GROUP="uinput", MODE="0660", OPTIONS+="static_node=uinput"
 KERNEL=="event[0-9]*", GROUP="uinput", MODE="0660"
 ```
 
+### `betterlockscreen`
+
+To lock the screen when suspended:
+
+```bash
+$ systemctl enable betterlockscreen@$USER
+```
+
 ## License
 
 Public domain.

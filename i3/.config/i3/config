@@ -28,8 +28,8 @@ smart_gaps on
 smart_borders on
 
 # Locking
-set $lock i3lock --nofork --color=333333
-exec --no-startup-id xss-lock --transfer-sleep-lock -- $lock
+set $lock betterlockscreen --lock
+exec --no-startup-id xidlehook --not-when-fullscreen --timer 600 "$lock" ""
 bindsym $mod+Ctrl+q exec --no-startup-id $lock, mode "default"
 
 # Media and volume
