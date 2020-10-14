@@ -1,6 +1,9 @@
 #!/bin/sh
 
-yay -Sy alsa \
+yay -Sy \
+  adobe-source-han-sans-otc-fonts \
+  adobe-source-han-serif-otc-fonts \
+  alsa \
   asdf-vm \
   atom \
   betterlockscreen-git \
