@@ -3,7 +3,7 @@
 yay -Sy alsa \
   asdf-vm \
   atom \
-  betterlockscreen \
+  betterlockscreen-git \
   bluez \
   bluez-utils \
   cheese \
