@@ -14,7 +14,7 @@ timestamp:	True
 splash:		True
 splashDuration:	0:00:05
 demoCommand:	xscreensaver-demo
-prefsCommand:	
+prefsCommand:
 nice:		10
 memoryLimit:	0
 fade:		True
@@ -28,18 +28,18 @@ dpmsEnabled:	True
 dpmsQuickOff:	False
 dpmsStandby:	0:00:00
 dpmsSuspend:	0:00:00
-dpmsOff:	0:20:00
+dpmsOff:	0:30:00
 grabDesktopImages:  True
 grabVideoFrames:    False
 chooseRandomImages: False
-imageDirectory:	
+imageDirectory:
 
 mode:		one
 selected:	0
 
 textMode:	file
 textLiteral:	XScreenSaver
-textFile:	
+textFile:
 textProgram:	fortune
 textURL:	https://en.wikipedia.org/w/index.php?title=Special:NewPages&feed=rss
 
@@ -295,4 +295,3 @@ procInterrupts:	True
 xinputExtensionDev: False
 overlayStderr:	True
 authWarningSlack:   20
-
