@@ -231,6 +231,17 @@ To lock the screen when suspended:
 $ systemctl enable betterlockscreen@$USER
 ```
 
+### `dropbox`
+
+Tell Dropbox which X display to use and enable autostart:
+
+```bash
+$ sudo systemctl edit dropbox@$USER
+[Service]
+Environment=DISPLAY=:0
+$ systemctl enable --now dropbox@$USER
+```
+
 ## License
 
 Public domain.

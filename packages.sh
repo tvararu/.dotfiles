@@ -7,6 +7,7 @@ yay -Sy alsa \
   bluez \
   bluez-utils \
   cheese \
+  dropbox \
   dunst \
   firefox \
   fish \
