@@ -33,6 +33,10 @@ yay -Sy \
   openssh \
   otf-libertinus \
   otf-san-francisco \
+  pamixer \
+  pulseaudio \
+  pulseaudio-alsa \
+  pulseaudio-bluetooth \
   python \
   redshift \
   st-luke-git \
