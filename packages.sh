@@ -46,6 +46,7 @@ yay -Sy \
   tig \
   ttf-apple-emoji \
   ttf-fira-code \
+  unzip \
   vim \
   wget \
   xcape \
