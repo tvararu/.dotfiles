@@ -47,6 +47,7 @@ yay -Sy \
   ttf-apple-emoji \
   ttf-fira-code \
   vim \
+  wget \
   xcape \
   xidlehook \
   xkeysnail \
