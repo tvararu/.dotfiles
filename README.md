@@ -51,7 +51,6 @@ I then use [alis](https://github.com/picodotdev/alis) to configure and install t
 KEYS="us"
 
 DEVICE="/dev/nvme0n1"
-SWAP_SIZE="2048"
 
 REFLECTOR="true"
 REFLECTOR_COUNTRIES=("United Kingdom")
