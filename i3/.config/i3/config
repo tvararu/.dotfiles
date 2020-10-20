@@ -46,7 +46,7 @@ bindsym $mod+Return exec st
 bindsym $mod+q kill
 bindsym $mod+space exec --no-startup-id dmenu_recency
 bindsym $mod+Tab workspace next_on_output
-bindsym $mod+Shift+Tab workspace next_on_output
+bindsym $mod+Shift+Tab workspace prev_on_output
 
 # Reload and restart
 bindsym $mod+Shift+c reload
