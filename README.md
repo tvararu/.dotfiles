@@ -156,7 +156,7 @@ $ bluetoothctl
 > power on
 > paired-devices
 Device 04:4B:ED:E4:56:A2 Theodor’s Keyboard
-Device DA:3C:8B:06:59:6F MX Master
+Device DA:3C:8B:06:59:70 MX Master
 > scan on
 > trust <mac>
 > pair <mac>
