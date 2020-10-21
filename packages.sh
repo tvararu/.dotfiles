@@ -11,7 +11,6 @@ yay -Sy \
   bluez-utils \
   cheese \
   conky \
-  dropbox \
   dunst \
   firefox \
   fish \
@@ -30,6 +29,7 @@ yay -Sy \
   nfs-utils \
   nitrogen \
   onboard \
+  onedrive-abraunegg \
   openssh \
   otf-libertinus \
   otf-san-francisco \

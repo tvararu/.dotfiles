@@ -230,15 +230,13 @@ To lock the screen when suspended:
 $ systemctl enable betterlockscreen@$USER
 ```
 
-### `dropbox`
+### `onedrive`
 
-Tell Dropbox which X display to use and enable autostart:
+Log into OneDrive and start it on system boot:
 
 ```bash
-$ sudo systemctl edit dropbox@$USER
-[Service]
-Environment=DISPLAY=:0
-$ systemctl enable --now dropbox@$USER
+$ onedrive
+$ systemctl enable --now onedrive@$USER.service
 ```
 
 ## License
