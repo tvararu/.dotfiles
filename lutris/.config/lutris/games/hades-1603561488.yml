@@ -1,0 +1,6 @@
+game:
+  arch: win64
+  exe: /home/deity/games/hades/drive_c/Games/Hades/x64/Hades.exe
+  prefix: ~/games/hades
+system: {}
+wine: {}
