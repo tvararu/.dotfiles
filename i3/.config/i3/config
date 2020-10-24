@@ -29,7 +29,7 @@ smart_gaps on
 smart_borders on
 
 # Locking
-set $lock xscreensaver-command -activate
+set $lock xset dpms force off
 bindsym $mod+Ctrl+q exec --no-startup-id "$lock", mode "default"
 
 # Media and volume

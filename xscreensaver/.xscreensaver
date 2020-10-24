@@ -1,11 +1,11 @@
 # XScreenSaver Preferences File
-# Written by xscreensaver-demo 5.44 for deity on Sat Oct 24 11:21:14 2020.
+# Written by xscreensaver-demo 5.44 for deity on Sat Oct 24 16:50:09 2020.
 # https://www.jwz.org/xscreensaver/
 
 timeout:	0:10:00
 cycle:		0:00:00
 lock:		True
-lockTimeout:	0:20:00
+lockTimeout:	0:10:00
 passwdTimeout:	0:00:30
 visualID:	default
 installColormap:    True
@@ -26,9 +26,9 @@ ignoreUninstalledPrograms:False
 font:		monospace:size=11
 dpmsEnabled:	True
 dpmsQuickOff:	False
-dpmsStandby:	0:00:00
-dpmsSuspend:	0:00:00
-dpmsOff:	0:30:00
+dpmsStandby:	0:20:00
+dpmsSuspend:	0:20:00
+dpmsOff:	0:20:00
 grabDesktopImages:  True
 grabVideoFrames:    False
 chooseRandomImages: False
