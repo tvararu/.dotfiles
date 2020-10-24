@@ -29,8 +29,7 @@ smart_gaps on
 smart_borders on
 
 # Locking
-set $lock xscreensaver-command -deactivate; betterlockscreen --off 30 --lock dim
-exec --no-startup-id xidlehook --not-when-fullscreen --timer 1800 "$lock" ""
+set $lock xscreensaver-command -activate
 bindsym $mod+Ctrl+q exec --no-startup-id "$lock", mode "default"
 
 # Media and volume
