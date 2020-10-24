@@ -15,8 +15,7 @@ exec --no-startup-id nitrogen --restore
 exec --no-startup-id conky
 
 # Borders
-default_border normal
-default_floating_border normal
+for_window [class=".*"] border pixel 2
 hide_edge_borders none
 bindsym $mod+Shift+n border none
 bindsym $mod+Shift+m border pixel 1
