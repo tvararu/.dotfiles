@@ -1,11 +1,11 @@
 # XScreenSaver Preferences File
-# Written by xscreensaver-demo 5.44 for deity on Wed Oct 14 08:54:25 2020.
+# Written by xscreensaver-demo 5.44 for deity on Sat Oct 24 11:21:14 2020.
 # https://www.jwz.org/xscreensaver/
 
 timeout:	0:10:00
 cycle:		0:00:00
-lock:		False
-lockTimeout:	0:02:00
+lock:		True
+lockTimeout:	0:20:00
 passwdTimeout:	0:00:30
 visualID:	default
 installColormap:    True
@@ -14,7 +14,7 @@ timestamp:	True
 splash:		True
 splashDuration:	0:00:05
 demoCommand:	xscreensaver-demo
-prefsCommand:
+prefsCommand:	
 nice:		10
 memoryLimit:	0
 fade:		True
@@ -32,14 +32,14 @@ dpmsOff:	0:30:00
 grabDesktopImages:  True
 grabVideoFrames:    False
 chooseRandomImages: False
-imageDirectory:
+imageDirectory:	
 
 mode:		one
 selected:	0
 
 textMode:	file
 textLiteral:	XScreenSaver
-textFile:
+textFile:	
 textProgram:	fortune
 textURL:	https://en.wikipedia.org/w/index.php?title=Special:NewPages&feed=rss
 
@@ -295,3 +295,4 @@ procInterrupts:	True
 xinputExtensionDev: False
 overlayStderr:	True
 authWarningSlack:   20
+
