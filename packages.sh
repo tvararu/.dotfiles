@@ -37,6 +37,7 @@ yay -Sy \
   pulseaudio \
   pulseaudio-alsa \
   pulseaudio-bluetooth \
+  pulsemixer \
   python \
   redshift \
   st-luke-git \
