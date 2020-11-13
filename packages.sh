@@ -34,6 +34,7 @@ yay -Sy \
   otf-libertinus \
   otf-san-francisco \
   pamixer \
+  pcmanfm \
   pulseaudio \
   pulseaudio-alsa \
   pulseaudio-bluetooth \
