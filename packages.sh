@@ -25,6 +25,7 @@ yay -Sy \
   libxft-bgra-git \
   logiops \
   man-db \
+  mangohud \
   mesa-vdpau \
   nfs-utils \
   nitrogen \
