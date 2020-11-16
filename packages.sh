@@ -12,6 +12,7 @@ yay -Sy \
   cheese \
   conky \
   dunst \
+  emote \
   firefox \
   fish \
   flameshot \
