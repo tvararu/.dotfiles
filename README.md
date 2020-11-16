@@ -239,6 +239,22 @@ $ onedrive
 $ systemctl enable --now onedrive@$USER.service
 ```
 
+### `transmission-daemon`
+
+Use the system user instead of `transmission`:
+
+```bash
+$ sudo systemctl edit transmission.service
+[Service]
+User=deity
+```
+
+To start now and on startup:
+
+```bash
+$ sudo systemctl enable --now transmission.service
+```
+
 ## License
 
 Public domain.

@@ -47,6 +47,7 @@ yay -Sy \
   telegram-desktop \
   tex-gyre-fonts \
   tig \
+  transmission-cli \
   ttf-apple-emoji \
   ttf-fira-code \
   unzip \
