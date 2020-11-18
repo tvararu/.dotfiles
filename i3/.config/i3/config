@@ -174,7 +174,7 @@ bindsym $mod+$alt+m bar mode toggle
 bar {
 	i3bar_command i3bar
 	status_command i3status
-	position bottom
+	position top
 
 	bindsym button4 nop
 	bindsym button5 nop
