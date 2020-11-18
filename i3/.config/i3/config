@@ -13,6 +13,7 @@ exec --no-startup-id redshift
 exec --no-startup-id flameshot
 exec --no-startup-id nitrogen --restore
 exec --no-startup-id conky
+exec --no-startup-id emote
 
 # Borders
 for_window [class=".*"] border pixel 2
