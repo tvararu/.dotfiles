@@ -202,14 +202,6 @@ GRUB_ENABLE_CRYPTODISK=y
 $ sudo grub-mkconfig -o /boot/grub/grub.cfg
 ```
 
-### `xscreensaver`
-
-To cache Aerial videos offline:
-
-```bash
-$ yay -Sy aerial-2k-videos
-```
-
 ### `xkeysnail`
 
 To use macOS style keybindings globally in apps, you need to allow `xkeysnail` to run as root:

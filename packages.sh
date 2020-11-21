@@ -59,6 +59,4 @@ yay -Sy \
   xkeysnail \
   xorg-xrandr \
   xorg-xrdb \
-  xorg-xset \
-  xscreensaver \
-  xscreensaver-aerial
+  xorg-xset
