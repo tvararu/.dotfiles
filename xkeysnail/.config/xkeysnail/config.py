@@ -13,7 +13,6 @@ define_keymap(lambda wm_class: wm_class not in ("St"), {
   K("Super-a"): K("C-a"),
   K("Super-f"): K("C-f"),
   K("Super-t"): K("C-t"),
-  K("Super-l"): K("C-l"),
   K("Super-w"): K("C-w"),
   K("Super-KEY_1"): K("C-KEY_1"),
   K("Super-KEY_2"): K("C-KEY_2"),
