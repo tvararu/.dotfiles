@@ -247,6 +247,14 @@ To start now and on startup:
 $ sudo systemctl enable --now transmission.service
 ```
 
+### `betterlockscreen`
+
+To lock the screen when suspended:
+
+```bash
+$ sudo systemctl enable betterlockscreen@$USER
+```
+
 ## License
 
 Public domain.
