@@ -136,6 +136,13 @@ Section "Monitor"
   Modeline   "2560x1440@75" 296.00 2560 2568 2600 2666 1440 1443 1448 1481 +hsync -vsync
   Option     "PreferredMode" "2560x1440@75"
 EndSection
+
+Section "Monitor"
+  Identifier "HDMI-A-0"
+  Option     "PreferredMode" "1920x1080"
+  Option     "RightOf" "DisplayPort-0"
+  Option     "Rotate" "right"
+EndSection
 ```
 
 ### Bluetooth
