@@ -101,15 +101,6 @@ $ stow --restow */ # Installs remaining dotfiles
 
 ## System-specific configuration
 
-### Audio
-
-Arch selects the GPU as the default sound card. To switch to the motherboard sound card:
-
-```bash
-$ sudo vim /etc/modprobe.d/default.conf
-options snd_hda_intel index=1
-```
-
 ### Screen tearing
 
 Firefox and other apps tear the screen when scrolling or otherwise changing large sections of the screen. Bumping the refresh rate from the default 60Hz to 75Hz and enabling FreeSync fixes it:
