@@ -2,7 +2,9 @@ import re
 from xkeysnail.transform import *
 
 define_modmap({
-  Key.CAPSLOCK: Key.LEFT_CTRL
+  Key.CAPSLOCK: Key.LEFT_CTRL,
+  Key.LEFT_ALT: Key.LEFT_META,
+  Key.LEFT_META: Key.LEFT_ALT
 })
 
 define_keymap(lambda wm_class: wm_class not in ("St"), {
@@ -23,8 +25,8 @@ define_keymap(lambda wm_class: wm_class not in ("St"), {
   K("Super-KEY_7"): K("C-KEY_7"),
   K("Super-KEY_8"): K("C-KEY_8"),
   K("Super-KEY_9"): K("C-KEY_9"),
-  K("C-e"): K("C-DOWN"),
-  K("C-a"): K("C-UP"),
+  K("C-e"): K("end"),
+  K("C-a"): K("home"),
 }, "Global")
 
 define_keymap(re.compile("St"), {

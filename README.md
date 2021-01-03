@@ -58,7 +58,7 @@ TIMEZONE="/usr/share/zoneinfo/Europe/London"
 LOCALES=("en_GB.UTF-8 UTF-8" "en_US.UTF-8 UTF-8")
 LOCALE_CONF=("en_GB:en")
 KEYMAP="KEYMAP=us"
-KEYLAYOUT="us"
+KEYLAYOUT="gb"
 KEYMODEL="apple"
 KEYVARIANT="mac"
 KEYOPTIONS=""
@@ -210,6 +210,12 @@ $ sudo gpasswd -a $USER input
 $ sudo vim /etc/udev/rules.d/70-xkeysnail.rules
 KERNEL=="uinput", GROUP="uinput", MODE="0660", OPTIONS+="static_node=uinput"
 KERNEL=="event[0-9]*", GROUP="uinput", MODE="0660"
+```
+
+To change the overall keyboard layout to the one for an Apple ISO UK keyboard:
+
+```bash
+$ sudo localectl --no-convert set-x11-keymap gb apple mac
 ```
 
 ### `betterlockscreen`
