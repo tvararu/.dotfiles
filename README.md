@@ -1,8 +1,10 @@
-# Arch dotfiles and scripts
+# Dotfiles and scripts
 
-I use Arch Linux for tinkering, gaming, and productivity, in that order. This repo is my current hardware setup, dotfiles, and notes on how to get various things working.
+Dotfiles for macOS and Linux.
 
 ## Hardware
+
+Arch:
 
 ```
 CASE: Dan A4-SFX v4.1 7L
@@ -19,21 +21,11 @@ NVME0: Sabrent Rocket 1TB R/W 3400/3000
 NVME1: Crucial P1 1TB R/W 2000/1700
 SSD0: SanDisk Ultra II 1TB R/W 540/500
 
-MONITOR: Philips S245E1S 1440p@75Hz FreeSync
-KEYBOARD: Apple Magic Keyboard British
+MONITOR: Philips 346P1CRH
+KEYBOARD: Keychron K6 ISO GB
 MOUSE: Logitech MX Master
 WEBCAM: Logitech C920
 ```
-
-Drivers: everything works out of the box on Linux kernel 5.8. `logiops-git` is necessary to change mouse settings.
-
-## BIOS configuration
-
-Boots fine in factory settings (secure boot is disabled), I then made these changes:
-
-- Clocked RAM to 3600MHz
-- Set water pump to 60% (inaudible) in all loads
-- Set CPU and CHA fan to 20% (inaudible) when under 75C and 50% above (barely audible)
 
 ## Installing Arch
 
@@ -87,7 +79,6 @@ $ sudo pacman -Syu
 Then:
 
 ```bash
-$ sudo pacman -U https://archive.archlinux.org/packages/s/stow/stow-2.2.2-5-any.pkg.tar.xz # Older version until https://github.com/aspiers/stow/issues/65 is resolved
 $ cd
 $ git clone https://github.com/tvararu/.dotfiles.git
 $ cd .dotfiles
@@ -99,14 +90,21 @@ $ git reset --hard # Updates local dotfiles to be the same as in this repo
 $ stow --restow */ # Installs remaining dotfiles
 ```
 
+## macOS setup
+
+```bash
+$ ./macos-install.sh
+$ stow -R fish git gpg ssh tmux vim
+```
+
 ## System-specific configuration
 
 ### Screen tearing
 
-Firefox and other apps tear the screen when scrolling or otherwise changing large sections of the screen. Bumping the refresh rate from the default 60Hz to 75Hz and enabling FreeSync fixes it:
+Firefox and other apps tear the screen when scrolling or otherwise changing large sections of the screen. Bumping the refresh rate from the default 60Hz and enabling FreeSync fixes it:
 
 ```bash
-$ xrandr --rate 75
+$ xrandr --rate 100
 $ xrandr --output DisplayPort-0 --set TearFree on
 ```
 
@@ -249,14 +247,6 @@ To start now and on startup:
 
 ```bash
 $ sudo systemctl enable --now transmission.service
-```
-
-### `betterlockscreen`
-
-To lock the screen when suspended:
-
-```bash
-$ sudo systemctl enable betterlockscreen@$USER
 ```
 
 ## License
