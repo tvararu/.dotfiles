@@ -19,6 +19,9 @@ syntax on
 " Use utf-8 encoding for everything
 set encoding=utf-8
 
+" Load filetype plugins
+filetype plugin on
+
 " Show line numbers in gutter
 set number
 
@@ -53,3 +56,9 @@ endfunction
 
 " Automatically remove trailing whitespace on write for any file type (*)
 autocmd BufWritePre * :call <SID>TrimWhitespaces()
+
+" Use search highlighting
+set hlsearch
+
+" Mute search highlighting with <C-l>
+nnoremap <silent> <C-l> :<C-u>nohlsearch<CR><C-l>
