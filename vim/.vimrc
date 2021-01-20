@@ -9,6 +9,9 @@ call plug#begin('~/.vim/plugged')
   " Shortcuts for commenting lines
   Plug 'tpope/vim-commentary'
 
+  " Use * to search for what's selected in visual mode
+  Plug 'nelstrom/vim-visual-star-search'
+
   " Fuzzy finder
   Plug '/usr/local/opt/fzf'
 call plug#end()
