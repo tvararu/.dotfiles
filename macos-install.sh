@@ -6,4 +6,6 @@ echo "\n Hey there. Never mind me, just setting up your system.\n"
 
 ./homebrew.sh
 
+stow -R fish git gpg ssh tmux vim
+
 echo " All done! Enjoy.\n"

@@ -94,7 +94,6 @@ $ stow --restow */ # Installs remaining dotfiles
 
 ```bash
 $ ./macos-install.sh
-$ stow -R fish git gpg ssh tmux vim
 ```
 
 ## System-specific configuration
