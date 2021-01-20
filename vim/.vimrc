@@ -16,6 +16,9 @@ call plug#end()
 " Use syntax highlighting
 syntax on
 
+" Allow backspace to delete existing text
+set backspace=2
+
 " Use utf-8 encoding for everything
 set encoding=utf-8
 
