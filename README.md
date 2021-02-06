@@ -34,7 +34,7 @@ Get the [latest image](https://www.archlinux.org/download/) and `dd` it to a USB
 ```bash
 $ diskutil list
 $ diskutil unmountDisk /dev/diskX
-$ sudo dd if=arch.iso of=/dev/rdiskX bs=1M
+$ sudo dd if=arch.iso of=/dev/rdiskX bs=1m
 ```
 
 I then use [alis](https://github.com/picodotdev/alis) to configure and install the base system with the following options:
