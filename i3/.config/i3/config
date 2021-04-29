@@ -13,7 +13,6 @@ exec --no-startup-id redshift
 exec --no-startup-id flameshot
 exec --no-startup-id nitrogen --restore
 exec --no-startup-id conky
-exec --no-startup-id emote
 
 # Borders
 for_window [class=".*"] border pixel 2
@@ -33,6 +32,10 @@ smart_borders on
 set $lock sleep 1 && xset dpms force off
 # exec --no-startup-id xidlehook --not-when-fullscreen --timer 1800 "$lock" ""
 bindsym $mod+Ctrl+q exec --no-startup-id "$lock", mode "default"
+
+# Brightness keys
+bindsym XF86MonBrightnessUp exec "xbacklight -inc 10"
+bindsym XF86MonBrightnessDown exec "xbacklight -dec 10"
 
 # Media and volume
 bindsym XF86AudioPlay exec --no-startup-id lollypop -t
