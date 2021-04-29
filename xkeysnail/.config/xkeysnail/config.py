@@ -2,9 +2,7 @@ import re
 from xkeysnail.transform import *
 
 define_modmap({
-  Key.CAPSLOCK: Key.LEFT_CTRL,
-  Key.LEFT_ALT: Key.LEFT_META,
-  Key.LEFT_META: Key.LEFT_ALT
+  Key.CAPSLOCK: Key.ESC
 })
 
 define_keymap(lambda wm_class: wm_class not in ("St"), {
