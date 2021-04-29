@@ -16,10 +16,17 @@ general {
 }
 
 order += "cpu_usage"
+order += "battery all"
 order += "tztime local"
 
 cpu_usage {
   format = " %usage "
+}
+
+battery all {
+  format = " %percentage %remaining "
+  integer_battery_capacity = true
+  status_bat = ""
 }
 
 tztime local {
