@@ -14,6 +14,9 @@ call plug#begin('~/.vim/plugged')
 
   " Fuzzy finder
   Plug '/usr/local/opt/fzf'
+
+  " Nunjucks and jinja templates
+  Plug 'lepture/vim-jinja'
 call plug#end()
 
 " Use syntax highlighting
