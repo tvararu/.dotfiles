@@ -2,68 +2,17 @@
 
 Dotfiles for macOS and Linux.
 
-## Hardware
-
-Arch:
-
-```
-CASE: Dan A4-SFX v4.1 7L
-PSU: Corsair SF750
-CPU: AMD Ryzen 5 3600XT 6C/12T 3.8GHz/4.5GHz
-FANS: Asetek 645LT 92mm AIO + Noctua NF-A9x14 x2
-MOTHERBOARD: Asus ROG STRIX B550-I GAMING mini-ITX
-LAN: Intel I225-V 2.5Gb Ethernet
-WLAN: Intel Wi-Fi 6 AX200
-AUDIO: Realtek S1220A
-RAM: Corsair Vengeance LPX 64GB DDR4 @ 3600MHz
-GPU: Powercolor AMD Radeon RX 5700 XT Red Dragon
-NVME0: Sabrent Rocket 1TB R/W 3400/3000
-NVME1: Crucial P1 1TB R/W 2000/1700
-SSD0: SanDisk Ultra II 1TB R/W 540/500
-
-MONITOR: Philips 346P1CRH
-KEYBOARD: Keychron K6 ISO GB
-MOUSE: Logitech MX Master
-WEBCAM: Logitech C920
-```
-
 ## Installing Arch
 
-Get the [latest image](https://www.archlinux.org/download/) and `dd` it to a USB drive (macOS specific instructions):
+Run `archinstall` in the live CD. I choose the `i3` preset.
 
-```bash
-$ diskutil list
-$ diskutil unmountDisk /dev/diskX
-$ sudo dd if=arch.iso of=/dev/rdiskX bs=1m
+When prompted, I use this list of starter packages:
+
+```
+vim tmux htop firefox wpa_supplicant man-db dhcpcd networkmanager network-manager-applet dex xss-lock git
 ```
 
-I then use [alis](https://github.com/picodotdev/alis) to configure and install the base system with the following options:
-
-```bash
-KEYS="us"
-
-DEVICE="/dev/nvme0n1"
-
-REFLECTOR="true"
-REFLECTOR_COUNTRIES=("United Kingdom")
-TIMEZONE="/usr/share/zoneinfo/Europe/London"
-LOCALES=("en_GB.UTF-8 UTF-8" "en_US.UTF-8 UTF-8")
-LOCALE_CONF=("en_GB:en")
-KEYMAP="KEYMAP=us"
-KEYLAYOUT="gb"
-KEYMODEL="apple"
-KEYVARIANT="mac"
-KEYOPTIONS=""
-HOSTNAME="arch"
-
-BOOTLOADER="grub"
-
-DESKTOP_ENVIRONMENT="i3-gaps"
-DISPLAY_DRIVER="amdgpu"
-VULKAN="true"
-
-AUR="yay"
-```
+On my 2013 MacBook Air, I also get `broadcom-wl` for wireless drivers.
 
 ## Installing dotfiles and programs
 
@@ -74,6 +23,32 @@ $ sudo vim /etc/pacman.conf
 [multilib]
 Include = /etc/pacman.d/mirrorlist
 $ sudo pacman -Syu
+```
+
+Install `yay`:
+
+```bash
+$ git clone https://aur.archlinux.org/yay-bin.git
+$ cd yay-bin
+$ makepkg -si
+```
+
+Install `st`:
+
+```bash
+$ git clone https://github.com/LukeSmithxyz/st.git
+$ cd st
+$ sudo make install
+$ yay -S libxft-bgra
+```
+
+Install `fish`:
+
+```bash
+$ yay -S fish
+$ chsh -s $(which fish)
+$ fish
+$ rm -r .bash*
 ```
 
 Then:
@@ -92,6 +67,22 @@ $ ./macos-install.sh
 ```
 
 ## System-specific configuration
+
+### Wifi
+
+After first-booting on my laptop:
+
+```bash
+$ sudo modprobe wl
+$ sudo systemctl enable --now NetworkManager.service
+$ nmtui
+```
+
+### Screen backlight on laptop
+
+```bash
+$ yay -S acpilight
+```
 
 ### Screen tearing
 
@@ -168,63 +159,12 @@ devices: ({
 $ systemctl enable --now logid.service
 ```
 
-### `dmenu_recency`
-
-The i3 config is set up to use `dmenu_recency`, which comes from [dmenu-manjaro](https://gitlab.manjaro.org/packages/community/dmenu-manjaro).
-
-To install:
-
-```bash
-$ yay -R dmenu
-$ git clone https://gitlab.manjaro.org/packages/community/dmenu-manjaro
-$ cd dmenu-manjaro
-$ makepkg -si
-```
-
-### `grub`
-
-Add the following options to the grub config:
-
-```bash
-$ sudo vim /etc/default/grub
-GRUB_CMDLINE_LINUX_DEFAULT="quiet loglevel=3"
-GRUB_ENABLE_CRYPTODISK=y
-$ sudo grub-mkconfig -o /boot/grub/grub.cfg
-```
-
-### `xkeysnail`
-
-To use macOS style keybindings globally in apps, you need to allow `xkeysnail` to run as root:
-
-```bash
-$ sudo groupadd -f uinput
-$ sudo gpasswd -a $USER input
-$ sudo vim /etc/udev/rules.d/70-xkeysnail.rules
-KERNEL=="uinput", GROUP="uinput", MODE="0660", OPTIONS+="static_node=uinput"
-KERNEL=="event[0-9]*", GROUP="uinput", MODE="0660"
-```
+### Keyboard
 
 To change the overall keyboard layout to the one for an Apple ISO UK keyboard:
 
 ```bash
 $ sudo localectl --no-convert set-x11-keymap gb apple mac
-```
-
-### `betterlockscreen`
-
-To lock the screen when suspended:
-
-```bash
-$ systemctl enable betterlockscreen@$USER
-```
-
-### `onedrive`
-
-Log into OneDrive and start it on system boot:
-
-```bash
-$ onedrive
-$ systemctl enable --now onedrive@$USER.service
 ```
 
 ### `transmission-daemon`
