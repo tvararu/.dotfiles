@@ -1,54 +1,55 @@
 #!/bin/sh
 
 yay -Sy --needed \
-	adobe-source-han-sans-otc-fonts \
-	adobe-source-han-serif-otc-fonts \
-	alsa \
-	asdf-vm \
-	bluez \
-	bluez-utils \
-	cheese \
-	dex \
-	dhcpcd \
-	dunst \
-	firefox \
-	flameshot \
-	git \
-	gnome-themes-extra \
-	htop \
-	hub \
-	man-db \
-	mosh \
-	network-manager-applet \
-	networkmanager \
-	nfs-utils \
-	openssh \
-	otf-libertinus \
-	otf-san-francisco \
-	pamixer \
-	pcmanfm \
-	pulseaudio \
-	pulseaudio-alsa \
-	pulseaudio-bluetooth \
-	pulsemixer \
-	redshift \
-	telegram-desktop \
-	tex-gyre-fonts \
-	tig \
-	tmux \
-	transmission-cli \
-	ttf-apple-emoji \
-	ttf-fira-code \
-	unzip \
-	vim \
-	wget \
-	wpa_supplicant \
-	xcape \
-	xorg-xrandr \
-	xorg-xrdb \
-	xorg-xset \
-	xss-lock
-  libnotify \
-  nitrogen \
-  syncthing \
-  xclip \
+adobe-source-han-sans-otc-fonts \
+adobe-source-han-serif-otc-fonts \
+alsa \
+asdf-vm \
+bluez \
+bluez-utils \
+cheese \
+dex \
+dhcpcd \
+dunst \
+firefox \
+flameshot \
+git \
+gnome-themes-extra \
+htop \
+hub \
+libnotify \
+lollypop \
+man-db \
+mosh \
+network-manager-applet \
+networkmanager \
+nfs-utils \
+nitrogen \
+openssh \
+otf-libertinus \
+otf-san-francisco \
+pamixer \
+pcmanfm \
+pulseaudio \
+pulseaudio-alsa \
+pulseaudio-bluetooth \
+pulsemixer \
+redshift \
+syncthing \
+telegram-desktop \
+tex-gyre-fonts \
+tig \
+tmux \
+transmission-cli \
+ttf-apple-emoji \
+ttf-fira-code \
+unzip \
+vim \
+wget \
+wpa_supplicant \
+xcape \
+xclip \
+xorg-xrandr \
+xorg-xrdb \
+xorg-xset \
+xss-lock
