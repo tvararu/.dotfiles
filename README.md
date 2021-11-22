@@ -78,6 +78,21 @@ $ sudo systemctl enable --now NetworkManager.service
 $ nmtui
 ```
 
+### Mounting an SD card
+
+```bash
+$ mkdir /mnt/SD
+$ sudo vim /etc/fstab
+UUID=<get using blkid>  /mnt/SD exfat defaults,uid=1000 0 2
+```
+
+### Syncthing
+
+```bash
+$ sudo systemctl enable --now syncthing@$USER.service
+$ open http://127.0.0.1:8384
+```
+
 ### Screen backlight on laptop
 
 ```bash
