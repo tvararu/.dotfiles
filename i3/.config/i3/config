@@ -3,7 +3,7 @@
 # General
 set $alt Mod1
 set $mod Mod4
-font xft:mono 11
+font xft:mono 10
 focus_follows_mouse no
 floating_modifier $mod
 workspace_auto_back_and_forth yes
