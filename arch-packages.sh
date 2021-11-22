@@ -44,8 +44,11 @@ yay -Sy --needed \
 	wget \
 	wpa_supplicant \
 	xcape \
-  xclip \
 	xorg-xrandr \
 	xorg-xrdb \
 	xorg-xset \
 	xss-lock
+  libnotify \
+  nitrogen \
+  syncthing \
+  xclip \
