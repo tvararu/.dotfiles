@@ -42,6 +42,15 @@ $ sudo make install
 $ yay -S libxft-bgra
 ```
 
+Install `dmenu`:
+
+```bash
+$ git clone https://github.com/LukeSmithxyz/dmenu.git
+$ cd dmenu
+$ make
+$ sudo make install
+```
+
 Install `fish`:
 
 ```bash
