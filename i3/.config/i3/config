@@ -23,8 +23,8 @@ bindsym $mod+Shift+m border pixel 1
 bindsym $mod+Shift+comma border normal
 
 # Gaps
-gaps inner 14
-gaps outer -2
+gaps inner 10
+gaps outer 0
 smart_gaps on
 smart_borders on
 
