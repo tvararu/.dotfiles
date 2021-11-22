@@ -1,4 +1,3 @@
 #!/bin/sh
 
-xkeysnail --quiet --watch ~/.config/xkeysnail/config.py &
-(sleep 5s && xset r rate 200 75) &
+xset r rate 200 75
