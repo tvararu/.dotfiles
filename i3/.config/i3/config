@@ -11,8 +11,8 @@ workspace_auto_back_and_forth yes
 # Autostart
 exec --no-startup-id redshift
 exec --no-startup-id flameshot
-exec --no-startup-id nitrogen --restore
-exec --no-startup-id conky
+exec --no-startup-id dex --autostart --environment i3
+exec --no-startup-id nm-applet
 
 # Borders
 for_window [class=".*"] border pixel 2
@@ -28,6 +28,7 @@ smart_gaps on
 smart_borders on
 
 # Locking
+exec --no-startup-id xss-lock --transfer-sleep-lock -- i3lock --nofork
 # set $lock betterlockscreen --off 30 --lock dim
 set $lock sleep 1 && xset dpms force off
 # exec --no-startup-id xidlehook --not-when-fullscreen --timer 1800 "$lock" ""
@@ -48,7 +49,7 @@ bindsym XF86AudioMute exec --no-startup-id pamixer --toggle-mute && notify-send 
 # Core
 bindsym $mod+Return exec st
 bindsym $mod+q kill
-bindsym $mod+space exec --no-startup-id dmenu_recency
+bindsym $mod+space exec --no-startup-id dmenu_run
 bindsym $mod+Tab workspace next_on_output
 bindsym $mod+Shift+Tab workspace prev_on_output
 
