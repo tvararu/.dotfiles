@@ -9,8 +9,6 @@
     alignment = left
     bounce_freq = 5
     show_age_threshold = 60
-    word_wrap = no
-    ignore_newline = no
     geometry = "0x4-25+25"
     shrink = yes
     transparency = 0
