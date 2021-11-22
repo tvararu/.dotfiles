@@ -93,10 +93,16 @@ $ sudo systemctl enable --now syncthing@$USER.service
 $ open http://127.0.0.1:8384
 ```
 
-### Screen backlight on laptop
+### Screen brightness
 
 ```bash
 $ yay -S acpilight
+```
+
+### Better trackpad drivers
+
+```bash
+$ yay -S xf86-input-synaptics
 ```
 
 ### Screen tearing
