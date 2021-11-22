@@ -17,6 +17,9 @@ call plug#begin('~/.vim/plugged')
 
   " Nunjucks and jinja templates
   Plug 'lepture/vim-jinja'
+
+  " mdx
+  Plug 'jxnblk/vim-mdx-js'
 call plug#end()
 
 " Use syntax highlighting
