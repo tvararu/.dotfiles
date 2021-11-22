@@ -106,6 +106,7 @@ $ open http://127.0.0.1:8384
 
 ```bash
 $ yay -S acpilight
+$ sudo gpasswd -a $USER video
 ```
 
 ### Better trackpad drivers
