@@ -1,3 +1,6 @@
-
 [Default Applications]
 inode/directory=pcmanfm.desktop
+x-scheme-handler/tg=userapp-Telegram Desktop-9966V0.desktop
+
+[Added Associations]
+x-scheme-handler/tg=userapp-Telegram Desktop-9966V0.desktop;
