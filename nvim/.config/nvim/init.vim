@@ -50,6 +50,12 @@ nmap s <Plug>(easymotion-overwin-f)
 vnoremap < <gv
 vnoremap > >gv
 
+" Disable arrow movement, resize splits instead
+nnoremap <Up>    :resize +2<CR>
+nnoremap <Down>  :resize -2<CR>
+nnoremap <Left>  :vertical resize +4<CR>
+nnoremap <Right> :vertical resize -4<CR>
+
 function! <SID>TrimWhitespaces()
   let _cursor_position = getpos(".")
 
