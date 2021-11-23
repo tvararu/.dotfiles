@@ -10,6 +10,8 @@ call plug#begin('~/.vim/plugged')
   Plug 'nekonako/xresources-nvim'   " Load Xresources colours
   Plug 'tpope/vim-commentary'       " Shortcuts for commenting lines
   Plug 'itchyny/lightline.vim'      " Light and configurable statusline
+
+  Plug 'pangloss/vim-javascript'    " .js support
   Plug 'lepture/vim-jinja'          " .njk support
   Plug 'jxnblk/vim-mdx-js'          " .mdx support
 call plug#end()
