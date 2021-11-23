@@ -22,7 +22,7 @@ call plug#begin('~/.vim/plugged')
 call plug#end()
 
 colorscheme xresources              " Use a color scheme based on Xresources
-set number                          " Show line numbers in gutter
+set number relativenumber           " Show relative line numbers in gutter
 set cc=80                           " Set an 80 width column border
 set hidden                          " Allow navigating with unsaved changes
 
