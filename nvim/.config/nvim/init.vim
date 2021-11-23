@@ -14,9 +14,10 @@ call plug#begin('~/.vim/plugged')
   Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
   Plug 'junegunn/fzf.vim'                 " Fuzzy file finder
 
-  Plug 'pangloss/vim-javascript' " .js support
-  Plug 'lepture/vim-jinja'       " .njk support
-  Plug 'jxnblk/vim-mdx-js'       " .mdx support
+  Plug 'HerringtonDarkholme/yats.vim'     " .ts support
+  Plug 'pangloss/vim-javascript'          " .js support
+  Plug 'lepture/vim-jinja'                " .njk support
+  Plug 'jxnblk/vim-mdx-js'                " .mdx support
 call plug#end()
 
 colorscheme xresources              " Use a color scheme based on Xresources
