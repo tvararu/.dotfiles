@@ -43,6 +43,7 @@ tex-gyre-fonts \
 tig \
 tmux \
 transmission-cli \
+tree \
 ttf-apple-emoji \
 ttf-fira-code \
 unzip \
