@@ -24,6 +24,7 @@ set softtabstop=2                   " Move forward 2 spaces with pressing tab
 set expandtab                       " Use space instead of tabs
 
 let g:netrw_banner = 0              " Remove netrw banner
+let mapleader ="\<Space>"           " Map space bar as the leader key
 
 function! <SID>TrimWhitespaces()
   let _cursor_position = getpos(".")
