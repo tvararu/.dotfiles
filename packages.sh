@@ -37,6 +37,7 @@ pulseaudio-alsa \
 pulseaudio-bluetooth \
 pulsemixer \
 redshift \
+ripgrep \
 syncthing \
 telegram-desktop \
 tex-gyre-fonts \
