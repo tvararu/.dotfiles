@@ -7,6 +7,7 @@ alsa \
 asdf-vm \
 bluez \
 bluez-utils \
+calibre \
 cheese \
 dex \
 dhcpcd \
