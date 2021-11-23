@@ -13,6 +13,7 @@ call plug#begin('~/.vim/plugged')
   Plug 'ConradIrwin/vim-bracketed-paste'  " Sane pasting
   Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
   Plug 'junegunn/fzf.vim'                 " Fuzzy file finder
+  Plug 'easymotion/vim-easymotion'        " Easier jumping with the leader key
 
   Plug 'HerringtonDarkholme/yats.vim'     " .ts support
   Plug 'pangloss/vim-javascript'          " .js support
@@ -40,6 +41,13 @@ let g:lightline = { 'colorscheme': 'ayu_dark', }
 nnoremap <silent> <Leader>. :GFiles <CR>
 command! -bang -nargs=* Rg call fzf#vim#grep("rg --column --line-number --no-heading --color=always --smart-case ".shellescape(<q-args>), 1, {'options': '--delimiter : --nth 4..'}, <bang>0)
 nnoremap <silent> <Leader>/ :Rg<CR>
+
+let g:EasyMotion_do_mapping = 0     " Disable default EasyMotion mappings
+nmap s <Plug>(easymotion-overwin-f)
+
+" Keep selection when reindenting
+vnoremap < <gv
+vnoremap > >gv
 
 function! <SID>TrimWhitespaces()
   let _cursor_position = getpos(".")
