@@ -9,6 +9,7 @@ call plug#begin('~/.vim/plugged')
   Plug 'tpope/vim-sensible'         " Sensible defaults
   Plug 'nekonako/xresources-nvim'   " Load Xresources colours
   Plug 'tpope/vim-commentary'       " Shortcuts for commenting lines
+  Plug 'itchyny/lightline.vim'      " Light and configurable statusline
   Plug 'lepture/vim-jinja'          " .njk support
   Plug 'jxnblk/vim-mdx-js'          " .mdx support
 call plug#end()
@@ -25,6 +26,9 @@ set expandtab                       " Use space instead of tabs
 
 let g:netrw_banner = 0              " Remove netrw banner
 let mapleader ="\<Space>"           " Map space bar as the leader key
+
+set noshowmode                      " Don't show mode below statusline
+let g:lightline = { 'colorscheme': 'ayu_dark', }
 
 function! <SID>TrimWhitespaces()
   let _cursor_position = getpos(".")
