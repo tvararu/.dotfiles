@@ -21,6 +21,7 @@ libnotify \
 lollypop \
 man-db \
 mosh \
+neovim \
 network-manager-applet \
 networkmanager \
 nfs-utils \
