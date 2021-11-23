@@ -54,3 +54,5 @@ urxvt*font: xft:fira code:size=10
 *.colorBD:     #e6e1cf
 !*.colorIT:
 !*.colorUL:
+
+#include ".Xresources.local"
