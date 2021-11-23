@@ -38,7 +38,7 @@ let mapleader ="\<Space>"           " Map space bar as the leader key
 set noshowmode                      " Don't show mode below statusline
 let g:lightline = { 'colorscheme': 'ayu_dark', }
 
-" Fuzzy finder mappings
+                                    " Fuzzy finder mappings
 nnoremap <silent> <Leader>. :GFiles <CR>
 command! -bang -nargs=* Rg call fzf#vim#grep(
   \ "rg --column --line-number --no-heading --color=always --smart-case "
@@ -48,11 +48,17 @@ nnoremap <silent> <Leader>/ :Rg<CR>
 let g:EasyMotion_do_mapping = 0     " Disable default EasyMotion mappings
 nmap s <Plug>(easymotion-overwin-f)
 
-" Keep selection when reindenting
+                                    " Keep selection when reindenting
 vnoremap < <gv
 vnoremap > >gv
 
-" Disable arrow movement, resize splits instead
+set splitbelow splitright           " Splits open at the bottom and right
+                                    " Shorter split navigation keybindings
+map <leader>h <C-w>h
+map <leader>j <C-w>j
+map <leader>k <C-w>k
+map <leader>l <C-w>l
+                                    " Resize splits with arrow keys
 nnoremap <Up>    :resize +2<CR>
 nnoremap <Down>  :resize -2<CR>
 nnoremap <Left>  :vertical resize +4<CR>
@@ -60,12 +66,10 @@ nnoremap <Right> :vertical resize -4<CR>
 
 function! <SID>TrimWhitespaces()
   let _cursor_position = getpos(".")
-
   :silent! %s/\s\+$//e              " Trim trailing whitespace on every line
   :silent! %s#\($\n\s*\)\+\%$##     " Trim blank lines at end of file
-
   call setpos(".", _cursor_position)
 endfunction
 
-" Automatically remove trailing whitespace on write for any file type (*)
+                                    " Automatically remove trailing whitespace
 autocmd BufWritePre * :call <SID>TrimWhitespaces()
