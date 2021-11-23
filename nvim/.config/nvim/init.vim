@@ -25,6 +25,7 @@ colorscheme xresources              " Use a color scheme based on Xresources
 set number relativenumber           " Show relative line numbers in gutter
 set cc=80                           " Set an 80 width column border
 set hidden                          " Allow navigating with unsaved changes
+set clipboard+=unnamedplus          " Use system clipboard
 
 set tabstop=2                       " Set tab to 2 spaces
 set shiftwidth=2                    " Shift by 2 spaces when using << >>
