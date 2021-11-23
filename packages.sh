@@ -13,6 +13,7 @@ dhcpcd \
 dunst \
 firefox \
 flameshot \
+fzf \
 git \
 gnome-themes-extra \
 htop \
