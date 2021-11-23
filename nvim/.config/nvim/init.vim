@@ -6,14 +6,17 @@ if empty(glob(data_dir . '/autoload/plug.vim'))
 endif
 
 call plug#begin('~/.vim/plugged')
-  Plug 'tpope/vim-sensible'         " Sensible defaults
-  Plug 'nekonako/xresources-nvim'   " Load Xresources colours
-  Plug 'tpope/vim-commentary'       " Shortcuts for commenting lines
-  Plug 'itchyny/lightline.vim'      " Light and configurable statusline
+  Plug 'tpope/vim-sensible'               " Sensible defaults
+  Plug 'nekonako/xresources-nvim'         " Load Xresources colours
+  Plug 'tpope/vim-commentary'             " Shortcuts for commenting lines
+  Plug 'itchyny/lightline.vim'            " Light and configurable statusline
+  Plug 'ConradIrwin/vim-bracketed-paste'  " Sane pasting
+  Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
+  Plug 'junegunn/fzf.vim'                 " Fuzzy file finder
 
-  Plug 'pangloss/vim-javascript'    " .js support
-  Plug 'lepture/vim-jinja'          " .njk support
-  Plug 'jxnblk/vim-mdx-js'          " .mdx support
+  Plug 'pangloss/vim-javascript' " .js support
+  Plug 'lepture/vim-jinja'       " .njk support
+  Plug 'jxnblk/vim-mdx-js'       " .mdx support
 call plug#end()
 
 colorscheme xresources              " Use a color scheme based on Xresources
