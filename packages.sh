@@ -5,6 +5,7 @@ adobe-source-han-sans-otc-fonts \
 adobe-source-han-serif-otc-fonts \
 alsa \
 asdf-vm \
+audo-cpufreq \
 bluez \
 bluez-utils \
 calibre \

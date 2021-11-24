@@ -217,6 +217,12 @@ To start now and on startup:
 $ sudo systemctl enable --now transmission.service
 ```
 
+### `auto-cpufreq`
+
+```bash
+$ sudo systemctl enable --now auto-cpufreq
+```
+
 ## License
 
 Public domain.
