@@ -153,6 +153,9 @@ Section "Monitor"
 EndSection
 ```
 
+On the MacBook Air, install `xf86-video-intel` and use a [different Xorg driver
+config](https://wiki.archlinux.org/title/intel_graphics#Tearing).
+
 ### Bluetooth
 
 Auto power-on after boot:
