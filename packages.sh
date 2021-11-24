@@ -24,6 +24,7 @@ libnotify \
 lollypop \
 man-db \
 mosh \
+mpv \
 neovim \
 network-manager-applet \
 networkmanager \
@@ -59,3 +60,4 @@ xorg-xrandr \
 xorg-xrdb \
 xorg-xset \
 xss-lock
+yt-dlp \
