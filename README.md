@@ -9,7 +9,7 @@ Run `archinstall` in the live CD. I choose the `i3` preset.
 When prompted, I use this list of starter packages:
 
 ```
-vim tmux htop firefox wpa_supplicant man-db dhcpcd networkmanager network-manager-applet dex xss-lock git
+vim tmux htop firefox wpa_supplicant man-db networkmanager network-manager-applet dex xss-lock git
 ```
 
 On my 2013 MacBook Air, I also get `broadcom-wl` for wireless drivers.
