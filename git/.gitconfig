@@ -6,5 +6,6 @@
   gpgsign = false
 [core]
   excludesfile = ~/.gitignore.global
+  editor = nvim
 [gpg]
   program = gpg
