@@ -59,10 +59,10 @@ map <leader>j <C-w>j
 map <leader>k <C-w>k
 map <leader>l <C-w>l
                                     " Resize splits with arrow keys
-nnoremap <Up>    :resize +2<CR>
-nnoremap <Down>  :resize -2<CR>
-nnoremap <Left>  :vertical resize +4<CR>
-nnoremap <Right> :vertical resize -4<CR>
+nnoremap <C-Up>    :resize +2<CR>
+nnoremap <C-Down>  :resize -2<CR>
+nnoremap <C-Left>  :vertical resize +4<CR>
+nnoremap <C-Right> :vertical resize -4<CR>
 
 function! <SID>TrimWhitespaces()
   let _cursor_position = getpos(".")
