@@ -28,6 +28,7 @@ mpv \
 neovim \
 network-manager-applet \
 networkmanager \
+newsboat \
 nfs-utils \
 nitrogen \
 openssh \
