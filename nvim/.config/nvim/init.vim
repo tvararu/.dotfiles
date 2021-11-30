@@ -13,7 +13,7 @@ call plug#begin('~/.vim/plugged')
   Plug 'ConradIrwin/vim-bracketed-paste'  " Sane pasting
   Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
   Plug 'junegunn/fzf.vim'                 " Fuzzy file finder
-  Plug 'easymotion/vim-easymotion'        " Easier jumping with the leader key
+  Plug 'easymotion/vim-easymotion'        " Easier jumping
 
   Plug 'HerringtonDarkholme/yats.vim'     " .ts support
   Plug 'pangloss/vim-javascript'          " .js support
