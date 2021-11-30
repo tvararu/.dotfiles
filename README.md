@@ -226,6 +226,20 @@ $ sudo systemctl enable --now transmission.service
 $ sudo systemctl enable --now auto-cpufreq
 ```
 
+### Set timezone when connecting to a network
+
+To automatically set the correct timezone when connecting to a new network:
+
+```bash
+$ sudo vim /etc/NetworkManager/dispatcher.d/09-timezone
+#!/bin/sh
+case "$2" in
+    up)
+        timedatectl set-timezone "$(curl --fail https://ipapi.co/timezone)"
+    ;;
+esac
+```
+
 ## License
 
 Public domain.
