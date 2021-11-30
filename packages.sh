@@ -10,6 +10,7 @@ bluez \
 bluez-utils \
 calibre \
 cheese \
+dashbinsh \
 dex \
 dhcpcd \
 dunst \
