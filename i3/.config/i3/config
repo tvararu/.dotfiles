@@ -29,7 +29,7 @@ smart_gaps on
 smart_borders on
 
 # Locking
-exec --no-startup-id xss-lock --transfer-sleep-lock -- i3lock --nofork
+exec --no-startup-id xss-lock --transfer-sleep-lock -- i3lock --nofork --color=323232
 set $lock sleep 1 && xset dpms force off
 bindsym $mod+Ctrl+q exec --no-startup-id "$lock", mode "default"
 
