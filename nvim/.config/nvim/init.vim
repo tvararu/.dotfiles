@@ -7,7 +7,7 @@ endif
 
 call plug#begin('~/.vim/plugged')
   Plug 'tpope/vim-sensible'               " Sensible defaults
-  Plug 'nekonako/xresources-nvim'         " Load Xresources colours
+  Plug 'tvararu/xresources-nvim'         " Load Xresources colours
   Plug 'tpope/vim-commentary'             " Shortcuts for commenting lines
   Plug 'itchyny/lightline.vim'            " Light and configurable statusline
   Plug 'ConradIrwin/vim-bracketed-paste'  " Sane pasting
