@@ -75,7 +75,7 @@ $ stow --restow */ # Installs remaining dotfiles
 ## macOS setup
 
 ```bash
-$ ./macos-install.sh
+$ ./.macos/macos-install.sh
 ```
 
 ## System-specific configuration
