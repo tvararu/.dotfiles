@@ -45,7 +45,7 @@ $ yay -S libxft-bgra
 Install `dmenu`:
 
 ```bash
-$ git clone https://github.com/LukeSmithxyz/dmenu.git
+$ git clone https://github.com/tvararu/dmenu.git
 $ cd dmenu
 $ make
 $ sudo make install
