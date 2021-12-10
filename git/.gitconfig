@@ -9,3 +9,5 @@
   editor = nvim
 [gpg]
   program = gpg
+[init]
+  defaultBranch = main
