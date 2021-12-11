@@ -35,6 +35,7 @@ set cc=80                           " Set an 80 width column border
 set hidden                          " Allow navigating with unsaved changes
 set clipboard+=unnamedplus          " Use system clipboard
 set signcolumn=number               " Merge sign column and number column
+set mouse=a                         " Enable mouse support
 
 set tabstop=2                       " Set tab to 2 spaces
 set shiftwidth=2                    " Shift by 2 spaces when using << >>
