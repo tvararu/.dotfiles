@@ -240,6 +240,13 @@ case "$2" in
 esac
 ```
 
+### Don't lock sudo for 10 minutes if wrong password is provided
+
+```bash
+$ sudo vim /etc/security/faillock.conf
+deny = 100
+```
+
 ## License
 
 Public domain.
