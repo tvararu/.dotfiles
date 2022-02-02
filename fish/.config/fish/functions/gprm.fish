@@ -1,3 +1,3 @@
 function gprm
-	gpr -b master
+	gpr -b main
 end
