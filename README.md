@@ -36,7 +36,7 @@ $ makepkg -si
 Install `st`:
 
 ```bash
-$ git clone https://github.com/LukeSmithxyz/st.git
+$ git clone https://github.com/tvararu/st.git
 $ cd st
 $ sudo make install
 $ yay -S libxft-bgra
