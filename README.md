@@ -247,6 +247,18 @@ $ sudo vim /etc/security/faillock.conf
 deny = 100
 ```
 
+### Make screen blank/turn off after 1 hour
+
+```bash
+$ sudo vim /etc/X11/xorg.conf.d/10-monitor.conf
+Section "ServerFlags"
+  Option "StandbyTime" "60"
+  Option "SuspendTime" "60"
+  Option "OffTime" "60"
+  Option "BlankTime" "60"
+EndSection
+```
+
 ## License
 
 Public domain.
