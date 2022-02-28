@@ -68,6 +68,7 @@ $ git clone https://github.com/tvararu/.dotfiles.git
 $ cd .dotfiles
 $ ./packages.sh
 $ mkdir .ssh
+$ touch .Xresources.local
 $ stow --adopt */  # Replaces all existing dotfiles with symlinks to this repo
 $ git reset --hard # Updates local dotfiles to be the same as in this repo
 $ stow --restow */ # Installs remaining dotfiles
@@ -258,6 +259,12 @@ Section "ServerFlags"
   Option "OffTime" "60"
   Option "BlankTime" "60"
 EndSection
+```
+
+### GUI scaling
+
+```bash
+$ echo "Xft.dpi:       192" >> .Xresources.local
 ```
 
 ## License

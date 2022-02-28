@@ -53,3 +53,5 @@ Xft.lcdfilter: lcddefault
 *.colorBD:     #e6e1cf
 !*.colorIT:
 !*.colorUL:
+
+#include ".Xresources.local"
