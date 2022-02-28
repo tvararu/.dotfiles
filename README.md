@@ -67,6 +67,7 @@ $ cd
 $ git clone https://github.com/tvararu/.dotfiles.git
 $ cd .dotfiles
 $ ./packages.sh
+$ mkdir .ssh
 $ stow --adopt */  # Replaces all existing dotfiles with symlinks to this repo
 $ git reset --hard # Updates local dotfiles to be the same as in this repo
 $ stow --restow */ # Installs remaining dotfiles
