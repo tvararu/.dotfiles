@@ -44,6 +44,7 @@ pulseaudio-bluetooth \
 pulsemixer \
 redshift \
 ripgrep \
+rsync \
 stow \
 syncthing \
 telegram-desktop \
