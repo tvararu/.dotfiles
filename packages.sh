@@ -1,18 +1,19 @@
 #!/bin/sh
 
 yay -Sy --needed \
+acpilight \
 adobe-source-han-sans-otc-fonts \
 adobe-source-han-serif-otc-fonts \
 alsa \
 asdf-vm \
-audo-cpufreq \
+auto-cpufreq \
+bashmount \
 bluez \
 bluez-utils \
 calibre \
 cheese \
 dashbinsh \
 dex \
-dhcpcd \
 dunst \
 firefox \
 flameshot \
@@ -26,6 +27,7 @@ lollypop \
 man-db \
 mosh \
 mpv \
+neofetch \
 neovim \
 network-manager-applet \
 networkmanager \
@@ -34,7 +36,6 @@ nfs-utils \
 nitrogen \
 openssh \
 otf-libertinus \
-otf-san-francisco \
 pamixer \
 pcmanfm \
 pulseaudio \
@@ -43,6 +44,7 @@ pulseaudio-bluetooth \
 pulsemixer \
 redshift \
 ripgrep \
+stow \
 syncthing \
 telegram-desktop \
 tex-gyre-fonts \
@@ -58,8 +60,9 @@ wget \
 wpa_supplicant \
 xcape \
 xclip \
+xorg-xinput \
 xorg-xrandr \
 xorg-xrdb \
 xorg-xset \
-xss-lock
+xss-lock \
 yt-dlp \
