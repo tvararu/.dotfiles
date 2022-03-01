@@ -8,6 +8,5 @@ xset -q | grep "Caps Lock:\s*on" && xdotool key Caps_Lock
 touchpad=$(xinput | grep Touchpad | cut -f 2 | cut -d'=' -f2)
 if [ $touchpad ]; then
   setxkbmap -option altwin:swap_alt_win
-  xinput set-prop "$touchpad" "libinput Click Method Enabled" 0 1
   xrandr --output eDP-1 --scale 1.25x1.25
 fi
