@@ -5,6 +5,7 @@ acpilight \
 adobe-source-han-sans-otc-fonts \
 adobe-source-han-serif-otc-fonts \
 alsa \
+arandr \
 asdf-vm \
 auto-cpufreq \
 bashmount \
