@@ -65,10 +65,10 @@ Then:
 ```bash
 $ cd
 $ git clone https://github.com/tvararu/.dotfiles.git
+$ mkdir .ssh .vim
+$ touch .Xresources.local
 $ cd .dotfiles
 $ ./packages.sh
-$ mkdir .ssh
-$ touch .Xresources.local
 $ stow --adopt */  # Replaces all existing dotfiles with symlinks to this repo
 $ git reset --hard # Updates local dotfiles to be the same as in this repo
 $ stow --restow */ # Installs remaining dotfiles
@@ -132,6 +132,8 @@ $ xrandr --output DisplayPort-0 --set TearFree on
 To persist past restart:
 
 ```bash
+$ cvt 3440 1440 100.00 # Generate modeline
+$ xrandr --verbose -q  # Or extract it like this
 $ sudo vim /etc/X11/xorg.conf.d/10-monitor.conf
 Section "Device"
   Identifier "AMD"
@@ -143,15 +145,8 @@ EndSection
 Section "Monitor"
   Identifier "DisplayPort-0"
   Option     "Primary" "true"
-  Modeline   "2560x1440@75" 296.00 2560 2568 2600 2666 1440 1443 1448 1481 +hsync -vsync
-  Option     "PreferredMode" "2560x1440@75"
-EndSection
-
-Section "Monitor"
-  Identifier "HDMI-A-0"
-  Option     "PreferredMode" "1920x1080"
-  Option     "RightOf" "DisplayPort-0"
-  Option     "Rotate" "right"
+  Modeline   "3440x1440_100.00"  543.50  3440 3488 3552 3600  1440 1443 1453 1510 -hsync +vsync
+  Option     "PreferredMode" "3440x1440_100.00"
 EndSection
 ```
 
@@ -166,7 +161,7 @@ Auto power-on after boot:
 $ sudo vim /etc/bluetooth/main.conf # Scroll to end
 [Policy]
 AutoEnable=true
-$ systemctl enable --now bluetooth.service
+$ sudo systemctl enable --now bluetooth.service
 ```
 
 Use `bluetoothctl` to detect, pair, trust, and connect to peripherals:
@@ -265,6 +260,7 @@ EndSection
 
 ```bash
 $ echo "Xft.dpi:       192" >> .Xresources.local
+$ echo "*.font: monospace:size=11" >> .Xresources.local
 ```
 
 ## License
