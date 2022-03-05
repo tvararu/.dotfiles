@@ -9,6 +9,7 @@ arandr \
 asdf-vm \
 auto-cpufreq \
 bashmount \
+bind \
 bluez \
 bluez-utils \
 calibre \
@@ -23,7 +24,9 @@ git \
 gnome-themes-extra \
 htop \
 hub \
+kdeconnect \
 libnotify \
+libqalculate \
 lollypop \
 man-db \
 mosh \
