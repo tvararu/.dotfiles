@@ -5,8 +5,8 @@ setxkbmap -option caps:super,altwin:swap_lalt_lwin
 killall xcape 2>/dev/null ; xcape -e 'Super_L=Escape'
 xset -q | grep "Caps Lock:\s*on" && xdotool key Caps_Lock
 
-touchpad=$(xinput | grep Touchpad | cut -f 2 | cut -d'=' -f2)
-if [ $touchpad ]; then
-  xinput set-prop "$touchpad" "libinput Click Method Enabled" 0 1
+if grep -q fwk /etc/hostname; then
+  touchpad_id=$(xinput | grep Touchpad | cut -f 2 | cut -d'=' -f2)
+  xinput set-prop "$touchpad_id" "libinput Click Method Enabled" 0 1
   xrandr --output eDP-1 --scale 1.25x1.25
 fi
