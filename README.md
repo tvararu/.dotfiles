@@ -114,12 +114,6 @@ $ yay -S acpilight
 $ sudo gpasswd -a $USER video
 ```
 
-### Better trackpad drivers
-
-```bash
-$ yay -S xf86-input-synaptics
-```
-
 ### Screen tearing
 
 Firefox and other apps tear the screen when scrolling or otherwise changing large sections of the screen. Bumping the refresh rate from the default 60Hz and enabling FreeSync fixes it:
