@@ -1,12 +1,11 @@
 #!/bin/sh
 
 xset r rate 200 75
-setxkbmap -option caps:super
+setxkbmap -option caps:super,altwin:swap_lalt_lwin
 killall xcape 2>/dev/null ; xcape -e 'Super_L=Escape'
 xset -q | grep "Caps Lock:\s*on" && xdotool key Caps_Lock
 
 touchpad=$(xinput | grep Touchpad | cut -f 2 | cut -d'=' -f2)
 if [ $touchpad ]; then
-  setxkbmap -option altwin:swap_alt_win
   xrandr --output eDP-1 --scale 1.25x1.25
 fi
