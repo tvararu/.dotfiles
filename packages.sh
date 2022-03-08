@@ -62,6 +62,7 @@ ttf-fira-code \
 unzip \
 vim \
 wget \
+wireguard-tools \
 wpa_supplicant \
 xcape \
 xclip \
