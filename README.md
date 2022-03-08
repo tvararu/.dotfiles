@@ -65,7 +65,7 @@ Then:
 ```bash
 $ cd
 $ git clone https://github.com/tvararu/.dotfiles.git
-$ mkdir .ssh .vim
+$ mkdir .ssh .vim .gnupg
 $ touch .Xresources.local
 $ cd .dotfiles
 $ ./packages.sh
