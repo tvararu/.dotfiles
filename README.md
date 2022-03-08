@@ -82,7 +82,7 @@ $ ./.macos/macos-install.sh
 
 ## System-specific configuration
 
-### Wifi
+### Wifi (MacBook Air)
 
 After first-booting on my laptop:
 
@@ -143,9 +143,6 @@ Section "Monitor"
   Option     "PreferredMode" "3440x1440_100.00"
 EndSection
 ```
-
-On the MacBook Air, install `xf86-video-intel` and use a [different Xorg driver
-config](https://wiki.archlinux.org/title/intel_graphics#Tearing).
 
 ### Bluetooth
 
