@@ -17,6 +17,7 @@ cheese \
 dashbinsh \
 dex \
 dunst \
+entr \
 firefox \
 flameshot \
 fzf \
