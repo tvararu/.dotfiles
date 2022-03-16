@@ -18,6 +18,7 @@ dashbinsh \
 dex \
 dunst \
 entr \
+feh \
 firefox \
 flameshot \
 fzf \
