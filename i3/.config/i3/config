@@ -36,6 +36,8 @@ bindsym $mod+Ctrl+q exec --no-startup-id "$lock", mode "default"
 # Brightness keys
 bindsym XF86MonBrightnessUp exec "xbacklight -inc 10"
 bindsym XF86MonBrightnessDown exec "xbacklight -dec 10"
+bindsym $alt+XF86MonBrightnessDown exec "xbacklight -set 1"
+bindsym $alt+XF86MonBrightnessUp exec "xbacklight -set 100"
 
 # Media and volume
 bindsym XF86AudioPlay exec --no-startup-id lollypop -t
