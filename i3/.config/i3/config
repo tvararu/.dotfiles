@@ -40,9 +40,9 @@ bindsym $alt+XF86MonBrightnessDown exec "xbacklight -set 1"
 bindsym $alt+XF86MonBrightnessUp exec "xbacklight -set 100"
 
 # Media and volume
-bindsym XF86AudioPlay exec --no-startup-id lollypop -t
-bindsym XF86AudioPrev exec --no-startup-id lollypop -p
-bindsym XF86AudioNext exec --no-startup-id lollypop -n
+bindsym XF86AudioPlay exec --no-startup-id playerctl play-pause
+bindsym XF86AudioPrev exec --no-startup-id playerctl previous
+bindsym XF86AudioNext exec --no-startup-id playerctl next
 bindsym XF86AudioRaiseVolume exec --no-startup-id pamixer --increase 5
 bindsym XF86AudioLowerVolume exec --no-startup-id pamixer --decrease 5
 bindsym XF86AudioMute exec --no-startup-id pamixer --toggle-mute && notify-send --expire-time 1000 "Volume $(pamixer --get-volume-human)"

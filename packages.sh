@@ -1,6 +1,7 @@
 #!/bin/sh
 
 yay -Sy --needed \
+acpid \
 acpilight \
 adobe-source-han-sans-otc-fonts \
 adobe-source-han-serif-otc-fonts \
@@ -46,6 +47,7 @@ openssh \
 otf-libertinus \
 pamixer \
 pcmanfm \
+playerctl \
 pulseaudio \
 pulseaudio-alsa \
 pulseaudio-bluetooth \

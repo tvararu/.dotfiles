@@ -280,6 +280,15 @@ auth		sufficient  	pam_unix.so try_first_pass likeauth nullok
 auth		sufficient  	pam_fprintd.so
 ```
 
+### Pausing media playback when unplugging headphones
+
+```bash
+$ sudo vim /etc/acpi/events/stop-music-when-headphones-unplug
+event=jack/headphone HEADPHONE unplug
+action=su - USER -c "env DISPLAY=:0 DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus playerctl pause"
+$ sudo systemctl enable --now acpid
+```
+
 ## License
 
 Public domain.
