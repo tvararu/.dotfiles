@@ -51,6 +51,7 @@ bindsym XF86AudioMute exec --no-startup-id pamixer --toggle-mute && notify-send 
 bindsym $mod+Return exec st
 bindsym $mod+q kill
 bindsym $mod+space exec --no-startup-id dmenu_run
+bindsym $mod+ctrl+space exec --no-startup-id ~/.local/bin/dmenuemoji
 bindsym $mod+Tab workspace next_on_output
 bindsym $mod+Shift+Tab workspace prev_on_output
 
