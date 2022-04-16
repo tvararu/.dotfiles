@@ -19,6 +19,7 @@ call plug#begin('~/.vim/plugged')
   Plug 'pangloss/vim-javascript'          " .js support
   Plug 'lepture/vim-jinja'                " .njk support
   Plug 'jxnblk/vim-mdx-js'                " .mdx support
+  Plug 'tpope/vim-rails'                  " Rails support
 
   Plug 'neoclide/coc.nvim', {'branch': 'release'}
 
