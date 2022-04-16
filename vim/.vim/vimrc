@@ -14,6 +14,8 @@ call plug#begin('~/.vim/plugged')
   Plug 'junegunn/fzf.vim'                 " Fuzzy file finder
   Plug 'easymotion/vim-easymotion'        " Easier jumping
   Plug 'dstein64/nvim-scrollview'         " Scrollbar
+  Plug 'ptzz/lf.vim'                      " Lf file explorer integration
+  Plug 'voldikss/vim-floaterm'            " Required by ptzz/lf
 
   Plug 'HerringtonDarkholme/yats.vim'     " .ts support
   Plug 'pangloss/vim-javascript'          " .js support
@@ -83,6 +85,10 @@ nnoremap <silent> <Leader>/ :Rg<CR>
 
 let g:EasyMotion_do_mapping = 0     " Disable default EasyMotion mappings
 nmap s <Plug>(easymotion-overwin-f)
+
+let g:lf_replace_netrw = 1          " Replace netrw with lf when exploring dirs
+let g:lf_width = 9999               " Stretch lf to full width and height
+let g:lf_height = 9999
 
 let g:coc_global_extensions = [
   \ 'coc-css',

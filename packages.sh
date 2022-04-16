@@ -28,6 +28,7 @@ gnome-themes-extra \
 htop \
 hub \
 kdeconnect \
+lf \
 libnotify \
 libqalculate \
 lollypop \
