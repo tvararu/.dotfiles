@@ -254,6 +254,32 @@ $ echo "Xft.dpi:       192" >> .Xresources.local
 $ echo "*.font: monospace:size=11" >> .Xresources.local
 ```
 
+### Fingerprint reader
+
+Restrict enrolling to the current user:
+
+```bash
+polkit.addRule(function (action, subject) {
+  if (action.id == "net.reactivated.fprint.device.enroll") {
+    return subject.user == "deity" ? polkit.Result.YES : polkit.Result.NO
+  }
+})
+```
+
+Enroll the finger:
+
+```bash
+$ fprintd-enroll deity
+```
+
+Modify `/etc/pam.d/{system-local-login,lightdm,sudo,i3lock}` by adding this
+at the top:
+
+```bash
+auth		sufficient  	pam_unix.so try_first_pass likeauth nullok
+auth		sufficient  	pam_fprintd.so
+```
+
 ## License
 
 Public domain.

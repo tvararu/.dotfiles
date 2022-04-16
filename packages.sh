@@ -21,6 +21,7 @@ entr \
 feh \
 firefox \
 flameshot \
+fprintd \
 fzf \
 git \
 gnome-themes-extra \
