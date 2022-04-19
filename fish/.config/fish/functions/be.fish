@@ -1,3 +1,3 @@
 function be
-	bundle exec $argv
+	bin/bundle exec $argv
 end
