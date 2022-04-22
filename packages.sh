@@ -21,6 +21,7 @@ dashbinsh \
 dex \
 duf \
 dunst \
+dust \
 entr \
 feh \
 firefox \
