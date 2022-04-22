@@ -10,9 +10,11 @@ arandr \
 asdf-vm \
 auto-cpufreq \
 bashmount \
+bat \
 bind \
 bluez \
 bluez-utils \
+btop \
 calibre \
 cheese \
 dashbinsh \
