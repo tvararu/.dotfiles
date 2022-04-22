@@ -26,6 +26,7 @@ flameshot \
 fprintd \
 fzf \
 git \
+git-delta \
 gnome-themes-extra \
 htop \
 hub \
