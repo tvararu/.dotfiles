@@ -1,3 +1,3 @@
 function lt
-ls --tree $argv
+lsd --tree $argv
 end
