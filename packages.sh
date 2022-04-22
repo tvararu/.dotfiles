@@ -31,6 +31,7 @@ fzf \
 git \
 git-delta \
 gnome-themes-extra \
+hexyl \
 htop \
 hub \
 kdeconnect \
@@ -38,6 +39,7 @@ lf \
 libnotify \
 libqalculate \
 lollypop \
+lsd \
 man-db \
 mosh \
 mpv \
