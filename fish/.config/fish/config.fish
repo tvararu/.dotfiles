@@ -14,3 +14,5 @@ if test -e /usr/local/opt/asdf/asdf.fish
 end
 
 fish_ssh_agent
+
+zoxide init fish | source

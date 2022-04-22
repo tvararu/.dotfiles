@@ -85,3 +85,4 @@ xorg-xrdb \
 xorg-xset \
 xss-lock \
 yt-dlp \
+zoxide \
