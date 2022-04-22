@@ -17,6 +17,7 @@ calibre \
 cheese \
 dashbinsh \
 dex \
+duf \
 dunst \
 entr \
 feh \
