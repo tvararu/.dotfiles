@@ -35,6 +35,7 @@ hexyl \
 htop \
 hub \
 kdeconnect \
+ledger \
 lf \
 libnotify \
 libqalculate \
