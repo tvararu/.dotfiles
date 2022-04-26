@@ -32,6 +32,7 @@ git \
 git-delta \
 gnome-themes-extra \
 hexyl \
+hledger-iadd-bin \
 htop \
 hub \
 kdeconnect \
