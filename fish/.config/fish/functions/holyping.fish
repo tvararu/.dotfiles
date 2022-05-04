@@ -1,3 +1,0 @@
-function holyping
-	ping 1.1.1.1
-end

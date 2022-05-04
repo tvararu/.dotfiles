@@ -1,6 +1,7 @@
 # This file contains fish universal variable definitions.
 # VERSION: 3.0
 SETUVAR __fish_initialized:3400
+SETUVAR _fish_abbr_be:bin/bundle\x20exec
 SETUVAR _fish_abbr_ga:git\x20add\x20\x2d\x2dall\x20\x2e
 SETUVAR _fish_abbr_gap:git\x20add\x20\x2d\x2dpatch
 SETUVAR _fish_abbr_gb:git\x20branch
@@ -27,6 +28,12 @@ SETUVAR _fish_abbr_grbima:git\x20rebase\x20\x2di\x20main\x20\x2d\x2dautosquash
 SETUVAR _fish_abbr_grhh:git\x20reset\x20\x2d\x2dhard\x20HEAD
 SETUVAR _fish_abbr_gsp:git\x20stash\x20pop
 SETUVAR _fish_abbr_gst:git\x20status
+SETUVAR _fish_abbr_l:ls
+SETUVAR _fish_abbr_ladd:hledger\x2diadd\x20\x2df\x20current\x2eledger
+SETUVAR _fish_abbr_led:ledger\x20\x2df\x20current\x2eledger\x20\x2d\x2dprice\x2ddb\x20prices\x2edb\x20\x2d\x2dexchange\x20\u00a3\x20\x2d\x2dpedantic
+SETUVAR _fish_abbr_ll:ls\x20\x2dlah
+SETUVAR _fish_abbr_lt:lsd\x20\x2d\x2dtree
+SETUVAR _fish_abbr_p:ping\x201\x2e1
 SETUVAR fish_color_autosuggestion:4D5566
 SETUVAR fish_color_cancel:\x2dr
 SETUVAR fish_color_command:39BAE6
