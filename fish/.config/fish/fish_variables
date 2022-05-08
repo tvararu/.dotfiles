@@ -34,6 +34,7 @@ SETUVAR _fish_abbr_led:ledger\x20\x2df\x20current\x2eledger\x20\x2d\x2dprice\x2d
 SETUVAR _fish_abbr_ll:ls\x20\x2dlah
 SETUVAR _fish_abbr_lt:lsd\x20\x2d\x2dtree
 SETUVAR _fish_abbr_p:ping\x201\x2e1
+SETUVAR _fish_abbr_v:nvim
 SETUVAR fish_color_autosuggestion:4D5566
 SETUVAR fish_color_cancel:\x2dr
 SETUVAR fish_color_command:39BAE6
