@@ -146,3 +146,6 @@ endfunction
 
                                     " Use <leader>a to show all diagnostics
 nnoremap <silent><nowait> <leader>a :<C-u>CocList diagnostics<cr>
+
+                                    " Automatically format ledger files
+autocmd BufWritePre *.ledger :LedgerAlignBuffer
