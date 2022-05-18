@@ -23,6 +23,7 @@ call plug#begin('~/.vim/plugged')
   Plug 'jxnblk/vim-mdx-js'                " .mdx support
   Plug 'tpope/vim-rails'                  " Rails support
   Plug 'ledger/vim-ledger'                " Ledger support
+  Plug 'slim-template/vim-slim'           " .slim support
 
   Plug 'neoclide/coc.nvim', {'branch': 'release'}
 
