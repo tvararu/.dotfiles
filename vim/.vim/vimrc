@@ -154,3 +154,6 @@ nnoremap <silent><nowait> <leader>a :<C-u>CocList diagnostics<cr>
 
                                     " Automatically format ledger files
 autocmd BufWritePre *.ledger :LedgerAlignBuffer
+
+                                    " Syntax highlight .html.tt as jinja
+autocmd BufRead,BufNewFile *.html.tt setfiletype jinja
