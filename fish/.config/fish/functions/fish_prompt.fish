@@ -14,5 +14,5 @@ function fish_prompt
   end
   set -l cwd $cyan(basename (prompt_pwd))
 
-  echo -n -s $arrow ' ' $cwd $normal ' '
+  echo -n -s $cwd ' ' $arrow $normal ' '
 end
