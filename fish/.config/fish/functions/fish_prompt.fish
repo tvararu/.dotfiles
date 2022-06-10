@@ -8,11 +8,11 @@ function fish_prompt
   set -l normal (set_color normal)
 
   if test $last_status = 0
-    set arrow "$green➜ "
+    set dollar "$green\$"
   else
-    set arrow "$red➜ "
+    set dollar "$red\$"
   end
   set -l cwd $cyan(basename (prompt_pwd))
 
-  echo -n -s $cwd ' ' $arrow $normal ' '
+  echo -n -s $cwd ' ' $dollar $normal ' '
 end
