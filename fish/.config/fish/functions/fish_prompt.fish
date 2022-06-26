@@ -13,6 +13,7 @@ function fish_prompt
     set dollar "$red\$"
   end
   set -l cwd $cyan(basename (prompt_pwd))
+  set -l git $red(fish_git_prompt)
 
-  echo -n -s $cwd ' ' $dollar $normal ' '
+  echo -n -s $cwd $git ' ' $dollar $normal ' '
 end
