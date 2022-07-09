@@ -13,9 +13,9 @@ Xft.lcdfilter: lcddefault
 ! Generated with :
 ! XRDB2Xreources.py
 !
-*.foreground:  #e6e1cf
-*.background:  #0f1419
-*.cursorColor: #f29718
+*.foreground:  #5c6773
+*.background:  #fafafa
+*.cursorColor: #ff6a00
 !
 ! Black
 *.color0:      #000000
@@ -26,31 +26,31 @@ Xft.lcdfilter: lcddefault
 *.color9:      #ff6565
 !
 ! Green
-*.color2:      #b8cc52
-*.color10:     #eafe84
+*.color2:      #86b300
+*.color10:     #b8e532
 !
 ! Yellow
-*.color3:      #e7c547
-*.color11:     #fff779
+*.color3:      #f29718
+*.color11:     #ffc94a
 !
 ! Blue
-*.color4:      #36a3d9
-*.color12:     #68d5ff
+*.color4:      #41a6d9
+*.color12:     #73d8ff
 !
 ! Magenta
 *.color5:      #f07178
 *.color13:     #ffa3aa
 !
 ! Cyan
-*.color6:      #95e6cb
-*.color14:     #c7fffd
+*.color6:      #4dbf99
+*.color14:     #7ff1cb
 !
 ! White
 *.color7:      #ffffff
 *.color15:     #ffffff
 !
 ! Bold, Italic, Underline
-*.colorBD:     #e6e1cf
+*.colorBD:     #5c6773
 !*.colorIT:
 !*.colorUL:
 
