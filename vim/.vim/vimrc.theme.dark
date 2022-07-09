@@ -1,0 +1,165 @@
+let data_dir = has('nvim') ? stdpath('data') . '/site' : '~/.vim'
+if empty(glob(data_dir . '/autoload/plug.vim'))
+  silent execute '!curl -fLo '.data_dir.'/autoload/plug.vim --create-dirs
+    \ https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim'
+  autocmd VimEnter * PlugInstall --sync | source $MYVIMRC
+endif
+
+call plug#begin('~/.vim/plugged')
+  Plug 'tpope/vim-sensible'               " Sensible defaults
+  Plug 'tpope/vim-commentary'             " Shortcuts for commenting lines
+  Plug 'itchyny/lightline.vim'            " Light and configurable statusline
+  Plug 'ConradIrwin/vim-bracketed-paste'  " Sane pasting
+  Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
+  Plug 'junegunn/fzf.vim'                 " Fuzzy file finder
+  Plug 'easymotion/vim-easymotion'        " Easier jumping
+  Plug 'dstein64/nvim-scrollview'         " Scrollbar
+  Plug 'ptzz/lf.vim'                      " Lf file explorer integration
+  Plug 'voldikss/vim-floaterm'            " Required by ptzz/lf
+  Plug 'junegunn/goyo.vim'                " Distraction-free writing
+  Plug 'junegunn/limelight.vim'           " Hyperfocus writing
+
+  Plug 'HerringtonDarkholme/yats.vim'     " .ts support
+  Plug 'pangloss/vim-javascript'          " .js support
+  Plug 'lepture/vim-jinja'                " .njk support
+  Plug 'jxnblk/vim-mdx-js'                " .mdx support
+  Plug 'tpope/vim-rails'                  " Rails support
+  Plug 'ledger/vim-ledger'                " Ledger support
+  Plug 'slim-template/vim-slim'           " .slim support
+
+  Plug 'neoclide/coc.nvim', {'branch': 'release'}
+
+  if has('nvim')
+    Plug 'tvararu/xresources-nvim'        " Load Xresources colours
+  end
+call plug#end()
+
+if has('nvim')
+  colorscheme xresources            " Use a color scheme based on Xresources
+end
+set number relativenumber           " Show relative line numbers in gutter
+set cc=80                           " Set an 80 width column border
+set hidden                          " Allow navigating with unsaved changes
+set clipboard+=unnamedplus          " Use system clipboard
+set signcolumn=number               " Merge sign column and number column
+set mouse=a                         " Enable mouse support
+
+set tabstop=2                       " Set tab to 2 spaces
+set shiftwidth=2                    " Shift by 2 spaces when using << >>
+set softtabstop=2                   " Move forward 2 spaces with pressing tab
+set expandtab                       " Use space instead of tabs
+
+let g:netrw_banner = 0              " Remove netrw banner
+let mapleader ="\<Space>"           " Map space bar as the leader key
+
+                                    " Keep selection when reindenting
+vnoremap < <gv
+vnoremap > >gv
+
+set splitbelow splitright           " Splits open at the bottom and right
+                                    " Shorter split navigation keybindings
+map <leader>h <C-w>h
+map <leader>j <C-w>j
+map <leader>k <C-w>k
+map <leader>l <C-w>l
+                                    " Resize splits with arrow keys
+nnoremap <C-Up>    :resize +2<CR>
+nnoremap <C-Down>  :resize -2<CR>
+nnoremap <C-Left>  :vertical resize +4<CR>
+nnoremap <C-Right> :vertical resize -4<CR>
+
+                                    " Automatically remove trailing whitespace
+autocmd BufWritePre * :call <SID>TrimWhitespaces()
+function! <SID>TrimWhitespaces()
+  let _cursor_position = getpos(".")
+  :silent! %s/\s\+$//e              " Trim trailing whitespace on every line
+  :silent! %s#\($\n\s*\)\+\%$##     " Trim blank lines at end of file
+  call setpos(".", _cursor_position)
+endfunction
+
+set noshowmode                      " Don't show mode below statusline
+let g:lightline = { 'colorscheme': 'ayu_dark', }
+
+                                    " Fuzzy finder mappings
+nnoremap <silent> <Leader>. :GFiles <CR>
+command! -bang -nargs=* Rg call fzf#vim#grep(
+  \ "rg --column --line-number --no-heading --color=always --smart-case "
+  \ .shellescape(<q-args>), 1, {'options': '--delimiter : --nth 4..'}, <bang>0)
+nnoremap <silent> <Leader>/ :Rg<CR>
+
+let g:EasyMotion_do_mapping = 0     " Disable default EasyMotion mappings
+nmap s <Plug>(easymotion-overwin-f)
+
+let g:lf_replace_netrw = 1          " Replace netrw with lf when exploring dirs
+let g:lf_width = 9999               " Stretch lf to full width and height
+let g:lf_height = 9999
+
+let g:coc_global_extensions = [
+  \ 'coc-css',
+  \ 'coc-html',
+  \ 'coc-json',
+  \ 'coc-pairs',
+  \ 'coc-prettier',
+  \ 'coc-snippets',
+  \ 'coc-solargraph',
+  \ 'coc-tsserver',
+  \ ]                               " Set up coc extensions
+
+set updatetime=300                  " Faster coc completion
+
+                                    " Use tab to trigger completion
+inoremap <silent><expr> <TAB>
+  \ pumvisible()
+    \ ? coc#_select_confirm() :
+  \ coc#expandableOrJumpable()
+    \ ? "\<C-r>=coc#rpc#request('doKeymap', ['snippets-expand-jump',''])\<CR>":
+  \ <SID>check_back_space()
+    \ ? "\<TAB>" :
+  \ coc#refresh()
+inoremap <expr><S-TAB> pumvisible() ? "\<C-p>" : "\<C-h>"
+function! s:check_back_space() abort
+  let col = col('.') - 1
+  return !col || getline('.')[col - 1]  =~# '\s'
+endfunction
+
+                                    " Use ctrl+space to trigger completion
+inoremap <silent><expr> <c-space> coc#refresh()
+
+                                    " Rename current word
+nmap <leader>rn <Plug>(coc-rename)
+
+                                    " Use `[g` and `]g` to navigate diagnostics
+nmap <silent>[g <Plug>(coc-diagnostic-prev)
+nmap <silent>]g <Plug>(coc-diagnostic-next)
+
+                                    " Remap keys for gotos
+nmap <silent>gd <Plug>(coc-definition)
+nmap <silent>gy <Plug>(coc-type-definition)
+nmap <silent>gi <Plug>(coc-implementation)
+nmap <silent>gr <Plug>(coc-references)
+
+                                    " Map :Prettier to coc-prettier format
+command! -nargs=0 Prettier :CocCommand prettier.forceFormatDocument
+
+                                    " Use K to preview documentation
+nnoremap <silent> K :call <SID>show_documentation()<CR>
+function! s:show_documentation()
+  if (index(['vim','help'], &filetype) >= 0)
+    execute 'h '.expand('<cword>')
+  else
+    call CocAction('doHover')
+  endif
+endfunction
+
+                                    " Use <leader>a to show all diagnostics
+nnoremap <silent><nowait> <leader>a :<C-u>CocList diagnostics<cr>
+
+                                    " Automatically format ledger files
+autocmd BufWritePre *.ledger :LedgerAlignBuffer
+
+                                    " Syntax highlight .html.tt as jinja
+autocmd BufRead,BufNewFile *.html.tt setfiletype jinja
+
+                                    " Enable Limelight when using Goyo
+autocmd! User GoyoEnter Limelight
+autocmd! User GoyoLeave Limelight!
