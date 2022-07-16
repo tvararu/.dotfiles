@@ -72,7 +72,7 @@ tig \
 tmux \
 transmission-cli \
 tree \
-ttf-fira-code \
+ttf-iosevka-nerd \
 unzip \
 vim \
 wget \
