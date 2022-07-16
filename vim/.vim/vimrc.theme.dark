@@ -159,7 +159,3 @@ autocmd BufWritePre *.ledger :LedgerAlignBuffer
 
                                     " Syntax highlight .html.tt as jinja
 autocmd BufRead,BufNewFile *.html.tt setfiletype jinja
-
-                                    " Enable Limelight when using Goyo
-autocmd! User GoyoEnter Limelight
-autocmd! User GoyoLeave Limelight!
