@@ -24,6 +24,7 @@ dunst \
 dust \
 entr \
 feh \
+figlet \
 firefox \
 flameshot \
 fprintd \
