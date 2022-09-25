@@ -26,9 +26,8 @@ cpu_usage {
 }
 
 battery all {
-        format = " %percentage %remaining "
+        format = " %status %percentage %remaining "
         integer_battery_capacity = true
-        status_bat = ""
 }
 
 disk "/" {
