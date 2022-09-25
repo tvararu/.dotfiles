@@ -7,12 +7,13 @@
 # If the above line is not correctly displayed, fix your editor first!
 
 general {
-        output_format = "i3bar"
-        colors = true
-        interval = 1
-        color_good = "#2AA198"
         color_bad = "#586E75"
         color_degraded = "#DC322F"
+        color_good = "#2AA198"
+        colors = true
+        interval = 1
+        markup = "pango"
+        output_format = "i3bar"
 }
 
 order += "cpu_usage"
@@ -22,24 +23,24 @@ order += "memory"
 order += "tztime local"
 
 cpu_usage {
-        format = " CPU %usage "
+        format = " <span color='#f29718'>CPU</span> %usage "
 }
 
 battery all {
-        format = " %status %percentage %remaining "
+        format = " <span color='#f29718'>%status</span> %percentage %remaining "
         integer_battery_capacity = true
 }
 
 disk "/" {
-        format = " SSD %avail "
+        format = " <span color='#f29718'>SSD</span> %avail "
 }
 
 memory {
-        format = " RAM %used "
+        format = " <span color='#f29718'>RAM</span> %used "
         threshold_degraded = "1G"
         format_degraded = "MEMORY < %available"
 }
 
 tztime local {
-        format = " %Y-%m-%d %H:%M:%S "
+        format = " <span color='#f29718'>%Y-%m-%d</span> %H:%M:%S "
 }
