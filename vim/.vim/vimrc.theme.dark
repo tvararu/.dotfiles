@@ -18,6 +18,7 @@ call plug#begin('~/.vim/plugged')
   Plug 'voldikss/vim-floaterm'            " Required by ptzz/lf
   Plug 'junegunn/goyo.vim'                " Distraction-free writing
   Plug 'junegunn/limelight.vim'           " Hyperfocus writing
+  Plug 'danilamihailov/beacon.nvim'       " Flash the cursor when it jumps
 
   Plug 'HerringtonDarkholme/yats.vim'     " .ts support
   Plug 'pangloss/vim-javascript'          " .js support
