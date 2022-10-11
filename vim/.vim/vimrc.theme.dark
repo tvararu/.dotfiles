@@ -57,18 +57,6 @@ let mapleader ="\<Space>"           " Map space bar as the leader key
 vnoremap < <gv
 vnoremap > >gv
 
-set splitbelow splitright           " Splits open at the bottom and right
-                                    " Shorter split navigation keybindings
-map <leader>h <C-w>h
-map <leader>j <C-w>j
-map <leader>k <C-w>k
-map <leader>l <C-w>l
-                                    " Resize splits with arrow keys
-nnoremap <C-Up>    :resize +2<CR>
-nnoremap <C-Down>  :resize -2<CR>
-nnoremap <C-Left>  :vertical resize +4<CR>
-nnoremap <C-Right> :vertical resize -4<CR>
-
                                     " Automatically remove trailing whitespace
 autocmd BufWritePre * :call <SID>TrimWhitespaces()
 function! <SID>TrimWhitespaces()
