@@ -60,6 +60,22 @@ function! <SID>TrimWhitespaces()
   call setpos(".", _cursor_position)
 endfunction
 
+                                    " Automatically create parent directories
+                                    " when saving new files
+function s:MkNonExDir(file, buf)
+  if empty(getbufvar(a:buf, '&buftype')) && a:file!~#'\v^\w+\:\/'
+    let dir=fnamemodify(a:file, ':h')
+    if !isdirectory(dir)
+        call mkdir(dir, 'p')
+    endif
+  endif
+endfunction
+augroup BWCCreateDir
+  autocmd!
+  autocmd BufWritePre * :call s:MkNonExDir(expand('<afile>'),
+                                        \ +expand('<abuf>'))
+augroup END
+
 set noshowmode                      " Don't show mode below statusline
 let g:lightline = { 'colorscheme': 'ayu_light', }
 
