@@ -9,8 +9,8 @@ if test -e /opt/asdf-vm/asdf.fish
 end
 
 # macOS asdf config
-if test -e /usr/local/opt/asdf/asdf.fish
-  source /usr/local/opt/asdf/asdf.fish
+if test -e /opt/homebrew/opt/asdf/libexec/asdf.fish
+  source /opt/homebrew/opt/asdf/libexec/asdf.fish
 end
 
 fish_ssh_agent
