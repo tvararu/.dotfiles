@@ -116,6 +116,10 @@ require('lazy').setup({
     priority = 1000,
     config = function()
       vim.cmd.colorscheme 'onedark'
+      require('onedark').setup {
+        style = 'deep'
+      }
+      require('onedark').load()
     end,
   },
 
@@ -497,13 +501,6 @@ cmp.setup {
     { name = 'luasnip' },
   },
 }
-
-require('onedark').setup {
-  style = 'deep'
-}
-require('onedark').load()
-
-require("nvim-autopairs").setup {}
 
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et
