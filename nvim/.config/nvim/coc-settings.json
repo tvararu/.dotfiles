@@ -1,5 +1,0 @@
-{
-  "coc.preferences.formatOnSaveFiletypes": ["typescript", "typescriptreact", "css", "markdown", "ruby", "html", "javascript", "sass", "scss"],
-  "solargraph.useBundler": true,
-  "solargraph.diagnostics": true
-}
