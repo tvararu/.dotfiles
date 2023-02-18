@@ -3,5 +3,6 @@
 --
 -- See the kickstart.nvim README for more information
 return {
-  'dstein64/nvim-scrollview'
+  'dstein64/nvim-scrollview',
+  'windwp/nvim-autopairs'
 }
