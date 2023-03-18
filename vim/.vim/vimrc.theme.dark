@@ -24,14 +24,19 @@ call plug#begin('~/.vim/plugged')
 
   Plug 'neoclide/coc.nvim', {'branch': 'release'}
 
-  if has('nvim')
+  if has('nvim') && system('uname') =~? 'linux'
     Plug 'tvararu/xresources-nvim'        " Load Xresources colours
-  end
+  elseif has('nvim') && system('uname') =~? 'darwin'
+    Plug 'navarasu/onedark.nvim'          " Onedark theme from Atom
+  endif
 call plug#end()
 
-if has('nvim')
+if has('nvim') && system('uname') =~? 'linux'
   colorscheme xresources            " Use a color scheme based on Xresources
-end
+elseif has('nvim') && system('uname') =~? 'darwin'
+  colorscheme onedark               " Use onedark
+endif
+
 set number relativenumber           " Show relative line numbers in gutter
 set cc=80                           " Set an 80 width column border
 set hidden                          " Allow navigating with unsaved changes
