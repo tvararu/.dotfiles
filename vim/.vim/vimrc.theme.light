@@ -24,6 +24,10 @@ call plug#begin('~/.vim/plugged')
 
   Plug 'neoclide/coc.nvim', {'branch': 'release'}
 
+  if has('nvim')
+    Plug 'zbirenbaum/copilot.lua'         " Corporate spyware
+  endif
+
   if has('nvim') && system('uname') =~? 'linux'
     Plug 'tvararu/xresources-nvim'        " Load Xresources colours
   elseif has('nvim') && system('uname') =~? 'darwin'
@@ -35,6 +39,20 @@ if has('nvim') && system('uname') =~? 'linux'
   colorscheme xresources            " Use a color scheme based on Xresources
 elseif has('nvim') && system('uname') =~? 'darwin'
   colorscheme onedark               " Use onedark
+endif
+
+                                    " Setup copilot.lua
+if has('nvim')
+  call luaeval('require("copilot").setup(
+  \  {
+  \    suggestion = {
+  \      auto_trigger = true,
+  \      keymap = {
+  \        accept = "<M-Tab>"
+  \      }
+  \    }
+  \  }
+  \)')
 endif
 
 set number relativenumber           " Show relative line numbers in gutter
