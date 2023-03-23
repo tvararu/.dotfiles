@@ -3,6 +3,8 @@ set fish_greeting ""
 set -x EDITOR vim
 set -x BROWSER firefox
 
+abbr -a s sgpt --no-animation
+
 # Arch asdf config
 if test -e /opt/asdf-vm/asdf.fish
   source /opt/asdf-vm/asdf.fish
