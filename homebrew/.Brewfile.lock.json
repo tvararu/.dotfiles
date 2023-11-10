@@ -2223,12 +2223,6 @@
           "full_name": "alfred"
         }
       },
-      "font-iosevka": {
-        "version": "27.3.4",
-        "options": {
-          "full_name": "font-iosevka"
-        }
-      },
       "iterm2": {
         "version": "3.4.22",
         "options": {
@@ -2275,6 +2269,12 @@
         "version": "10.10.88",
         "options": {
           "full_name": "logitech-options"
+        }
+      },
+      "font-iosevka-nerd-font": {
+        "version": "3.0.2",
+        "options": {
+          "full_name": "font-iosevka-nerd-font"
         }
       }
     },
