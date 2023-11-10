@@ -1,1 +1,26 @@
-.gitconfig.theme.dark
+[user]
+  name = Theodor Vararu
+  email = theo@vararu.org
+  signingkey = ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAID4ETkFBIaCdvWkZzWLYT0yR1/TC9ETKpsxuRWV00BDe
+[init]
+  defaultBranch = main
+[core]
+  excludesfile = ~/.gitignore.global
+  editor = nvim
+  pager = delta
+[interactive]
+  diffFilter = delta --color-only
+[merge]
+  conflictstyle = diff3
+[diff]
+  colorMoved = default
+[commit]
+  gpgsign = true
+[gpg]
+  format = ssh
+[gpg "ssh"]
+  program = /Applications/1Password.app/Contents/MacOS/op-ssh-sign
+[delta]
+  navigate = true  # use n and N to move between diff sections
+  line-numbers = true
+  light = true
