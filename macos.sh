@@ -35,11 +35,9 @@ defaults write com.apple.menuextra.battery ShowPercent -string "YES"
 
 echo "\n Keyboard."
 
-echo "- Set Keyboard > Key Repeat to be the fastest possible from System Preferences."
-defaults write NSGlobalDomain KeyRepeat -integer 2
-
-echo "- Set Keyboard > Delay Until Repeat to be the fastest possible from System Preferences."
-defaults write NSGlobalDomain InitialKeyRepeat -integer 15
+echo "- Set Keyboard repeat rate to a really fast one."
+defaults write NSGlobalDomain KeyRepeat -integer 1
+defaults write NSGlobalDomain InitialKeyRepeat -integer 10
 
 echo "\n Dock."
 
