@@ -1,7 +1,6 @@
 # Remove the newcomer fish greeting.
 set fish_greeting ""
 set -x EDITOR vim
-set -x BROWSER firefox
 
 abbr -a s sgpt --no-animation
 
