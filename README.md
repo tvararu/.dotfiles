@@ -83,7 +83,7 @@ $ mkdir .ssh .vim .gnupg
 $ mkdir -p .local/share .local/bin
 $ touch .Xresources.local
 $ cd .dotfiles
-$ ./packages.sh
+$ ./arch.sh
 $ stow --adopt */  # Replaces all existing dotfiles with symlinks to this repo
 $ git reset --hard # Updates local dotfiles to be the same as in this repo
 $ stow --restow --ignore=".theme.*" */ # Installs remaining dotfiles
@@ -92,7 +92,7 @@ $ stow --restow --ignore=".theme.*" */ # Installs remaining dotfiles
 ## macOS setup
 
 ```bash
-$ ./.macos/macos-install.sh
+$ ./macos.sh
 ```
 
 ## System-specific configuration
