@@ -2276,6 +2276,12 @@
         "options": {
           "full_name": "font-iosevka-nerd-font"
         }
+      },
+      "istat-menus": {
+        "version": "6.72",
+        "options": {
+          "full_name": "istat-menus"
+        }
       }
     },
     "mas": {
