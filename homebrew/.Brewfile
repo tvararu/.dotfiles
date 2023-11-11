@@ -57,6 +57,7 @@ cask "logitech-options"
 cask "orion"
 cask "rectangle"
 cask "slack"
+cask "steam"
 
 # Mac App Store apps
 mas "1password-safari", id: 1569813296

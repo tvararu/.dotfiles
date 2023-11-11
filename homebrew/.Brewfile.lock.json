@@ -2242,7 +2242,7 @@
         }
       },
       "orion": {
-        "version": "0.99,126.1",
+        "version": "0.99,126.2",
         "options": {
           "full_name": "orion"
         }
@@ -2281,6 +2281,12 @@
         "version": "6.72",
         "options": {
           "full_name": "istat-menus"
+        }
+      },
+      "steam": {
+        "version": "4.0",
+        "options": {
+          "full_name": "steam"
         }
       }
     },
