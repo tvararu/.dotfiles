@@ -58,6 +58,7 @@ cask "orion"
 cask "rectangle"
 cask "slack"
 cask "steam"
+cask "transmission"
 cask "whisky"
 
 # Mac App Store apps

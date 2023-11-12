@@ -2294,6 +2294,12 @@
         "options": {
           "full_name": "whisky"
         }
+      },
+      "transmission": {
+        "version": "4.0.4",
+        "options": {
+          "full_name": "transmission"
+        }
       }
     },
     "mas": {
