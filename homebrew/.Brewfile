@@ -68,3 +68,4 @@ mas "hush", id: 1544743900
 mas "kagi", id: 1622835804
 mas "vimari", id: 1480933944
 mas "wipr", id: 1320666476
+mas "wireguard", id: 1451685025
