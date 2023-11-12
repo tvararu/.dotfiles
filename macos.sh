@@ -104,7 +104,7 @@ brew tap homebrew/cask-fonts
 
 brew install stow --quiet
 
-mkdir ~/.ssh ~/.vim ~/.gnupg
+mkdir ~/.ssh ~/.vim
 
 stow -R fish git homebrew ssh tmux vim nvim
 
