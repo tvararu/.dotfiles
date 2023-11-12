@@ -2300,6 +2300,12 @@
         "options": {
           "full_name": "transmission"
         }
+      },
+      "dash": {
+        "version": "7.1.6",
+        "options": {
+          "full_name": "dash"
+        }
       }
     },
     "mas": {
