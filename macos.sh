@@ -106,7 +106,7 @@ brew install stow --quiet
 
 mkdir ~/.ssh ~/.vim
 
-stow -R fish git homebrew ssh tmux vim nvim
+stow -R bin fish git homebrew ssh tmux vim nvim
 
 echo "\n brew bundling."
 brew bundle --global
