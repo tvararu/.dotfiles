@@ -8,6 +8,7 @@ endif
 call plug#begin('~/.vim/plugged')
   Plug 'tpope/vim-sensible'               " Sensible defaults
   Plug 'tpope/vim-commentary'             " Shortcuts for commenting lines
+  Plug 'tpope/vim-surround'               " Shortcuts for surrounding text
   Plug 'itchyny/lightline.vim'            " Light and configurable statusline
   Plug 'ConradIrwin/vim-bracketed-paste'  " Sane pasting
   Plug 'dstein64/nvim-scrollview'         " Scrollbar
