@@ -10,9 +10,9 @@ call plug#begin('~/.vim/plugged')
   Plug 'tpope/vim-commentary'             " Shortcuts for commenting lines
   Plug 'itchyny/lightline.vim'            " Light and configurable statusline
   Plug 'ConradIrwin/vim-bracketed-paste'  " Sane pasting
+  Plug 'dstein64/nvim-scrollview'         " Scrollbar
   Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
   Plug 'junegunn/fzf.vim'                 " Fuzzy file finder
-  Plug 'dstein64/nvim-scrollview'         " Scrollbar
 
   Plug 'HerringtonDarkholme/yats.vim'     " .ts support
   Plug 'pangloss/vim-javascript'          " .js support
@@ -100,7 +100,30 @@ augroup BWCCreateDir
 augroup END
 
 set noshowmode                      " Don't show mode below statusline
-let g:lightline = { 'colorscheme': 'ayu_dark', }
+
+                                    " Set up lightline theme
+let is_dark_mode = readfile('/tmp/is_dark_mode')
+if is_dark_mode[0] =~ 'true'
+  let g:lightline = { 'colorscheme': 'ayu_dark' }
+else
+  let g:lightline = { 'colorscheme': 'ayu_light' }
+endif
+
+                                    " Customize fzf colours to match theme
+let g:fzf_colors =
+\ { 'fg':      ['fg', 'Normal'],
+  \ 'bg':      ['bg', 'Normal'],
+  \ 'hl':      ['fg', 'Comment'],
+  \ 'fg+':     ['fg', 'CursorLine', 'CursorColumn', 'Normal'],
+  \ 'bg+':     ['bg', 'CursorLine', 'CursorColumn'],
+  \ 'hl+':     ['fg', 'Statement'],
+  \ 'info':    ['fg', 'PreProc'],
+  \ 'border':  ['fg', 'Ignore'],
+  \ 'prompt':  ['fg', 'Conditional'],
+  \ 'pointer': ['fg', 'Exception'],
+  \ 'marker':  ['fg', 'Keyword'],
+  \ 'spinner': ['fg', 'Label'],
+  \ 'header':  ['fg', 'Comment'] }
 
                                     " Fuzzy finder mappings
 nnoremap <silent> <Leader>. :GFiles <CR>
