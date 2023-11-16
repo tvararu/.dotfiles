@@ -1,8 +1,7 @@
-# Remove the newcomer fish greeting.
 set fish_greeting ""
 set -x EDITOR vim
 
-abbr -a s sgpt --no-animation
+fish_add_path ~/.bin
 
 # Arch asdf config
 if test -e /opt/asdf-vm/asdf.fish
