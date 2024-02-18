@@ -28,6 +28,7 @@ brew "rename"
 brew "ripgrep"
 brew "ssh-copy-id"
 brew "stow"
+brew "thefuck"
 brew "tig"
 brew "tmux"
 brew "tree"
@@ -53,23 +54,28 @@ brew "sl"
 cask "1password"
 cask "alfred"
 cask "appcleaner"
+cask "audacity"
 cask "beeper"
 cask "calibre"
 cask "daisydisk"
 cask "dash"
+cask "discord"
 cask "docker"
+cask "firefox"
 cask "font-iosevka-nerd-font"
 cask "google-chrome"
 cask "istat-menus"
 cask "iterm2"
 cask "logitech-options"
 cask "lunar"
-cask "orion"
 cask "qlmarkdown"
 cask "rectangle"
 cask "slack"
+cask "spotify"
 cask "steam"
+cask "the-unarchiver"
 cask "transmission"
+cask "vlc"
 cask "whisky"
 
 # Mac App Store apps
@@ -77,6 +83,9 @@ mas "1password-safari", id: 1569813296
 mas "amphetamine", id: 937984704
 mas "hush", id: 1544743900
 mas "kagi", id: 1622835804
+mas "kagi-for-safari", id: 1622835804
+mas "privacy-redirect", id: 1578144015
+mas "refined-github", id: 1519867270
 mas "vimari", id: 1480933944
 mas "wipr", id: 1320666476
 mas "wireguard", id: 1451685025
