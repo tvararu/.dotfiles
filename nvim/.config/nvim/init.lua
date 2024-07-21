@@ -26,15 +26,17 @@ end
 vim.opt.rtp:prepend(lazypath)
 
 require("lazy").setup({            -- Specify plugins
-  { "navarasu/onedark.nvim" },
-  {
-    "nvim-lualine/lualine.nvim",
-    dependencies = { 'nvim-tree/nvim-web-devicons' }
-  },
+  "navarasu/onedark.nvim",
+  {"nvim-lualine/lualine.nvim", dependencies={'nvim-tree/nvim-web-devicons'}},
   "cappyzawa/trim.nvim",
   "numToStr/Comment.nvim",
   "dstein64/nvim-scrollview",
+  "lewis6991/gitsigns.nvim",
+  "mhartington/formatter.nvim",
+  {"nvim-treesitter/nvim-treesitter", build=":TSUpdate"},
   "zbirenbaum/copilot.lua",
+  {"nvim-telescope/telescope.nvim", dependencies={"nvim-lua/plenary.nvim"}},
+  "neovim/nvim-lspconfig",
 })
 
 require("onedark").load()          -- Load One Dark theme
@@ -42,6 +44,23 @@ require("lualine").setup()         -- Lualine setup
 require("trim").setup()            -- Trim setup
 require("Comment").setup()         -- Comment setup
 require("scrollview").setup()      -- Scrollview setup
+require("gitsigns").setup()        -- Gitsigns setup
+require("formatter").setup()       -- Formatter setup
+require("nvim-treesitter.configs").setup({ -- Treesitter setup
+  ensure_installed = "all",
+  highlight = { enable = true },
+  indent = { enable = true },
+})
 require("copilot").setup(          -- Copilot options
   { suggestion = { auto_trigger = true, keymap = { accept = "<M-Tab>" } } }
-)
+)                                  -- Set up language servers
+-- require("lspconfig").solargraph.setup()
+
+                                   -- Telescope keybindings
+local telescope = require('telescope.builtin')
+vim.keymap.set('n', '<leader>.', telescope.find_files, {})
+vim.keymap.set('n', '<leader>/', telescope.live_grep, {})
+vim.keymap.set('n', '<leader>ff', telescope.find_files, {})
+vim.keymap.set('n', '<leader>fg', telescope.live_grep, {})
+vim.keymap.set('n', '<leader>fb', telescope.buffers, {})
+vim.keymap.set('n', '<leader>fh', telescope.help_tags, {})
