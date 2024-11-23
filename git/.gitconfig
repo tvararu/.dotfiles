@@ -7,11 +7,11 @@
 [core]
   excludesfile = ~/.gitignore.global
   editor = nvim
-  pager = git delta
+  pager = delta
 [interactive]
-  diffFilter = git delta --color-only
+  diffFilter = delta --color-only
 [merge]
-  conflictstyle = diff3
+  conflictstyle = zdiff3
 [diff]
   colorMoved = default
 [commit]
@@ -20,8 +20,6 @@
   format = ssh
 [gpg "ssh"]
   program = /Applications/1Password.app/Contents/MacOS/op-ssh-sign
-[alias]
-  delta = !delta $(grep -q true /tmp/is_dark_mode 2>/dev/null && echo --dark || echo --light)
 [delta]
   navigate = true  # use n and N to move between diff sections
   line-numbers = true
