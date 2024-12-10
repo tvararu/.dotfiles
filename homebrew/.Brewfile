@@ -61,6 +61,7 @@ cask "rectangle"
 cask "slack"
 cask "spotify"
 cask "steam"
+cask "tailscale"
 cask "the-unarchiver"
 cask "transmission"
 cask "vlc"
@@ -69,7 +70,14 @@ cask "whisky"
 # Mac App Store apps
 mas "1password-safari", id: 1569813296
 mas "amphetamine", id: 937984704
+mas "focus-for-youtube", id: 1514703160
+mas "git-streaks", id: 1525795950
 mas "hush", id: 1544743900
+mas "imovie", id: 408981434
+mas "keynote", id: 409183694
+mas "numbers", id: 409203825
+mas "pages", id: 409201541
 mas "refined-github", id: 1519867270
 mas "vimari", id: 1480933944
+mas "wipr", id: 1662217862
 mas "wireguard", id: 1451685025
