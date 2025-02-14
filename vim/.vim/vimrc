@@ -1,5 +1,3 @@
-" if has('nvim') | source ~/.vim/init.lua | endif
-
 set clipboard+=unnamedplus           " Use system clipboard
 set colorcolumn=80                   " Set an 80 width column border
 set expandtab                        " Use space instead of tabs
