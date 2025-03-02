@@ -1,5 +1,5 @@
 set fish_greeting ""
-set -x EDITOR vim
+set -x EDITOR nvim
 
 fish_add_path ~/.bin
 
