@@ -17,7 +17,7 @@ abbr --add -- p 'ping 1.1'
 abbr --add -- r 'rails'
 abbr --add -- t 'tmux'
 abbr --add -- v 'nvim'
-abbr --add -- os 'overmind start --port 4000 --daemonize --procfile Procfile.dev'
+abbr --add -- os 'overmind start --daemonize --procfile Procfile.dev'
 abbr --add -- oc 'overmind connect'
 abbr --add -- oq 'overmind quit'
 
