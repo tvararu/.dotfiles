@@ -1,0 +1,25 @@
+#!/bin/sh
+
+# Check if Docker is installed
+if ! command -v docker >/dev/null 2>&1; then
+  echo "Docker is not installed"
+  exit 1
+fi
+
+# Set variables
+container_name="ffmpeg_temp"
+image_name="jrottenberg/ffmpeg:4.4-ubuntu"
+
+# Pull image if it doesn't exist
+if ! docker image inspect "$image_name" >/dev/null 2>&1; then
+  docker pull "$image_name"
+fi
+
+# Run FFmpeg in Docker container
+docker run --rm \
+  --platform linux/amd64 \
+  -v "$(pwd):/workdir" \
+  -w /workdir \
+  --name "$container_name" \
+  "$image_name" \
+  "$@"
