@@ -1,3 +1,4 @@
-nodejs   latest
-python   latest
-ruby     latest
+nodejs latest
+python latest
+ruby   latest
+uv     latest
