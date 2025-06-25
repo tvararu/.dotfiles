@@ -3,7 +3,7 @@ set -x EDITOR nvim
 
 fish_add_path ~/.bin
 
-fish_ssh_agent
+set -e SSH_AUTH_SOCK # Unset SSH_AUTH_SOCK to avoid shadowing global fish one
 
 zoxide init fish | source
 

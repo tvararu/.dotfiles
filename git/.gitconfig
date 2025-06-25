@@ -1,7 +1,6 @@
 [user]
   name = Theodor Vararu
   email = theo@vararu.org
-  signingkey = ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAID4ETkFBIaCdvWkZzWLYT0yR1/TC9ETKpsxuRWV00BDe
 [init]
   defaultBranch = main
 [core]
@@ -14,12 +13,6 @@
   conflictstyle = zdiff3
 [diff]
   colorMoved = default
-[commit]
-  gpgsign = true
-[gpg]
-  format = ssh
-[gpg "ssh"]
-  program = /Applications/1Password.app/Contents/MacOS/op-ssh-sign
 [delta]
   navigate = true  # use n and N to move between diff sections
   line-numbers = true
@@ -28,3 +21,11 @@
   smudge = git-lfs smudge -- %f
   process = git-lfs filter-process
   required = true
+
+; Commit signing using SSH
+[commit]
+  gpgsign = true
+[gpg]
+  format = ssh
+[gpg "ssh"]
+  defaultKeyCommand = sh -c 'echo key::$(ssh-add -L)'
