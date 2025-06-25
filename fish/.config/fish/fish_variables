@@ -1,6 +1,7 @@
 # This file contains fish universal variable definitions.
 # VERSION: 3.0
 SETUVAR --export FZF_DEFAULT_OPTS:\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x1e\x20\x2d\x2dcolor\x3dbg\x2b\x3a\x23131721\x2cbg\x3a\x230f1419\x2cspinner\x3a\x2395e6cb\x2chl\x3a\x2359c2ff\x1e\x20\x2d\x2dcolor\x3dfg\x3a\x23bfbdb6\x2cheader\x3a\x2359c2ff\x2cinfo\x3a\x23ffb454\x2cpointer\x3a\x2395e6cb\x1e\x20\x2d\x2dcolor\x3dmarker\x3a\x2395e6cb\x2cfg\x2b\x3a\x23e6e1cf\x2cprompt\x3a\x23ffb454\x2chl\x2b\x3a\x2359c2ff
+SETUVAR --export SSH_AUTH_SOCK:/Users/deity/Library/Containers/com\x2emaxgoedjen\x2eSecretive\x2eSecretAgent/Data/socket\x2essh
 SETUVAR __fish_initialized:3800
 SETUVAR fish_color_autosuggestion:4D5566
 SETUVAR fish_color_cancel:\x2d\x2dreverse
