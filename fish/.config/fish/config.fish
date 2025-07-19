@@ -2,6 +2,7 @@ set fish_greeting ""
 set -x EDITOR nvim
 
 fish_add_path ~/.bin
+fish_add_path ~/.local/bin
 
 set -x SSH_AUTH_SOCK /Users/deity/Library/Containers/com.maxgoedjen.Secretive.SecretAgent/Data/socket.ssh
 
