@@ -10,7 +10,9 @@
     "context": "Workspace",
     "bindings": {
       // "shift shift": "file_finder::Toggle",
-      "cmd-shift-e": "workspace::ToggleLeftDock"
+      // "cmd-shift-e": "workspace::ToggleLeftDock"
+      // "ctrl-tab": "pane::ActivateNextItem",
+      // "ctrl-shift-tab": "pane::ActivatePreviousItem"
     }
   },
   {
