@@ -11,15 +11,13 @@
     "mcp-server-context7": {
       "source": "extension",
       "enabled": true,
-      "settings": {
-        "default_minimum_tokens": "10000"
-      }
+      "settings": { "default_minimum_tokens": "10000" }
     }
   },
   "agent": {
     "inline_assistant_model": {
-      "provider": "ollama",
-      "model": "devstral:latest"
+      "provider": "zed.dev",
+      "model": "claude-sonnet-4"
     },
     "default_model": {
       "provider": "openrouter",
@@ -33,19 +31,43 @@
   "buffer_font_family": "Iosevka Nerd Font Mono",
   "buffer_font_size": 16,
   "cursor_blink": false,
-  "scrollbar": {
-    "show": "system"
+  "git": { "inline_blame": { "enabled": false } },
+  "gutter": { "breakpoints": false, "folds": false, "runnables": false },
+  "inline_code_actions": false,
+  "languages": {
+    "Python": {
+      "language_servers": ["pyright", "ruff"],
+      "format_on_save": "on",
+      "formatter": [
+        { "code_actions": { "source.fixAll.ruff": true } },
+        { "language_server": { "name": "ruff" } }
+      ]
+    }
   },
+  "lsp": {
+    "pyright": {
+      "settings": { "python.analysis": { "diagnosticMode": "workspace" } }
+    }
+  },
+  "scrollbar": { "show": "system" },
   "terminal": {
     "dock": "right",
-    "default_width": 756
+    "default_width": 756,
+    "detect_venv": "off",
+    "toolbar": {
+      "breadcrumbs": false
+    }
   },
   "theme": {
     "mode": "system",
-    "light": "One Light",
-    "dark": "One Dark"
+    "light": "Github Plus Light",
+    "dark": "macOS Classic Dark2"
+  },
+  "toolbar": {
+    "breadcrumbs": false,
+    "quick_actions": false
   },
   "ui_font_size": 16,
   "vim_mode": true,
-  "wrap_guides": [80]
+  "wrap_guides": [80, 88]
 }
