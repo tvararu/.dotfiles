@@ -6,8 +6,8 @@ Follow these guidelines:
 - Subject line: 50 characters max, describe the what
 - Body: wrap at 72 characters, describe the why
 - Use imperative tense
-- Don't sign yourself as "Created with Claude Code."
-- Don't use bullet points, keep the body short and sweet.
+- Don't sign yourself as "Generated with Claude Code"
+- Don't use bullet points, keep the body short and sweet
 
 Use Tim Pope's commit message style:
 
