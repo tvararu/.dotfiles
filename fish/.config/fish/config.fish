@@ -21,7 +21,7 @@ abbr --add -- v 'nvim'
 abbr --add -- os 'overmind start --daemonize --procfile Procfile.dev'
 abbr --add -- oc 'overmind connect'
 abbr --add -- oq 'overmind quit'
-abbr --add -- mr 'mise run'
+abbr --add -- cc 'claude --continue'
 
 abbr --add -- ga 'git add --all .'
 abbr --add -- gap 'git add --patch'
