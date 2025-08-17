@@ -6,7 +6,7 @@ function aic --description 'Generate commit message from staged diff'
         return 1
     end
 
-    set model "devstral"
+    set model "gpt-oss"
 
     set prompt "Write a consise Tim Pope-style git commit message in the
   imperative present tense ('Fix bug', not 'Fixed bug'), starting with a
