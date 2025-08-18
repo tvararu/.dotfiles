@@ -1,6 +1,7 @@
 # Defined in /tmp/fish.OgXR9I/eip.fish @ line 2
+# Defined in /Users/deity/.config/fish/functions/eip.fish
 function eip
-    set data (curl -s http://ip-api.com/json/ | jq -r 'if .status == "success" then [.query, (.countryCode // "XX")] | join(" ") else empty end')
+    set data (curl -s https://tux.ro/geo | jq -r 'if .ip then [.ip, (.geo | split(", ")[-1])] | join(" ") else empty end')
 
     if test -z "$data"
         echo "Error: Failed to fetch data."
@@ -11,7 +12,7 @@ function eip
     set -l ip $parts[1]
     set -l country $parts[2]
 
-    if test "$country" = "XX"
+    if test "$country" = ""
         set flag "🌐"
     else
         set first (string lower (string sub -s 1 -l 1 $country))
