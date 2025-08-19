@@ -44,6 +44,13 @@
       ]
     }
   },
+  "language_models": {
+    "ollama": {
+      "available_models": [
+        { "name": "gpt-oss", "max_tokens": 131072, "supports_tools": true }
+      ]
+    }
+  },
   "lsp": {
     "pyright": {
       "settings": { "python.analysis": { "diagnosticMode": "workspace" } }
