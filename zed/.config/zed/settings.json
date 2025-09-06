@@ -36,6 +36,8 @@
   "gutter": { "breakpoints": false, "folds": false, "runnables": false },
   "inline_code_actions": false,
   "languages": {
+    "CSS": { "tab_size": 2 },
+    "SCSS": { "tab_size": 2 },
     "Python": {
       "language_servers": ["pyright", "ruff"],
       "format_on_save": "on",
@@ -43,6 +45,18 @@
         { "code_actions": { "source.fixAll.ruff": true } },
         { "language_server": { "name": "ruff" } }
       ]
+    },
+    "ERB": {
+      "format_on_save": "on",
+      "formatter": {
+        "external": { "command": "rufo", "arguments": ["--simple-exit"] }
+      }
+    },
+    "Ruby": {
+      "format_on_save": "on",
+      "formatter": {
+        "external": { "command": "rufo", "arguments": ["--simple-exit"] }
+      }
     }
   },
   "language_models": {
