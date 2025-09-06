@@ -1,4 +1,6 @@
 function fish_prompt
+  set_system_theme
+
   set -l last_status $status
   set -l cyan (set_color -o cyan)
   set -l yellow (set_color -o yellow)
