@@ -23,6 +23,8 @@ abbr --add -- oc 'overmind connect'
 abbr --add -- oq 'overmind quit'
 abbr --add -- cc 'claude --dangerously-skip-permissions --continue'
 abbr --add -- mc 'mise ci'
+abbr --add -- md 'mise deploy'
+abbr --add -- mds 'mise deploy:setup'
 
 abbr --add -- ga 'git add --all .'
 abbr --add -- gap 'git add --patch'
