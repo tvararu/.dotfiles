@@ -25,6 +25,7 @@ abbr --add -- cc 'claude --dangerously-skip-permissions --continue'
 abbr --add -- mc 'mise ci'
 abbr --add -- md 'mise deploy'
 abbr --add -- mds 'mise deploy:setup'
+abbr --add -- bbb 'brew doctor && brew update && brew upgrade'
 
 abbr --add -- ga 'git add --all .'
 abbr --add -- gap 'git add --patch'
