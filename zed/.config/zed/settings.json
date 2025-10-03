@@ -46,17 +46,13 @@
         { "language_server": { "name": "ruff" } }
       ]
     },
-    "ERB": {
-      "format_on_save": "on",
-      "formatter": {
-        "external": { "command": "rufo", "arguments": ["--simple-exit"] }
-      }
-    },
+    "HTML/ERB": { "tab_size": 2 },
     "Ruby": {
       "format_on_save": "on",
       "formatter": {
         "external": { "command": "rufo", "arguments": ["--simple-exit"] }
-      }
+      },
+      "language_servers": ["ruby-lsp", "!solargraph", "rubocop"]
     }
   },
   "language_models": {
