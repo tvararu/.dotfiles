@@ -76,6 +76,7 @@
     "dock": "right",
     "default_width": 756,
     "detect_venv": "off",
+    "max_scroll_history_lines": 100000,
     "toolbar": {
       "breadcrumbs": false
     }
