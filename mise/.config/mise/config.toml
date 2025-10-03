@@ -1,8 +1,9 @@
 [tools]
-node = "latest"
-python = "latest"
-ruby = "latest"
-uv = "latest"
+node = "lts"
+python = "3.13"
+ruby = "3.4"
+uv = "0.8"
 
 [settings]
 idiomatic_version_file_enable_tools = []
+# auto_install = false
