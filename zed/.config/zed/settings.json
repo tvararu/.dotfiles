@@ -17,14 +17,14 @@
   "agent": {
     "always_allow_tool_actions": true,
     "inline_assistant_model": {
-      "provider": "zed.dev",
-      "model": "claude-sonnet-4"
-    },
-    "default_model": {
       "provider": "openrouter",
       "model": "x-ai/grok-code-fast-1"
     },
-    "default_profile": "write",
+    "default_model": {
+      "provider": "openrouter",
+      "model": "openrouter/auto"
+    },
+    "default_profile": "ask",
     "default_width": 756,
     "model_parameters": []
   },
