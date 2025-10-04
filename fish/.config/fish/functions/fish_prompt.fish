@@ -1,4 +1,6 @@
 function fish_prompt
+    set_system_theme
+
     set -l last_status $status
     set -l color
     if test $last_status -eq 0
