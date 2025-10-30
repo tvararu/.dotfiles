@@ -1,6 +1,7 @@
 [user]
   name = Theodor Vararu
   email = theo@vararu.org
+  signingkey = /Users/deity/Library/Containers/com.maxgoedjen.Secretive.SecretAgent/Data/PublicKeys/c1bf132907311509ec637c2549b97b8a.pub
 [init]
   defaultBranch = main
 [core]
@@ -28,4 +29,5 @@
 [gpg]
   format = ssh
 [gpg "ssh"]
+  allowedSignersFile = ~/.gitallowedsigners
   defaultKeyCommand = sh -c 'echo key::$(ssh-add -L)'
