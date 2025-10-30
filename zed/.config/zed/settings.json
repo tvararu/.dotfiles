@@ -7,6 +7,11 @@
 // custom settings, run `zed: open default settings` from the
 // command palette (cmd-shift-p / ctrl-shift-p)
 {
+  "agent_servers": {
+    "claude": {
+      "default_mode": "plan"
+    }
+  },
   "context_servers": {
     "mcp-server-context7": {
       "source": "extension",
@@ -15,6 +20,7 @@
     }
   },
   "agent": {
+    "play_sound_when_agent_done": true,
     "always_allow_tool_actions": true,
     "inline_assistant_model": {
       "provider": "openrouter",
@@ -22,7 +28,7 @@
     },
     "default_model": {
       "provider": "openrouter",
-      "model": "openrouter/auto"
+      "model": "x-ai/grok-code-fast-1"
     },
     "default_profile": "ask",
     "default_width": 756,
@@ -36,24 +42,41 @@
   "gutter": { "breakpoints": false, "folds": false, "runnables": false },
   "inline_code_actions": false,
   "languages": {
-    "CSS": { "tab_size": 2 },
-    "SCSS": { "tab_size": 2 },
+    "CSS": {
+      "tab_size": 2,
+      "language_servers": ["tailwindcss-language-server"]
+    },
+    "ERB": { "tab_size": 2 },
+    "HTML": { "tab_size": 2 },
+    "HTML+ERB": {
+      "formatter": {
+        "external": {
+          "command": "rufo",
+          "arguments": ["--filename", "{buffer_path}", "--simple-exit"]
+        }
+      }
+    },
     "Python": {
       "language_servers": ["pyright", "ruff"],
       "format_on_save": "on",
       "formatter": [
-        { "code_actions": { "source.fixAll.ruff": true } },
+        { "code_action": "source.fixAll.ruff" },
         { "language_server": { "name": "ruff" } }
       ]
     },
-    "HTML/ERB": { "tab_size": 2 },
     "Ruby": {
       "format_on_save": "on",
       "formatter": {
         "external": { "command": "rufo", "arguments": ["--simple-exit"] }
       },
-      "language_servers": ["ruby-lsp", "!solargraph", "rubocop"]
-    }
+      "language_servers": [
+        "ruby-lsp",
+        "!solargraph",
+        "rubocop",
+        "tailwindcss-language-server"
+      ]
+    },
+    "SCSS": { "tab_size": 2 }
   },
   "language_models": {
     "ollama": {
@@ -65,22 +88,27 @@
   "lsp": {
     "pyright": {
       "settings": { "python.analysis": { "diagnosticMode": "workspace" } }
+    },
+    "tailwindcss-language-server": {
+      "settings": {
+        "experimental": {
+          "classRegex": ["\"([^\"]*)\""] // Scan all double quoted strings
+        }
+      }
     }
   },
   "scrollbar": { "show": "system" },
   "terminal": {
-    "dock": "right",
     "default_width": 756,
     "detect_venv": "off",
-    "max_scroll_history_lines": 100000,
-    "toolbar": {
-      "breadcrumbs": false
-    }
+    "dock": "right",
+    "line_height": "comfortable",
+    "max_scroll_history_lines": 100000
   },
   "theme": {
     "mode": "system",
     "light": "Github Plus Light",
-    "dark": "macOS Classic Dark2"
+    "dark": "macOS Classic Dark"
   },
   "toolbar": {
     "breadcrumbs": false,
