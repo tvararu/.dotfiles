@@ -8,7 +8,7 @@ echo " Setting up system and application defaults."
 echo " Asking for the administrator password upfront."
 sudo -v
 
-# Keep-alive: update existing `sudo` time stamp until `.osx` has finished.
+# Keep-alive: update existing `sudo` time stamp until `macos.sh` has finished.
 while true; do sudo -n true; sleep 60; kill -0 "$$" || exit; done 2>/dev/null &
 
 echo "\n Global changes."
@@ -102,12 +102,11 @@ brew upgrade
 echo "\n brew tap homebrew/cask-fonts to add fonts to brew."
 brew tap homebrew/cask-fonts
 
+echo "\n Installing stow and dotfiles."
 brew install stow --quiet
-
 mkdir ~/.ssh
 mkdir ~/.vim
 mkdir -p ~/.config/{fish,tmux,zed}
-
 stow -R bin fish git homebrew mise nvim ssh tmux vim zed
 
 echo "\n brew bundling."
@@ -121,6 +120,10 @@ if ! grep --quiet $(which fish) /etc/shells; then
   sudo sh -c "echo $(which fish) >> /etc/shells"
   chsh -s $(which fish)
 fi
+
+echo "\n Adding additional paths to the fish variables."
+fish_add_path ~/.bin
+fish_add_path ~/.local/bin
 
 echo " Successfully installed all brew apps.\n"
 

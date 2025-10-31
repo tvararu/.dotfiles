@@ -1,14 +1,16 @@
 set fish_greeting ""
 set -x EDITOR nvim
 
-fish_add_path ~/.bin
-fish_add_path ~/.local/bin
-
+# Secretive
 set -x SSH_AUTH_SOCK /Users/deity/Library/Containers/com.maxgoedjen.Secretive.SecretAgent/Data/socket.ssh
 
+# z
 zoxide init fish | source
+
+# Orbstack
 source ~/.orbstack/shell/init2.fish 2>/dev/null || :
 
+# Abbreviations for day to day commands
 abbr --add -- be 'bin/bundle exec'
 abbr --add -- bs 'bin/setup --skip-server'
 abbr --add -- l 'ls'
@@ -28,6 +30,7 @@ abbr --add -- md 'mise deploy'
 abbr --add -- mds 'mise deploy:setup'
 abbr --add -- bbb 'brew doctor && brew update && brew upgrade'
 
+# git abbreviations, stolen from oh-my-zsh some time ago
 abbr --add -- ga 'git add --all .'
 abbr --add -- gap 'git add --patch'
 abbr --add -- gb 'git branch'
