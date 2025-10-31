@@ -107,6 +107,7 @@ brew install stow --quiet
 mkdir ~/.ssh
 mkdir ~/.vim
 mkdir ~/.config/zed
+mkdir ~/.config/tmux
 
 stow -R bin fish git homebrew ssh tmux vim nvim
 
