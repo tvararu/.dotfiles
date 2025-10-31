@@ -7,6 +7,7 @@ fish_add_path ~/.local/bin
 set -x SSH_AUTH_SOCK /Users/deity/Library/Containers/com.maxgoedjen.Secretive.SecretAgent/Data/socket.ssh
 
 zoxide init fish | source
+source ~/.orbstack/shell/init2.fish 2>/dev/null || :
 
 abbr --add -- be 'bin/bundle exec'
 abbr --add -- bs 'bin/setup --skip-server'
