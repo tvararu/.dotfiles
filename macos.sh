@@ -106,10 +106,9 @@ brew install stow --quiet
 
 mkdir ~/.ssh
 mkdir ~/.vim
-mkdir ~/.config/zed
-mkdir ~/.config/tmux
+mkdir -p ~/.config/{fish,tmux,zed}
 
-stow -R bin fish git homebrew ssh tmux vim nvim
+stow -R bin fish git homebrew mise nvim ssh tmux vim zed
 
 echo "\n brew bundling."
 brew bundle --global
