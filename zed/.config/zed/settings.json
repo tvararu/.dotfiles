@@ -54,9 +54,17 @@
     },
     "HTML": { "tab_size": 2 },
     "HTML+ERB": {
-      "formatter": {
-        "external": { "command": "herb-format", "arguments": ["-"] }
-      }
+      "formatter": [
+        {
+          "external": { "command": "herb-format", "arguments": ["-"] }
+        },
+        {
+          "external": {
+            "command": "rufo",
+            "arguments": ["--filename", "{buffer_path}", "--simple-exit"]
+          }
+        }
+      ]
     },
     "Python": {
       "language_servers": ["pyright", "ruff"],
