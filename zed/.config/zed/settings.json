@@ -26,9 +26,11 @@
     "fish": true,
     "git-firefly": true,
     "html": true,
+    "ink": true,
     "macos-classic": true,
     "ruby": true,
-    "scss": true
+    "scss": true,
+    "toml": true
   },
   "base_keymap": "Atom",
   "buffer_font_family": "Iosevka Nerd Font Mono",
