@@ -43,6 +43,7 @@
     }
   },
   "cursor_blink": false,
+  "format_on_save": "on",
   "git": { "inline_blame": { "enabled": false } },
   "gutter": { "breakpoints": false, "folds": false, "runnables": false },
   "inline_code_actions": false,
@@ -51,26 +52,20 @@
       "tab_size": 2,
       "language_servers": ["tailwindcss-language-server"]
     },
-    "ERB": { "tab_size": 2 },
     "HTML": { "tab_size": 2 },
     "HTML+ERB": {
       "formatter": {
-        "external": {
-          "command": "rufo",
-          "arguments": ["--filename", "{buffer_path}", "--simple-exit"]
-        }
+        "external": { "command": "herb-format", "arguments": ["-"] }
       }
     },
     "Python": {
       "language_servers": ["pyright", "ruff"],
-      "format_on_save": "on",
       "formatter": [
         { "code_action": "source.fixAll.ruff" },
         { "language_server": { "name": "ruff" } }
       ]
     },
     "Ruby": {
-      "format_on_save": "on",
       "formatter": {
         "external": { "command": "rufo", "arguments": ["--simple-exit"] }
       },
