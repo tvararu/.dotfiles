@@ -37,4 +37,5 @@ function set_light_theme
     set -U fish_pager_color_secondary_description
     set -U fish_pager_color_secondary_background
     set -U fish_pager_color_background
+    claude config set -g theme light 2>/dev/null
 end
