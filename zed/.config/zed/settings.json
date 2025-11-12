@@ -23,13 +23,16 @@
   },
   "agent_servers": { "claude": { "default_mode": "plan" } },
   "auto_install_extensions": {
+    "dockerfile": true,
     "fish": true,
     "git-firefly": true,
+    "github-classic": true,
     "html": true,
     "ink": true,
     "macos-classic": true,
     "ruby": true,
     "scss": true,
+    "sql": true,
     "toml": true
   },
   "base_keymap": "Atom",
@@ -114,7 +117,7 @@
     "max_scroll_history_lines": 100000
   },
   "theme": {
-    "light": "macOS Classic Light",
+    "light": "GitHub Light Classic",
     "dark": "macOS Classic Dark"
   },
   "toolbar": {
