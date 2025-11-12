@@ -59,3 +59,7 @@ abbr --add -- grs 'git restore --staged .'
 abbr --add -- gsp 'git stash pop'
 abbr --add -- gst 'git status'
 abbr --add -- gs 'git switch'
+
+# Added by LM Studio CLI (lms)
+set -gx PATH $PATH /Users/deity/.cache/lm-studio/bin
+# End of LM Studio CLI section
