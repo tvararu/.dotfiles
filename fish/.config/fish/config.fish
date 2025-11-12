@@ -11,8 +11,6 @@ zoxide init fish | source
 source ~/.orbstack/shell/init2.fish 2>/dev/null || :
 
 # Abbreviations for day to day commands
-abbr --add -- be 'bin/bundle exec'
-abbr --add -- bs 'bin/setup --skip-server'
 abbr --add -- l 'ls'
 abbr --add -- led 'ledger -f current.ledger --price-db prices.db --exchange £ --pedantic'
 abbr --add -- ll 'ls -lah'
@@ -24,11 +22,13 @@ abbr --add -- v 'nvim'
 abbr --add -- os 'overmind start --daemonize --procfile Procfile.dev'
 abbr --add -- oc 'overmind connect'
 abbr --add -- oq 'overmind quit'
-abbr --add -- cc 'claude --dangerously-skip-permissions --continue'
 abbr --add -- mc 'mise ci'
+abbr --add -- ms 'mise setup'
 abbr --add -- md 'mise deploy'
 abbr --add -- mds 'mise deploy:setup'
 abbr --add -- bbb 'brew doctor && brew update && brew upgrade'
+abbr --add -- cc 'claude --dangerously-skip-permissions --continue'
+abbr --add -- zcc 'claude --settings ~/.claude/settings.json.zai --dangerously-skip-permissions --continue'
 
 # git abbreviations, stolen from oh-my-zsh some time ago
 abbr --add -- ga 'git add --all .'
