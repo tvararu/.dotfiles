@@ -1,4 +1,6 @@
 function set_system_theme
+    type -q defaults; or return
+
     set -l macos_mode (defaults read -g AppleInterfaceStyle 2>/dev/null)
     set -l detected_mode (test -n "$macos_mode" && echo "dark" || echo "light")
 

@@ -1,7 +1,8 @@
 [user]
   name = Theodor Vararu
   email = theo@vararu.org
-  signingkey = /Users/deity/Library/Containers/com.maxgoedjen.Secretive.SecretAgent/Data/PublicKeys/c1bf132907311509ec637c2549b97b8a.pub
+[include]
+  path = ~/.gitconfig.local
 [init]
   defaultBranch = main
 [core]
@@ -22,12 +23,3 @@
   smudge = git-lfs smudge -- %f
   process = git-lfs filter-process
   required = true
-
-; Commit signing using SSH
-[commit]
-  gpgsign = true
-[gpg]
-  format = ssh
-[gpg "ssh"]
-  allowedSignersFile = ~/.gitallowedsigners
-  defaultKeyCommand = sh -c 'echo key::$(ssh-add -L)'

@@ -1,14 +1,16 @@
 set fish_greeting ""
 set -x EDITOR nvim
 
-# Secretive
-set -x SSH_AUTH_SOCK /Users/deity/Library/Containers/com.maxgoedjen.Secretive.SecretAgent/Data/socket.ssh
+# Secretive (macOS only)
+if test (uname) = Darwin
+    set -x SSH_AUTH_SOCK ~/Library/Containers/com.maxgoedjen.Secretive.SecretAgent/Data/socket.ssh
+end
 
 # z
 zoxide init fish | source
 
-# Orbstack
-source ~/.orbstack/shell/init2.fish 2>/dev/null || :
+# Orbstack (macOS only)
+test (uname) = Darwin; and source ~/.orbstack/shell/init2.fish 2>/dev/null
 
 # Abbreviations for day to day commands
 abbr --add -- l 'ls'
@@ -60,6 +62,5 @@ abbr --add -- gsp 'git stash pop'
 abbr --add -- gst 'git status'
 abbr --add -- gs 'git switch'
 
-# Added by LM Studio CLI (lms)
-set -gx PATH $PATH /Users/deity/.cache/lm-studio/bin
-# End of LM Studio CLI section
+# LM Studio CLI (lms)
+test -d ~/.cache/lm-studio/bin; and set -gx PATH $PATH ~/.cache/lm-studio/bin

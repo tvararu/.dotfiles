@@ -109,6 +109,19 @@ mkdir ~/.vim
 mkdir -p ~/.config/{fish,tmux,zed}
 stow -R bin fish git homebrew mise nvim ssh tmux vim zed
 
+echo "\n Setting up git commit signing with Secretive."
+cat > ~/.gitconfig.local << 'EOF'
+[user]
+  signingkey = ~/Library/Containers/com.maxgoedjen.Secretive.SecretAgent/Data/PublicKeys/c1bf132907311509ec637c2549b97b8a.pub
+[commit]
+  gpgsign = true
+[gpg]
+  format = ssh
+[gpg "ssh"]
+  allowedSignersFile = ~/.gitallowedsigners
+  defaultKeyCommand = sh -c 'echo key::$(ssh-add -L)'
+EOF
+
 echo "\n brew bundling."
 brew bundle --global
 
