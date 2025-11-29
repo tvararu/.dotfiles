@@ -2,6 +2,12 @@
 
 This is a log of the various customisations I've done to my Omarchy setup.
 
+## CLI Tools
+
+```bash
+yay -S fish git-delta lsd mosh tmux
+```
+
 ## Keyboard: Apple GB ISO Layout
 
 ```
