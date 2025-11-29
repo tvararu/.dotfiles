@@ -117,3 +117,35 @@ Add the SSH key to GitHub as a **signing key** (not just auth):
 ```bash
 cat ~/.ssh/id_ed25519.pub | wl-copy
 ```
+
+## Removed Packages
+
+```bash
+# Office/Productivity
+yay -Rns libreoffice-fresh xournalpp typora obsidian
+
+# Printing (no printer)
+yay -Rns cups cups-browsed cups-filters cups-pdf system-config-printer
+
+# Media apps (overkill)
+yay -Rns kdenlive obs-studio gpu-screen-recorder
+
+# Messaging/Music (use web versions)
+yay -Rns signal-desktop spotify localsend
+
+# File system mounts (not using)
+yay -Rns gvfs-mtp gvfs-nfs gvfs-smb
+
+# Development (not needed)
+yay -Rns ruby luarocks mariadb-libs postgresql-libs
+yay -Rns python-gobject python-poetry-core python-terminaltexteffects
+
+# Misc
+yay -Rns asdcontrol tobi-try evince sushi ffmpegthumbnailer
+```
+
+Clean orphans after:
+
+```bash
+yay -Rns $(yay -Qdtq)
+```
