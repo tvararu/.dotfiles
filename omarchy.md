@@ -15,6 +15,14 @@ hyprctl reload
 fcitx5 -r -d
 ```
 
+## Keyboard: Fast Repeat Rate
+
+```
+# ~/.config/hypr/input.conf
+repeat_rate = 100
+repeat_delay = 150
+```
+
 ## Keyboard: Fn Keys as Media Keys
 
 fnmode=1 is media keys default, fnmode=2 is F-keys default.
