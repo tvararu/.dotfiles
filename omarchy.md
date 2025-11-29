@@ -118,6 +118,13 @@ Add the SSH key to GitHub as a **signing key** (not just auth):
 cat ~/.ssh/id_ed25519.pub | wl-copy
 ```
 
+## Neovim: Disable Markdown Rendering
+
+```lua
+-- ~/.config/nvim/lua/config/options.lua
+vim.opt.conceallevel = 0
+```
+
 ## Removed Packages
 
 ```bash
