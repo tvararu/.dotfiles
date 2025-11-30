@@ -125,6 +125,27 @@ cat ~/.ssh/id_ed25519.pub | wl-copy
 vim.opt.conceallevel = 0
 ```
 
+## XDG Directories Cleanup
+
+Remove default XDG folders (Desktop, Documents, etc.) and prevent recreation:
+
+```
+# ~/.config/user-dirs.dirs
+XDG_DESKTOP_DIR="$HOME"
+XDG_DOCUMENTS_DIR="$HOME"
+XDG_DOWNLOAD_DIR="$HOME/downloads"
+XDG_MUSIC_DIR="$HOME"
+XDG_PICTURES_DIR="$HOME"
+XDG_PUBLICSHARE_DIR="$HOME"
+XDG_TEMPLATES_DIR="$HOME"
+XDG_VIDEOS_DIR="$HOME"
+```
+
+```
+# ~/.config/user-dirs.conf
+enabled=False
+```
+
 ## Removed Packages
 
 ```bash
