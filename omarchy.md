@@ -146,6 +146,14 @@ XDG_VIDEOS_DIR="$HOME"
 enabled=False
 ```
 
+## Ghostty: Line-by-Line Scrolling
+
+```
+# ~/.config/ghostty/config
+keybind = ctrl+shift+up=scroll_page_lines:-1
+keybind = ctrl+shift+down=scroll_page_lines:1
+```
+
 ## Removed Packages
 
 ```bash
