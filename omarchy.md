@@ -154,6 +154,15 @@ keybind = ctrl+shift+up=scroll_page_lines:-1
 keybind = ctrl+shift+down=scroll_page_lines:1
 ```
 
+## Idle/Lock Timings
+
+```
+# ~/.config/hypr/hypridle.conf
+timeout = 600   # 10min - screensaver
+timeout = 1200  # 20min - lock screen
+timeout = 3600  # 60min - screen off
+```
+
 ## Removed Packages
 
 ```bash

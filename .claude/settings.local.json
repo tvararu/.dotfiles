@@ -4,7 +4,11 @@
       "WebSearch",
       "WebFetch(domain:wiki.archlinux.org)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(docker logs:*)",
+      "Bash(sensors:*)",
+      "Bash(nvidia-smi:*)",
+      "Bash(ollama run:*)"
     ],
     "deny": [],
     "ask": []
