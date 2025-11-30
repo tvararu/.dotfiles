@@ -96,26 +96,78 @@ sudo tailscale set --operator=$USER
 tailscale up
 ```
 
-## Git: SSH Commit Signing
+## TPM-Backed SSH Keys
+
+SSH keys stored in TPM hardware - private key never leaves the chip, requires PIN to use.
+
+### Setup
 
 ```bash
-cat > ~/.gitconfig.local << 'EOF'
+yay -S tpm2-tools tpm2-pkcs11
+sudo usermod -aG tss $USER
+# reboot for group to take effect
+```
+
+### Initialize TPM and create key
+
+```bash
+tpm2_ptool init
+tpm2_ptool addtoken --pid=1 --label=ssh --sopin='ADMIN_PIN' --userpin='YOUR_PIN'
+tpm2_ptool addkey --algorithm=ecc256 --label=ssh --userpin='YOUR_PIN'
+```
+
+### Export public key
+
+```bash
+ssh-keygen -D /usr/lib/libtpm2_pkcs11.so 2>/dev/null | head -1 > ~/.ssh/id_tpm.pub
+```
+
+### ssh-agent (systemd)
+
+```bash
+systemctl --user enable --now ssh-agent.socket
+```
+
+```fish
+# ~/.config/fish/config.fish (already in dotfiles)
+if test (uname) != Darwin
+    set -x SSH_AUTH_SOCK $XDG_RUNTIME_DIR/ssh-agent.socket
+end
+```
+
+### Daily usage
+
+Load TPM key into agent once per login (prompts for PIN):
+
+```bash
+ssh-add -s /usr/lib/libtpm2_pkcs11.so
+```
+
+Or use the `tpm` abbreviation (already in dotfiles).
+
+### Git commit signing
+
+```
+# ~/.gitconfig.local
 [user]
-  signingkey = ~/.ssh/id_ed25519.pub
+  signingkey = ~/.ssh/id_tpm.pub
 [commit]
   gpgsign = true
 [gpg]
   format = ssh
-EOF
-
-echo "$(git config user.email) $(cat ~/.ssh/id_ed25519.pub)" > ~/.gitallowedsigners
-git config --global gpg.ssh.allowedSignersFile ~/.gitallowedsigners
+[gpg "ssh"]
+  allowedSignersFile = ~/.gitallowedsigners
 ```
 
-Add the SSH key to GitHub as a **signing key** (not just auth):
+```bash
+# Add public key to allowed signers
+echo "$(git config user.email) $(cat ~/.ssh/id_tpm.pub)" >> ~/.gitallowedsigners
+```
+
+Add the SSH key to GitHub as both **SSH key** and **signing key**:
 
 ```bash
-cat ~/.ssh/id_ed25519.pub | wl-copy
+cat ~/.ssh/id_tpm.pub | wl-copy
 ```
 
 ## Neovim: Disable Markdown Rendering
