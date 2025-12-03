@@ -6,8 +6,8 @@ if test (uname) = Darwin
     # Secretive (macOS)
     set -x SSH_AUTH_SOCK ~/Library/Containers/com.maxgoedjen.Secretive.SecretAgent/Data/socket.ssh
 else
-    # systemd ssh-agent (Linux)
-    set -x SSH_AUTH_SOCK $XDG_RUNTIME_DIR/ssh-agent.socket
+    # ssh-tpm-agent (Linux)
+    set -x SSH_AUTH_SOCK $XDG_RUNTIME_DIR/ssh-tpm-agent.sock
 end
 
 # z
@@ -34,7 +34,6 @@ abbr --add -- md 'mise deploy'
 abbr --add -- mds 'mise deploy:setup'
 abbr --add -- bbb 'brew doctor && brew update && brew upgrade'
 abbr --add -- cc 'claude --dangerously-skip-permissions --continue'
-abbr --add -- tpm 'ssh-add -s /usr/lib/libtpm2_pkcs11.so'
 abbr --add -- zcc 'claude --settings ~/.claude/settings.json.zai --dangerously-skip-permissions --continue'
 
 # git abbreviations, stolen from oh-my-zsh some time ago
