@@ -8,7 +8,10 @@
       "Bash(docker logs:*)",
       "Bash(sensors:*)",
       "Bash(nvidia-smi:*)",
-      "Bash(ollama run:*)"
+      "Bash(ollama run:*)",
+      "Bash(journalctl:*)",
+      "Bash(dmesg:*)",
+      "Bash(coredumpctl list:*)"
     ],
     "deny": [],
     "ask": []

@@ -1,0 +1,70 @@
+services:
+  ollama:
+    container_name: ollama
+    image: ollama/ollama
+    restart: unless-stopped
+    ports:
+      - "11434:11434"
+    volumes:
+      - ~/srv/ollama:/root/.ollama
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+  comfy:
+    container_name: comfy
+    image: mmartial/comfyui-nvidia-docker:ubuntu24_cuda13.0-20251129
+    restart: unless-stopped
+    ports:
+      - "8188:8188"
+    volumes:
+      - ~/srv/comfy:/comfy/mnt
+      - ~/models:/comfy/mnt/ComfyUI/models
+    environment:
+      - WANTED_UID=1000
+      - WANTED_GID=1000
+      - USE_UV=true
+      - FORCE_CHOWN=true
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=all
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu, compute, utility]
+
+  comfy-api:
+    container_name: comfy-api
+    image: ghcr.io/saladtechnologies/comfyui-api:comfy0.3.75-api1.14.0-torch2.8.0-cuda12.8-runtime
+    ports:
+      - "8300:3000"
+      - "8288:8188"
+    volumes:
+      - ~/srv/comfy-api/cache:/root/.cache/comfyui-api
+      - ~/srv/comfy-api/output:/opt/ComfyUI/output
+      - ~/models:/opt/ComfyUI/models
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+  cloudflared:
+    container_name: cloudflared
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    command: tunnel run --token ${CLOUDFLARED_TOKEN}
+    networks:
+      - kamal
+
+networks:
+  kamal:
+    external: true

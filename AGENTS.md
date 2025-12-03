@@ -23,6 +23,6 @@ stow fish git nvim tmux
 ## Platform notes
 
 - Always use `yay` instead of `pacman` on Arch/Omarchy
-- `omarchy.md` contains Omarchy-specific system setup (keyboard, DDC brightness, boot)
+- `t1/omarchy.md` contains Omarchy-specific system setup (keyboard, DDC brightness, boot)
 - macOS-specific code uses `if test (uname) = Darwin` guards in fish
-- After completing any Omarchy setup/config task, update `omarchy.md` with the steps
+- After completing any Omarchy setup/config task, update `t1/omarchy.md` with the steps
