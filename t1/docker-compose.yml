@@ -59,6 +59,22 @@ services:
               count: all
               capabilities: [gpu]
 
+  transmission:
+    container_name: transmission
+    image: linuxserver/transmission:latest
+    restart: unless-stopped
+    ports:
+      - "9091:9091"
+      - "51413:51413"
+      - "51413:51413/udp"
+    volumes:
+      - ~/srv/transmission/config:/config
+      - ~/downloads:/downloads
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Asia/Bangkok
+
   cloudflared:
     container_name: cloudflared
     image: cloudflare/cloudflared:latest
