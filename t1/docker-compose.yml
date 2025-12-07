@@ -49,6 +49,8 @@ services:
       - ~/srv/comfy-api/cache:/root/.cache/comfyui-api
       - ~/srv/comfy-api/output:/opt/ComfyUI/output
       - ~/models:/opt/ComfyUI/models
+    networks:
+      - kamal
     deploy:
       resources:
         reservations:
