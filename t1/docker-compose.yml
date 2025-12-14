@@ -48,7 +48,10 @@ services:
     volumes:
       - ~/srv/comfy-api/cache:/root/.cache/comfyui-api
       - ~/srv/comfy-api/output:/opt/ComfyUI/output
+      - ~/srv/comfy-api/manifest.yml:/manifest.yml:ro
       - ~/models:/opt/ComfyUI/models
+    environment:
+      - MANIFEST=/manifest.yml
     networks:
       - kamal
     deploy:
