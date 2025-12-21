@@ -34,6 +34,7 @@ abbr --add -- md 'mise deploy'
 abbr --add -- mds 'mise deploy:setup'
 abbr --add -- bbb 'brew doctor && brew update && brew upgrade'
 abbr --add -- cc 'claude --continue'
+abbr --add -- s 'git push && mise deploy'
 
 # git abbreviations, stolen from oh-my-zsh some time ago
 abbr --add -- ga 'git add --all .'
