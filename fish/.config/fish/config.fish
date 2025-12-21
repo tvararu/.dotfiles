@@ -33,8 +33,7 @@ abbr --add -- ms 'mise setup'
 abbr --add -- md 'mise deploy'
 abbr --add -- mds 'mise deploy:setup'
 abbr --add -- bbb 'brew doctor && brew update && brew upgrade'
-abbr --add -- cc 'claude --dangerously-skip-permissions --continue'
-abbr --add -- zcc 'claude --settings ~/.claude/settings.json.zai --dangerously-skip-permissions --continue'
+abbr --add -- cc 'claude --continue'
 
 # git abbreviations, stolen from oh-my-zsh some time ago
 abbr --add -- ga 'git add --all .'
@@ -66,5 +65,6 @@ abbr --add -- gsp 'git stash pop'
 abbr --add -- gst 'git status'
 abbr --add -- gs 'git switch'
 
-# LM Studio CLI (lms)
+# Added by LM Studio CLI (lms)
 test -d ~/.cache/lm-studio/bin; and set -gx PATH $PATH ~/.cache/lm-studio/bin
+# End of LM Studio CLI section
