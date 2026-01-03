@@ -1,7 +1,7 @@
 services:
   ollama:
     container_name: ollama
-    image: ollama/ollama:0.13.2
+    image: ollama/ollama:0.13.5
     restart: unless-stopped
     ports:
       - "11434:11434"
@@ -17,8 +17,8 @@ services:
 
   comfy:
     container_name: comfy
-    image: mmartial/comfyui-nvidia-docker:ubuntu24_cuda13.0-20251129
-    restart: unless-stopped
+    image: mmartial/comfyui-nvidia-docker:ubuntu24_cuda13.0-20251219
+    # restart: unless-stopped
     ports:
       - "8188:8188"
     volumes:
@@ -41,7 +41,7 @@ services:
 
   comfy-api:
     container_name: comfy-api
-    image: ghcr.io/saladtechnologies/comfyui-api:comfy0.3.75-api1.14.0-torch2.8.0-cuda12.8-runtime
+    image: ghcr.io/saladtechnologies/comfyui-api:comfy0.5.1-api1.16.0-torch2.8.0-cuda12.8-runtime
     ports:
       - "8300:3000"
       - "8288:8188"
