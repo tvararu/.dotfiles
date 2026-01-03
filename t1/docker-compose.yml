@@ -42,6 +42,7 @@ services:
   comfy-api:
     container_name: comfy-api
     image: ghcr.io/saladtechnologies/comfyui-api:comfy0.5.1-api1.16.0-torch2.8.0-cuda12.8-runtime
+    restart: unless-stopped
     ports:
       - "8300:3000"
       - "8288:8188"
