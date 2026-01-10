@@ -65,7 +65,7 @@ services:
 
   transmission:
     container_name: transmission
-    image: linuxserver/transmission:latest
+    image: linuxserver/transmission:4.0.5
     restart: unless-stopped
     ports:
       - "100.73.138.96:9091:9091"
