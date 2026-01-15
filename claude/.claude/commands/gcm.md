@@ -4,14 +4,17 @@ description: Create a git commit
 
 Create a clear and concise git commit with the current changes.
 
-The subject should be the "what," max 50 characters.
+The subject should be the "what", max 50 characters.
 
-Always include a description of the "why," wrapping at 72 characters. The
+Always include a description of the "why", wrapping at 72 characters. The
 description should be only 1 paragraph, 1-3 sentences.
 
 Do not write bullet points.
 
 Do not add a "Claude Code" attribution footer.
+
+Use `git log -n 10` before and look at the last commits to copy the same style.
+Ignore dependabot commits.
 
 Use Tim Pope's style:
 
