@@ -12,14 +12,14 @@
     "always_allow_tool_actions": true,
     "inline_assistant_model": {
       "provider": "openrouter",
-      "model": "x-ai/grok-code-fast-1"
+      "model": "x-ai/grok-code-fast-1",
     },
     "default_model": {
       "provider": "openrouter",
-      "model": "x-ai/grok-code-fast-1"
+      "model": "x-ai/grok-code-fast-1",
     },
     "default_profile": "ask",
-    "default_width": 756
+    "default_width": 756,
   },
   "agent_servers": { "claude": { "default_mode": "plan" } },
   "auto_install_extensions": {
@@ -33,7 +33,7 @@
     "ruby": true,
     "scss": true,
     "sql": true,
-    "toml": true
+    "toml": true,
   },
   "base_keymap": "Atom",
   "buffer_font_family": "Iosevka Nerd Font Mono",
@@ -41,71 +41,74 @@
   "context_servers": {
     "mcp-server-context7": {
       "enabled": true,
-      "settings": { "default_minimum_tokens": "10000" }
-    }
+      "settings": { "default_minimum_tokens": "10000" },
+    },
   },
   "cursor_blink": false,
   "format_on_save": "on",
   "git": { "inline_blame": { "enabled": false } },
   "gutter": { "breakpoints": false, "folds": false, "runnables": false },
   "inline_code_actions": false,
+  "file_types": {
+    "HTML+ERB": ["tt"],
+  },
   "languages": {
     "CSS": {
       "tab_size": 2,
-      "language_servers": ["tailwindcss-language-server"]
+      "language_servers": ["tailwindcss-language-server"],
     },
     "HTML": { "tab_size": 2 },
     "HTML+ERB": {
       "formatter": [
         {
-          "external": { "command": "herb-format", "arguments": ["-"] }
+          "external": { "command": "herb-format", "arguments": ["-"] },
         },
         {
           "external": {
             "command": "rufo",
-            "arguments": ["--filename", "{buffer_path}", "--simple-exit"]
-          }
-        }
-      ]
+            "arguments": ["--filename", "{buffer_path}", "--simple-exit"],
+          },
+        },
+      ],
     },
     "Python": {
       "language_servers": ["pyright", "ruff"],
       "formatter": [
         { "code_action": "source.fixAll.ruff" },
-        { "language_server": { "name": "ruff" } }
-      ]
+        { "language_server": { "name": "ruff" } },
+      ],
     },
     "Ruby": {
       "formatter": {
-        "external": { "command": "rufo", "arguments": ["--simple-exit"] }
+        "external": { "command": "rufo", "arguments": ["--simple-exit"] },
       },
       "language_servers": [
         "ruby-lsp",
         "!solargraph",
         "rubocop",
-        "tailwindcss-language-server"
-      ]
+        "tailwindcss-language-server",
+      ],
     },
-    "SCSS": { "tab_size": 2 }
+    "SCSS": { "tab_size": 2 },
   },
   "language_models": {
     "ollama": {
       "available_models": [
-        { "name": "gpt-oss", "max_tokens": 131072, "supports_tools": true }
-      ]
-    }
+        { "name": "gpt-oss", "max_tokens": 131072, "supports_tools": true },
+      ],
+    },
   },
   "lsp": {
     "pyright": {
-      "settings": { "python.analysis": { "diagnosticMode": "workspace" } }
+      "settings": { "python.analysis": { "diagnosticMode": "workspace" } },
     },
     "tailwindcss-language-server": {
       "settings": {
         "experimental": {
-          "classRegex": ["\"([^\"]*)\""] // Scan all double quoted strings
-        }
-      }
-    }
+          "classRegex": ["\"([^\"]*)\""], // Scan all double quoted strings
+        },
+      },
+    },
   },
   "scrollbar": { "show": "system" },
   "terminal": {
@@ -113,16 +116,16 @@
     "detect_venv": "off",
     "dock": "right",
     "line_height": "comfortable",
-    "max_scroll_history_lines": 100000
+    "max_scroll_history_lines": 100000,
   },
   "theme": {
     "light": "GitHub Light Classic",
-    "dark": "macOS Classic Dark"
+    "dark": "macOS Classic Dark",
   },
   "toolbar": {
     "breadcrumbs": false,
-    "quick_actions": false
+    "quick_actions": false,
   },
   "vim_mode": true,
-  "wrap_guides": [80, 88]
+  "wrap_guides": [80, 88],
 }
