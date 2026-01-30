@@ -1,8 +1,11 @@
 ---
 description: Create a git commit
+argument-hint: "[directions]"
 ---
 
 Create a clear and concise git commit with the current changes.
+
+$ARGUMENTS
 
 The subject should be the "what", max 50 characters.
 
