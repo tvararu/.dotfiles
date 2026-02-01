@@ -203,3 +203,96 @@ Clean orphans after:
 ```bash
 yay -Rns $(yay -Qdtq)
 ```
+
+## QEMU VM (OpenClaw)
+
+Ubuntu 24.04 VM for running OpenClaw agent.
+
+### Setup
+
+```bash
+yay -S qemu-base cloud-image-utils
+
+mkdir -p ~/vms
+cd ~/vms
+
+# Download Ubuntu cloud image
+curl -L -O https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.img
+
+# Create VM disk (40GB thin-provisioned)
+cp noble-server-cloudimg-amd64.img openclaw.qcow2
+qemu-img resize openclaw.qcow2 40G
+
+# Create cloud-init config
+cat > user-data << EOF
+#cloud-config
+hostname: openclaw
+users:
+  - name: deity
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    shell: /bin/bash
+    ssh_authorized_keys:
+      - $(cat ~/.ssh/id_ecdsa.pub)
+package_update: true
+packages:
+  - curl
+  - git
+  - build-essential
+EOF
+
+echo "instance-id: openclaw" > meta-data
+
+# Create seed image
+cloud-localds seed.img user-data meta-data
+
+# First boot (applies cloud-init)
+qemu-system-x86_64 \
+  -enable-kvm \
+  -m 8G \
+  -smp 4 \
+  -cpu host \
+  -drive file=openclaw.qcow2,if=virtio \
+  -drive file=seed.img,if=virtio,format=raw \
+  -nic user,hostfwd=tcp::2222-:22 \
+  -nographic
+
+# Set up root SSH access and remove deity user
+ssh -p 2222 deity@localhost "sudo mkdir -p /root/.ssh && sudo cp ~/.ssh/authorized_keys /root/.ssh/ && sudo userdel -r deity"
+
+# Clean up
+rm seed.img user-data meta-data
+```
+
+### Run VM
+
+```bash
+# ~/vms/openclaw.sh
+#!/bin/bash
+qemu-system-x86_64 \
+  -enable-kvm \
+  -m 8G \
+  -smp 4 \
+  -cpu host \
+  -drive file=$HOME/vms/openclaw.qcow2,if=virtio \
+  -nic user,hostfwd=tcp::2222-:22 \
+  -display none \
+  -serial none \
+  -daemonize
+```
+
+```bash
+chmod +x ~/vms/openclaw.sh
+~/vms/openclaw.sh
+```
+
+### Connect
+
+```bash
+ssh -p 2222 root@localhost
+```
+
+### Stop VM
+
+```bash
+pkill -f openclaw.qcow2
+```
