@@ -12,12 +12,14 @@ The subject should be the "what", max 50 characters.
 Always include a description of the "why", wrapping at 72 characters. The
 description should be only 1 paragraph, 1-3 sentences.
 
-Do not write bullet points.
-
-Do not add a "Claude Code" attribution footer.
-
-Use `git log -n 10` before and look at the last commits to copy the same style.
+Use `git log -n 5` before and look at the last commits to copy the same style.
 Ignore dependabot commits.
+
+DO NOT USE `--oneline`, READ THE FULL MESSAGES.
+
+DO NOT WRITE BULLET POINTS.
+
+DO NOT ADD A "CLAUDE CODE" ATTRIBUTION FOOTER.
 
 Use Tim Pope's style:
 
