@@ -270,6 +270,10 @@ qemu-system-x86_64 \
   -cpu host \
   -drive file=$HOME/vms/openclaw.qcow2,if=virtio \
   -nic user,hostfwd=tcp::2222-:22 \
+  -device virtio-balloon-pci \
+  -object rng-random,id=rng0,filename=/dev/urandom \
+  -device virtio-rng-pci,rng=rng0 \
+  -pidfile $HOME/vms/openclaw.pid \
   -display none \
   -serial none \
   -daemonize
@@ -289,8 +293,8 @@ After=network.target
 
 [Service]
 Type=forking
+PIDFile=/home/deity/vms/openclaw.pid
 ExecStart=/home/deity/vms/openclaw.sh
-ExecStop=/usr/bin/pkill -f openclaw.qcow2
 Restart=on-failure
 
 [Install]
