@@ -15,39 +15,19 @@ services:
               count: all
               capabilities: [gpu]
 
-  comfy:
-    container_name: comfy
-    image: mmartial/comfyui-nvidia-docker:ubuntu24_cuda13.0-20251219
-    # restart: unless-stopped
+  comfyui-api:
+    container_name: comfyui-api
+    image: ghcr.io/saladtechnologies/comfyui-api:comfy0.8.2-api1.17.0-torch2.8.0-cuda12.8-runtime
+    restart: unless-stopped
     ports:
       - "8188:8188"
+      - "8300:8300"
+    extra_hosts:
+      - "openclaw:100.91.68.60"
     volumes:
-      - ~/srv/comfy:/comfy/mnt
-      - ~/models:/comfy/mnt/ComfyUI/models
-    environment:
-      - WANTED_UID=1000
-      - WANTED_GID=1000
-      - USE_UV=true
-      - FORCE_CHOWN=true
-      - NVIDIA_VISIBLE_DEVICES=all
-      - NVIDIA_DRIVER_CAPABILITIES=all
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: all
-              capabilities: [gpu, compute, utility]
-
-  comfy-api:
-    container_name: comfy-api
-    image: ghcr.io/saladtechnologies/comfyui-api:comfy0.5.1-api1.16.0-torch2.8.0-cuda12.8-runtime
-    restart: unless-stopped
-    network_mode: host
-    volumes:
-      - ~/srv/comfy-api/cache:/root/.cache/comfyui-api
-      - ~/srv/comfy-api/output:/opt/ComfyUI/output
-      - ~/srv/comfy-api/manifest.yml:/manifest.yml:ro
+      - ~/srv/comfyui-api/cache:/root/.cache/comfyui-api
+      - ~/srv/comfyui-api/output:/opt/ComfyUI/output
+      - ~/srv/comfyui-api/manifest.yml:/manifest.yml:ro
       - ~/models:/opt/ComfyUI/models
     environment:
       - MANIFEST=/manifest.yml
