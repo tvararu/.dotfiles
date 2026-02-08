@@ -12,7 +12,7 @@
     "always_allow_tool_actions": true,
     "inline_assistant_model": {
       "provider": "openrouter",
-      "model": "x-ai/grok-code-fast-1",
+      "model": "openrouter/free",
     },
     "default_model": {
       "provider": "openrouter",
