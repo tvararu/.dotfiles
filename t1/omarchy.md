@@ -79,6 +79,23 @@ ddcci-backlight
 ACTION=="add", SUBSYSTEM=="i2c", ATTR{name}=="NVIDIA i2c adapter 3 at 1:00.0", RUN+="/bin/sh -c 'echo ddcci 0x37 > /sys/bus/i2c/devices/i2c-3/new_device'"
 ```
 
+## Viture Luma Pro Mirror (1920x1200)
+
+Set the UPERFECT to `1920x1200` first, then mirror the Viture output to it.
+
+```bash
+# source display (UPERFECT)
+hyprctl keyword monitor "HDMI-A-2,1920x1200@59.95,0x0,1"
+
+# find first non-UPERFECT output (when Viture is connected)
+GLASSES=$(hyprctl monitors all | awk '/^Monitor /{print $2}' | grep -v '^HDMI-A-2$' | head -n1)
+
+# mirror Viture to UPERFECT at 1920x1200
+hyprctl keyword monitor "$GLASSES,1920x1200@60,0x0,1,mirror,HDMI-A-2"
+```
+
+If no second monitor appears in `hyprctl monitors all`, the USB-C port/cable is not exposing DisplayPort Alt-Mode yet.
+
 ## Boot: Disable Limine Timeout
 
 ```
@@ -328,4 +345,112 @@ Host openclaw
 
 ```bash
 ssh openclaw
+```
+
+## Sunshine (Game Streaming via Moonlight)
+
+Stream desktop to Mac (or other devices) via Moonlight. Uses VAAPI encoding on the AMD iGPU with KMS capture. Display is connected to the AMD iGPU (HDMI-A-2), keeping the RTX 5090 free for compute (saves ~1GB VRAM).
+
+Note: NVENC on the 5090 won't work with this setup because KMS captures DMA-BUFs from the AMD GPU which can't be imported cross-GPU. Also, NVIDIA's DRM driver won't create custom modes not in the TV's EDID, so custom resolutions (like 1920x1200) only work on the AMD iGPU.
+
+### Install
+
+```bash
+yay -S sunshine-bin
+```
+
+### Setup
+
+```bash
+# Capability needed for KMS capture
+sudo setcap cap_sys_admin+p $(readlink -f $(which sunshine))
+
+# Enable user service
+systemctl --user enable --now sunshine
+```
+
+Open `https://localhost:47990` to set credentials, then pair from Moonlight.
+
+### Config
+
+```
+# ~/.config/sunshine/sunshine.conf
+system_tray = disabled
+capture = kms
+```
+
+### Resolution switching script
+
+Switches Hyprland to 1920x1200 (16:10) when streaming starts, back to 1080p when it stops. The AMD iGPU supports custom modes even if the TV doesn't advertise them.
+
+```bash
+# ~/.local/bin/sunshine-res
+#!/bin/bash
+export HYPRLAND_INSTANCE_SIGNATURE=$(ls -t /run/user/$(id -u)/hypr/ | head -1)
+hyprctl keyword monitor "HDMI-A-2,${1},0x0,${2:-1}"
+```
+
+```bash
+chmod +x ~/.local/bin/sunshine-res
+```
+
+### App config
+
+```json
+// ~/.config/sunshine/apps.json
+{
+  "env": {
+    "PATH": "$(PATH):$(HOME)/.local/bin"
+  },
+  "apps": [
+    {
+      "name": "Desktop",
+      "image-path": "desktop.png",
+      "prep-cmd": [
+        {
+          "do": "sunshine-res 1920x1200@60",
+          "undo": "sunshine-res 1920x1080@60"
+        }
+      ]
+    },
+    {
+      "name": "Desktop (1080p)",
+      "image-path": "desktop.png"
+    },
+    {
+      "name": "Steam Big Picture",
+      "detached": [
+        "setsid steam steam://open/bigpicture"
+      ],
+      "prep-cmd": [
+        {
+          "do": "",
+          "undo": "setsid steam steam://close/bigpicture"
+        }
+      ],
+      "image-path": "steam.png"
+    }
+  ]
+}
+```
+
+### Moonlight client settings
+
+- Resolution: 1920x1200 (or "Native excluding notch" on Mac)
+- Connect via Tailscale IP (100.73.138.96) — auto-uses LAN when on same network
+
+### Firewall
+
+```bash
+sudo ufw allow 47984:48010/tcp
+sudo ufw allow 47984:48010/udp
+```
+
+### Monitor config
+
+Using a catch-all so any display works without specifying a port:
+
+```
+# ~/.config/hypr/monitors.conf
+monitor = ,preferred,auto,1
 ```
