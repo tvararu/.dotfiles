@@ -1,5 +1,6 @@
 [tools]
 node = "lts"
+"npm:happy-coder" = "latest"
 python = "latest"
 ruby = "latest"
 uv = "latest"
