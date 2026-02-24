@@ -13,6 +13,9 @@ end
 # z
 zoxide init fish | source
 
+# mise
+mise activate fish | source
+
 # Orbstack (macOS only)
 test (uname) = Darwin; and source ~/.orbstack/shell/init2.fish 2>/dev/null
 
