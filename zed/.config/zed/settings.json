@@ -9,7 +9,7 @@
 {
   "agent": {
     "tool_permissions": {
-      "default": "allow"
+      "default": "allow",
     },
     "play_sound_when_agent_done": true,
     "inline_assistant_model": {
@@ -31,11 +31,11 @@
     "github-classic": true,
     "html": true,
     "ink": true,
-    "macos-classic": true,
     "ruby": true,
     "scss": true,
     "sql": true,
     "toml": true,
+    "vercel-theme": true,
   },
   "base_keymap": "Atom",
   "buffer_font_family": "Iosevka Nerd Font Mono",
@@ -121,8 +121,8 @@
     "max_scroll_history_lines": 100000,
   },
   "theme": {
-    "light": "GitHub Light Classic",
-    "dark": "macOS Classic Dark",
+    "light": "Vercel Light",
+    "dark": "Vercel Dark",
   },
   "toolbar": {
     "breadcrumbs": false,
