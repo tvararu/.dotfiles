@@ -8,7 +8,7 @@ block() {
 }
 
 [[ "$CMD" =~ ^mise\ run\  ]] && block 'Use "mise TASK" not "mise run TASK"'
-[[ "$CMD" =~ git\ .*-[cC]\  ]] && block 'Use "git" directly, cd if you must'
+[[ "$CMD" =~ ^git\ -[cC]\  ]] && block 'Use "git" directly, cd if you must'
 [[ "$CMD" =~ ^grep ]] && block 'Use the Grep tool instead of the grep command'
 [[ "$CMD" =~ ^find ]] && block 'Use the Glob tool instead of the find command'
 [[ "$CMD" =~ ^cat ]] && block 'Use the Read/Write/Edit tools instead of cat'
