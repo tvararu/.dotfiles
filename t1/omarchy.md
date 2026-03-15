@@ -113,6 +113,16 @@ sudo tailscale set --operator=$USER
 tailscale up
 ```
 
+### Docker: start after Tailscale
+
+Docker containers that bind to Tailscale IPs (e.g. Transmission on `100.73.138.96:9091`) fail to map ports if Tailscale isn't up yet. Fix by ordering Docker after Tailscale:
+
+```bash
+sudo mkdir -p /etc/systemd/system/docker.service.d
+echo -e '[Unit]\nAfter=tailscaled.service' | sudo tee /etc/systemd/system/docker.service.d/after-tailscale.conf
+sudo systemctl daemon-reload
+```
+
 ## TPM-Backed SSH Keys
 
 SSH keys stored in TPM hardware - private key never leaves the chip.
