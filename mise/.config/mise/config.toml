@@ -1,6 +1,5 @@
 [tools]
 node = "lts"
-"npm:happy-coder" = "latest"
 python = "latest"
 ruby = "latest"
 uv = "latest"
@@ -8,3 +7,6 @@ uv = "latest"
 [settings]
 idiomatic_version_file_enable_tools = []
 experimental = true
+
+[settings.ruby]
+compile = false
