@@ -23,7 +23,12 @@
     "default_profile": "ask",
     "default_width": 756,
   },
-  "agent_servers": { "claude": { "default_mode": "plan" } },
+  "agent_servers": {
+    "claude-acp": {
+      "type": "registry",
+      "default_mode": "plan"
+    }
+  },
   "auto_install_extensions": {
     "dockerfile": true,
     "fish": true,
