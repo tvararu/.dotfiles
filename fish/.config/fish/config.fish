@@ -37,6 +37,7 @@ abbr --add -- md 'mise deploy'
 abbr --add -- mds 'mise deploy:setup'
 abbr --add -- bbb 'brew doctor && brew update && brew upgrade'
 abbr --add -- cc 'claude --continue'
+abbr --add -- cr 'claude --resume'
 abbr --add -- zcc 'claude --settings ~/.claude/settings.json.zai --continue'
 abbr --add -- s 'git push && mise deploy'
 
