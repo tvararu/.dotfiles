@@ -418,7 +418,7 @@ chmod +x ~/.local/bin/sunshine-res
       "image-path": "desktop.png",
       "prep-cmd": [
         {
-          "do": "sunshine-res 1920x1200@60",
+          "do": "sunshine-res 1920x1200@60 1.5",
           "undo": "sunshine-res 1920x1080@60"
         }
       ]
@@ -458,11 +458,18 @@ sudo ufw allow 47984:48010/udp
 
 ### Monitor config
 
-Using a catch-all so any display works without specifying a port:
-
 ```
 # ~/.config/hypr/monitors.conf
-monitor = ,preferred,auto,1
+monitor = HDMI-A-2, 1920x1200@60, auto, 1.5
+```
+
+### DPMS
+
+The dummy plug must stay on for KMS capture to work — if DPMS turns it off, Sunshine sees 0x0 resolution and fails. Exclude it from the dpms-off listener in hypridle:
+
+```
+# ~/.config/hypr/hypridle.conf
+on-timeout = hyprctl dispatch dpms off HDMI-A-1  # skip dummy plug on HDMI-A-2
 ```
 
 ## HDMI Dummy Plug (Headless/Remote Access)
