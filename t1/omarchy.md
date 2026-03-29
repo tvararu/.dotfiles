@@ -194,8 +194,8 @@ keybind = ctrl+shift+down=scroll_page_lines:1
 
 ```
 # ~/.config/hypr/hypridle.conf
-timeout = 600   # 10min - screensaver
-timeout = 1200  # 20min - lock screen
+timeout = 3600  # 60min - screensaver
+timeout = 3600  # 60min - lock screen
 timeout = 3600  # 60min - screen off
 ```
 
@@ -463,4 +463,37 @@ Using a catch-all so any display works without specifying a port:
 ```
 # ~/.config/hypr/monitors.conf
 monitor = ,preferred,auto,1
+```
+
+## HDMI Dummy Plug (Headless/Remote Access)
+
+4K HDMI dummy plug (reports as AOC 28E850) for headless Sunshine/Moonlight streaming. The plug does NOT work on the RTX 5090 — the NVIDIA HDMI port doesn't detect its HPD signal. Must be plugged into the AMD iGPU's HDMI-A-2 port.
+
+```
+# ~/.config/hypr/monitors.conf
+monitor = HDMI-A-2, 1920x1200@60, auto, 1.5
+```
+
+## HDMI Dropouts on AMD iGPU (card2)
+
+Display connected to the motherboard HDMI (AMD iGPU) instead of the RTX 5090 to save ~500MB VRAM for ComfyUI. The 2880x1800@100Hz mode needs a 563 MHz TMDS pixel clock, which is near the 600 MHz max and above the 340 MHz scrambling threshold. The iGPU's aggressive power management in `auto` mode can cause intermittent HDMI link drops (visible as brief screen blackouts and `Connector HDMI-A-2 disconnected` in the Hyprland log).
+
+Fix: lock the iGPU out of deep power saving states:
+
+```bash
+echo low | sudo tee /sys/class/drm/card2/device/power_dpm_force_performance_level
+```
+
+Persistence via udev rule:
+
+```
+# /etc/udev/rules.d/99-amdgpu-dpm.rules
+ACTION=="add", SUBSYSTEM=="pci", DRIVERS=="amdgpu", ATTR{power_dpm_force_performance_level}="low"
+```
+
+If dropouts persist, lower the refresh rate to 60Hz (pixel clock drops to ~340 MHz):
+
+```
+# ~/.config/hypr/monitors.conf
+monitor = HDMI-A-2,2880x1800@60,0x0,2
 ```
