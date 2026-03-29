@@ -1,7 +1,7 @@
 services:
   ollama:
     container_name: ollama
-    image: ollama/ollama:0.13.5
+    image: ollama/ollama:0.18.2
     restart: unless-stopped
     ports:
       - "11434:11434"
@@ -17,7 +17,7 @@ services:
 
   comfyui-api:
     container_name: comfyui-api
-    image: ghcr.io/saladtechnologies/comfyui-api:comfy0.8.2-api1.17.0-torch2.8.0-cuda12.8-runtime
+    image: ghcr.io/saladtechnologies/comfyui-api:comfy0.12.3-api1.17.1-torch2.8.0-cuda12.8-runtime
     restart: unless-stopped
     ports:
       - "8188:8188"
