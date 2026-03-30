@@ -96,6 +96,50 @@ hyprctl keyword monitor "$GLASSES,1920x1200@60,0x0,1,mirror,HDMI-A-2"
 
 If no second monitor appears in `hyprctl monitors all`, the USB-C port/cable is not exposing DisplayPort Alt-Mode yet.
 
+## LUKS Auto-Unlock (Clevis + TPM2)
+
+Auto-unlocks disk encryption on boot using the TPM2 chip. No passphrase prompt, no keyboard needed for reboot.
+
+### Setup
+
+```bash
+sudo pacman -S --needed clevis tpm2-tools tpm2-tss
+yay -S mkinitcpio-clevis-hook
+
+# Bind LUKS to TPM2 (will ask for existing passphrase)
+sudo clevis luks bind -d /dev/nvme1n1p2 tpm2 '{}'
+
+# Verify
+sudo clevis luks list -d /dev/nvme1n1p2
+```
+
+Add `clevis` before `encrypt` in hooks:
+
+```
+# /etc/mkinitcpio.conf.d/omarchy_hooks.conf
+HOOKS=(base udev plymouth keyboard autodetect microcode modconf kms keymap consolefont block clevis encrypt filesystems fsck btrfs-overlayfs)
+```
+
+```bash
+sudo limine-mkinitcpio
+```
+
+### Disable before travelling
+
+Restores the passphrase prompt so physical access alone can't boot the machine:
+
+```bash
+sudo clevis luks unbind -d /dev/nvme1n1p2 -s 1
+```
+
+### Re-enable when back
+
+```bash
+sudo clevis luks bind -d /dev/nvme1n1p2 tpm2 '{}'
+```
+
+The LUKS passphrase slot is never removed — both TPM and passphrase work simultaneously.
+
 ## Boot: Disable Limine Timeout
 
 ```
