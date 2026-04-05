@@ -1,10 +1,13 @@
 [tools]
+bun = "latest"
 node = "lts"
 python = "latest"
 ruby = "latest"
+rust = "latest"
 uv = "latest"
 
 [settings]
+auto_install = false
 idiomatic_version_file_enable_tools = []
 experimental = true
 
