@@ -22,6 +22,8 @@ block() {
 [[ "$CMD" =~ ^git\ worktree ]] && block 'Use mise worktree instead'
 [[ "$CMD" =~ ^timeout ]] && block 'timeout and gtimeout are not installed'
 [[ "$CMD" =~ ^gtimeout ]] && block 'timeout and gtimeout are not installed'
+[[ "$CMD" =~ ^biome\ lint ]] && block 'Use mise lint instead'
+[[ "$CMD" =~ ^git\ stash ]] && block 'Do not run destructive git commands'
 [[ "$CMD" =~ ^cargo ]] && block 'Use mise instead'
 
 exit 0
