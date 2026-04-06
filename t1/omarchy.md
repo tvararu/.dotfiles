@@ -525,6 +525,33 @@ on-timeout = hyprctl dispatch dpms off HDMI-A-1  # skip dummy plug on HDMI-A-2
 monitor = HDMI-A-2, 1920x1200@60, auto, 1.5
 ```
 
+## ComfyUI (comfyui-api)
+
+Headless ComfyUI via [SaladTechnologies/comfyui-api](https://github.com/SaladTechnologies/comfyui-api). Runs as a Docker container with GPU passthrough on the RTX 5090.
+
+- **API port**: 8300, **UI port**: 8188
+- **Image**: `ghcr.io/saladtechnologies/comfyui-api:comfy0.12.3-api1.17.1-torch2.8.0-cuda12.8-runtime`
+- **Models**: shared from `~/models` (mounted at `/opt/ComfyUI/models`)
+- **Outputs**: `~/srv/comfyui-api/output`
+- **Manifest**: `~/srv/comfyui-api/manifest.yml` — declares custom nodes, cloned on each boot
+
+### Custom nodes
+
+| Node pack | Repo |
+|-----------|------|
+| VideoHelperSuite | Kosinkadink/ComfyUI-VideoHelperSuite |
+| VFI (video frame interpolation) | GACLove/ComfyUI-VFI |
+| comfy_mtb | melMass/comfy_mtb |
+| Easy-Use | yolain/ComfyUI-Easy-Use |
+| MMAudio | kijai/ComfyUI-MMAudio |
+| TRELLIS2 (3D generation) | PozzettiAndrea/ComfyUI-TRELLIS2 |
+
+### Notes
+
+- There's also a standalone ComfyUI install at `~/srv/comfy/ComfyUI/` with many more nodes (Manager, Impact Pack, Florence2, SAM2, etc.) — not used by the API container.
+- The container re-clones custom nodes on every restart from the manifest; no persistent custom_nodes volume.
+- Previously used `visualbruno/ComfyUI-Trellis2` but it failed to import (`libGL.so.1` missing in the runtime image). Switched to `PozzettiAndrea/ComfyUI-TRELLIS2` which uses a comfy-env wrapper that avoids the issue.
+
 ## HDMI Dropouts on AMD iGPU (card2)
 
 Display connected to the motherboard HDMI (AMD iGPU) instead of the RTX 5090 to save ~500MB VRAM for ComfyUI. The 2880x1800@100Hz mode needs a 563 MHz TMDS pixel clock, which is near the 600 MHz max and above the 340 MHz scrambling threshold. The iGPU's aggressive power management in `auto` mode can cause intermittent HDMI link drops (visible as brief screen blackouts and `Connector HDMI-A-2 disconnected` in the Hyprland log).
