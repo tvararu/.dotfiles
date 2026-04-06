@@ -534,6 +534,7 @@ Headless ComfyUI via [SaladTechnologies/comfyui-api](https://github.com/SaladTec
 - **Models**: shared from `~/models` (mounted at `/opt/ComfyUI/models`)
 - **Outputs**: `~/srv/comfyui-api/output`
 - **Manifest**: `~/srv/comfyui-api/manifest.yml` — declares custom nodes, cloned on each boot
+- **Startup script**: `~/srv/comfyui-api/startup.sh` — installs deps and applies patches on boot
 
 ### Custom nodes
 
@@ -544,13 +545,29 @@ Headless ComfyUI via [SaladTechnologies/comfyui-api](https://github.com/SaladTec
 | comfy_mtb | melMass/comfy_mtb |
 | Easy-Use | yolain/ComfyUI-Easy-Use |
 | MMAudio | kijai/ComfyUI-MMAudio |
-| TRELLIS2 (3D generation) | PozzettiAndrea/ComfyUI-TRELLIS2 |
+| TRELLIS2 (3D generation) | visualbruno/ComfyUI-Trellis2 |
+
+### TRELLIS2 setup
+
+The visualbruno TRELLIS2 plugin needs significant patching for the RTX 5090 (Blackwell, sm_120). All of this is handled by `startup.sh`:
+
+- **System libs**: `libgl1`, `libopengl0`, `libglib2.0-0`, `gcc` (triton JIT)
+- **CUDA wheels**: cumesh, nvdiffrast, flex_gemm, o_voxel from [PozzettiAndrea/cuda-wheels](https://github.com/PozzettiAndrea/cuda-wheels) (cp311+cu128+torch2.8 — the repo ships cp312-only wheels)
+- **PyPI deps**: trimesh, plyfile, easydict, lpips, spconv-cu126, scikit-image, meshlib, pymeshlab, opencv-python-headless, scipy, open3d, plotly, rembg
+- **Blackwell compat**: Fakes compute capability to (9,0) for spconv/cumm, replaces flex_gemm triton kernels with PyTorch fallbacks, forces `ATTN_BACKEND=sdpa` and `SPARSE_CONV_BACKEND=spconv`
+- **Runtime patches**: Removes stale libcuda stub from image, stubs `tiled_flexible_dual_grid_to_mesh` in o_voxel, strips `remove_inner_faces` kwarg from cumesh calls
+
+When using `Trellis2LoadModel`, set `backend: "sdpa"` and `conv_backend: "spconv"`.
+
+The 8300 API's base64 image input is broken (corrupts files). Pass image URLs instead — ComfyUI fetches them at execution time.
+
+Previously tried PozzettiAndrea/ComfyUI-TRELLIS2 but its comfy-env subprocess isolation caused socket timeouts during mesh decoding on the 5090.
 
 ### Notes
 
 - There's also a standalone ComfyUI install at `~/srv/comfy/ComfyUI/` with many more nodes (Manager, Impact Pack, Florence2, SAM2, etc.) — not used by the API container.
 - The container re-clones custom nodes on every restart from the manifest; no persistent custom_nodes volume.
-- Previously used `visualbruno/ComfyUI-Trellis2` but it failed to import (`libGL.so.1` missing in the runtime image). Switched to `PozzettiAndrea/ComfyUI-TRELLIS2` which uses a comfy-env wrapper that avoids the issue.
+- Boot takes ~90s (apt-get + pip installs + clone + ComfyUI init). Restarts are faster (~40s) since packages are cached in the running container.
 
 ## HDMI Dropouts on AMD iGPU (card2)
 

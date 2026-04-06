@@ -28,7 +28,9 @@ services:
       - ~/srv/comfyui-api/cache:/root/.cache/comfyui-api
       - ~/srv/comfyui-api/output:/opt/ComfyUI/output
       - ~/srv/comfyui-api/manifest.yml:/manifest.yml:ro
+      - ~/srv/comfyui-api/startup.sh:/startup.sh:ro
       - ~/models:/opt/ComfyUI/models
+    entrypoint: ["/bin/bash", "/startup.sh"]
     environment:
       - MANIFEST=/manifest.yml
       - PORT=8300
