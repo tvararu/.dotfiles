@@ -19,7 +19,6 @@ block() {
 [[ "$CMD" =~ ^bun\ -e ]] && block 'Write scripts to tmp and run via bun'
 [[ "$CMD" =~ ^bun\ test ]] && block 'Use mise test instead'
 [[ "$CMD" =~ ^npx ]] && block 'Use mise to run package.json scripts instead of npx'
-[[ "$CMD" =~ ^git\ worktree ]] && block 'Use mise worktree instead'
 [[ "$CMD" =~ ^timeout ]] && block 'timeout and gtimeout are not installed'
 [[ "$CMD" =~ ^gtimeout ]] && block 'timeout and gtimeout are not installed'
 [[ "$CMD" =~ ^biome\ lint ]] && block 'Use mise lint instead'
