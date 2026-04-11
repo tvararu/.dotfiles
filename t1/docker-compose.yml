@@ -47,7 +47,7 @@ services:
     image: linuxserver/transmission:4.0.5
     restart: unless-stopped
     ports:
-      - "100.73.138.96:9091:9091"
+      - "9091:9091"
       - "51413:51413"
       - "51413:51413/udp"
     volumes:
