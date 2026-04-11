@@ -504,7 +504,15 @@ sudo ufw allow 47984:48010/udp
 
 ```
 # ~/.config/hypr/monitors.conf
-monitor = HDMI-A-2, 1920x1200@60, auto, 1.5
+monitor = HDMI-A-2, 1920x1080@60, 0x0, 1.5
+monitor = HDMI-A-1, 1920x1080@60, 0x0, 1.5, mirror, HDMI-A-2
+```
+
+Default is 1080p for TV use. Moonlight's "Desktop" app switches to 1920x1200 via `sunshine-res` on connect, and reverts on disconnect. To manually switch:
+
+```bash
+sunshine-res 1920x1080@60 1.5  # TV / gaming
+sunshine-res 1920x1200@60 1.5  # remote desktop
 ```
 
 ### DPMS
@@ -522,7 +530,7 @@ on-timeout = hyprctl dispatch dpms off HDMI-A-1  # skip dummy plug on HDMI-A-2
 
 ```
 # ~/.config/hypr/monitors.conf
-monitor = HDMI-A-2, 1920x1200@60, auto, 1.5
+monitor = HDMI-A-2, 1920x1080@60, 0x0, 1.5
 ```
 
 ## ComfyUI (comfyui-api)
@@ -568,6 +576,49 @@ Previously tried PozzettiAndrea/ComfyUI-TRELLIS2 but its comfy-env subprocess is
 - There's also a standalone ComfyUI install at `~/srv/comfy/ComfyUI/` with many more nodes (Manager, Impact Pack, Florence2, SAM2, etc.) — not used by the API container.
 - The container re-clones custom nodes on every restart from the manifest; no persistent custom_nodes volume.
 - Boot takes ~90s (apt-get + pip installs + clone + ComfyUI init). Restarts are faster (~40s) since packages are cached in the running container.
+
+## Xbox One S Controller (Bluetooth)
+
+Controller: 045E:02FD (Model 1708). Works with the kernel's built-in `hid-microsoft` driver — no extra packages needed.
+
+### Pairing
+
+```bash
+bluetoothctl scan on
+# hold pair button on controller
+bluetoothctl pair 5C:BA:37:26:8A:CD
+bluetoothctl trust 5C:BA:37:26:8A:CD
+bluetoothctl connect 5C:BA:37:26:8A:CD
+```
+
+The controller can sometimes send a corrupted HID descriptor over Bluetooth (`parse failed` in dmesg). This is transient — remove and re-pair to fix:
+
+```bash
+bluetoothctl remove 5C:BA:37:26:8A:CD
+# power cycle controller, then re-pair from scratch
+```
+
+Verify: `journalctl -b -g 045e` should show "gamepad detected" not "parse failed".
+
+### Steam
+
+Enable "Xbox Configuration Support" in Steam Settings → Controller.
+
+## TV Mirroring (HDMI-A-1)
+
+TV plugs into the NVIDIA HDMI-A-1 port. Mirrors the dummy plug (HDMI-A-2) at 1080p.
+
+```
+# ~/.config/hypr/monitors.conf
+monitor = HDMI-A-1, 1920x1080@60, 0x0, 1.5, mirror, HDMI-A-2
+```
+
+Switch resolution manually when needed:
+
+```bash
+sunshine-res 1920x1080@60 1.5  # TV / gaming
+sunshine-res 1920x1200@60 1.5  # remote desktop (Moonlight does this automatically)
+```
 
 ## HDMI Dropouts on AMD iGPU (card2)
 
