@@ -1,0 +1,33 @@
+amends "package://github.com/jdx/hk/releases/download/v1.38.0/hk@1.38.0#/Config.pkl"
+
+hooks {
+  ["commit-msg"] {
+    fix = true
+    steps {
+      ["wrap-body"] {
+        stage = List()
+        fix = #"""
+          file="{{commit_msg_file}}"
+          subject=$(head -n 1 "$file")
+          body=$(tail -n +3 "$file" | grep -v '^#' || true)
+          if [ -z "$body" ]; then
+            exit 0
+          fi
+          wrapped=$(echo "$body" | fmt -w 72)
+          printf '%s\n\n%s\n' "$subject" "$wrapped" > "$file"
+          """#
+      }
+      ["subject-length"] {
+        depends = List("wrap-body")
+        check = #"""
+          subject=$(head -n 1 "{{commit_msg_file}}")
+          len=$(printf '%s' "$subject" | wc -c | tr -d ' ')
+          if [ "$len" -gt 50 ]; then
+            echo "Subject is $len chars (max 50): $subject" >&2
+            exit 1
+          fi
+          """#
+      }
+    }
+  }
+}
