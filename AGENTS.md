@@ -37,3 +37,13 @@ stow fish git nvim tmux
 - Never add `ip=` kernel parameters — breaks Plymouth password prompt
 - LUKS auto-unlock uses Clevis + TPM2 (hook: `clevis` before `encrypt`)
 - For boot/initramfs changes: research Omarchy repo + community discussions first, never guess
+
+## Commits
+
+tpope style, no Conventional Commits prefix in this repo:
+
+- Check `git log -n 5` first to match existing style
+- Subject ≤50 chars, imperative mood, capitalized, no period
+- Blank line, then 1-3 sentence body explaining "why"
+- Always `git add` and `git commit` as separate commands
+- Separate commits per logical change
