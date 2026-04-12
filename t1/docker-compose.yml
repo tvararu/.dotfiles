@@ -44,19 +44,48 @@ services:
 
   transmission:
     container_name: transmission
-    image: linuxserver/transmission:4.0.5
+    image: linuxserver/transmission:latest
     restart: unless-stopped
-    ports:
-      - "9091:9091"
-      - "51413:51413"
-      - "51413:51413/udp"
+    network_mode: host
     volumes:
       - ~/srv/transmission/config:/config
       - ~/downloads:/downloads
+      - ~/media:/media
     environment:
       - PUID=1000
       - PGID=1000
       - TZ=Asia/Bangkok
+      - USER=${TRANSMISSION_USER}
+      - PASS=${TRANSMISSION_PASS}
+
+  jellyfin:
+    container_name: jellyfin
+    image: linuxserver/jellyfin:latest
+    restart: unless-stopped
+    ports:
+      - "8096:8096"
+    volumes:
+      - ~/srv/jellyfin:/config
+      - ~/media:/data/media
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Asia/Bangkok
+      - NVIDIA_VISIBLE_DEVICES=all
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+  jellyfin-vue:
+    container_name: jellyfin-vue
+    image: ghcr.io/jellyfin/jellyfin-vue:unstable
+    restart: unless-stopped
+    ports:
+      - "8099:80"
 
   cloudflared:
     container_name: cloudflared
