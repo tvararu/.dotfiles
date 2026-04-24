@@ -44,7 +44,7 @@ services:
 
   transmission:
     container_name: transmission
-    image: linuxserver/transmission:latest
+    image: linuxserver/transmission:4.0.5
     restart: unless-stopped
     network_mode: host
     volumes:
