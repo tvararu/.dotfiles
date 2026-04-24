@@ -95,6 +95,29 @@ services:
     networks:
       - kamal
 
+  aitoolkit:
+    container_name: aitoolkit
+    image: ostris/aitoolkit:latest
+    restart: unless-stopped
+    ports:
+      - "8675:8675"
+    volumes:
+      - ~/srv/aitoolkit/hf-cache:/root/.cache/huggingface
+      - ~/srv/aitoolkit/aitk_db.db:/app/ai-toolkit/aitk_db.db
+      - ~/srv/aitoolkit/datasets:/app/ai-toolkit/datasets
+      - ~/srv/aitoolkit/output:/app/ai-toolkit/output
+      - ~/srv/aitoolkit/config:/app/ai-toolkit/config
+    environment:
+      - NODE_ENV=production
+      - TZ=Asia/Bangkok
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
 networks:
   kamal:
     external: true
