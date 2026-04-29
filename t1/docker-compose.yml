@@ -99,6 +99,7 @@ services:
     container_name: aitoolkit
     image: ostris/aitoolkit:latest
     restart: unless-stopped
+    shm_size: "16gb"
     ports:
       - "8675:8675"
     volumes:
