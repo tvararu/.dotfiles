@@ -533,6 +533,32 @@ on-timeout = hyprctl dispatch dpms off HDMI-A-1  # skip dummy plug on HDMI-A-2
 monitor = HDMI-A-2, 1920x1080@60, 0x0, 1.5
 ```
 
+## Ollama (native)
+
+Runs natively as a systemd service rather than in docker — direct CUDA access on the RTX 5090, simpler ops, journald logs.
+
+```bash
+yay -S --needed ollama-cuda
+sudo systemctl enable --now ollama.service
+```
+
+The package creates the `ollama` system user and `/var/lib/ollama` (700 perms, owned by `ollama:ollama`). The service unit sets `OLLAMA_MODELS=/var/lib/ollama` and binds `127.0.0.1:11434`.
+
+Models live at `/var/lib/ollama/{blobs,manifests}`. To migrate from a previous docker setup that used `~/srv/ollama`:
+
+```bash
+sudo cp -a ~/srv/ollama/models/blobs     /var/lib/ollama/blobs
+sudo cp -a ~/srv/ollama/models/manifests /var/lib/ollama/manifests
+sudo chown -R ollama:ollama /var/lib/ollama
+```
+
+To expose on the LAN, add `Environment=OLLAMA_HOST=0.0.0.0:11434` via a drop-in:
+
+```bash
+sudo systemctl edit ollama.service
+sudo ufw allow 11434/tcp
+```
+
 ## ComfyUI (comfyui-api)
 
 Headless ComfyUI via [SaladTechnologies/comfyui-api](https://github.com/SaladTechnologies/comfyui-api). Runs as a Docker container with GPU passthrough on the RTX 5090.
