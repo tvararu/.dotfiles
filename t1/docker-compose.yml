@@ -1,20 +1,4 @@
 services:
-  ollama:
-    container_name: ollama
-    image: ollama/ollama:0.22.0
-    restart: unless-stopped
-    ports:
-      - "11434:11434"
-    volumes:
-      - ~/srv/ollama:/root/.ollama
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: all
-              capabilities: [gpu]
-
   comfyui-api:
     container_name: comfyui-api
     image: ghcr.io/saladtechnologies/comfyui-api:comfy0.12.3-api1.17.1-torch2.8.0-cuda12.8-runtime
