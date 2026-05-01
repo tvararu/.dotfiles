@@ -583,6 +583,7 @@ Declared inline in `user_script.bash` — idempotent git-clone + `pip install -r
 | RES4LYF | ClownsharkBatwing/RES4LYF |
 | rgthree-comfy | rgthree/rgthree-comfy |
 | sdxl_prompt_styler | twri/sdxl_prompt_styler |
+| ComfyUI-LTXVideo | Lightricks/ComfyUI-LTXVideo |
 
 ### Notes
 
