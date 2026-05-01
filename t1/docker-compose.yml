@@ -4,7 +4,7 @@ services:
     image: mmartial/comfyui-nvidia-docker:ubuntu24_cuda13.1-latest
     restart: unless-stopped
     ports:
-      - "8189:8188"
+      - "8188:8188"
     volumes:
       - ~/srv/comfyui:/comfy/mnt
       - ~/models:/host_models
@@ -13,31 +13,6 @@ services:
       - WANTED_GID=1000
       - USE_UV=true
       - FORCE_CHOWN=true
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: all
-              capabilities: [gpu]
-
-  comfyui-api:
-    container_name: comfyui-api
-    image: ghcr.io/saladtechnologies/comfyui-api:comfy0.12.3-api1.17.1-torch2.8.0-cuda12.8-runtime
-    restart: unless-stopped
-    ports:
-      - "8188:8188"
-      - "8300:8300"
-    extra_hosts:
-      - "openclaw:100.91.68.60"
-    volumes:
-      - ~/srv/comfyui-api/cache:/root/.cache/comfyui-api
-      - ~/srv/comfyui-api/output:/opt/ComfyUI/output
-      - ~/srv/comfyui-api/manifest.yml:/manifest.yml:ro
-      - ~/models:/opt/ComfyUI/models
-    environment:
-      - MANIFEST=/manifest.yml
-      - PORT=8300
     deploy:
       resources:
         reservations:
