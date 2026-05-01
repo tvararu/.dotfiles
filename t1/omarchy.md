@@ -646,6 +646,32 @@ sunshine-res 1920x1080@60 1.5  # TV / gaming
 sunshine-res 1920x1200@60 1.5  # remote desktop (Moonlight does this automatically)
 ```
 
+## Bulk Storage on /mnt/aux
+
+Secondary 2 TB NVMe (`/dev/nvme0n1p1`, btrfs+zstd, **unencrypted**) holds bulky replaceable data. Mounted via fstab so symlinks survive reboots.
+
+```
+# /etc/fstab
+UUID=7321bcf0-fe6d-4899-8108-a4dde896910d /mnt/aux btrfs defaults,compress=zstd:3,ssd 0 2
+```
+
+Symlinks from `~`:
+
+```bash
+ln -s /mnt/aux/games     ~/games
+ln -s /mnt/aux/media     ~/media
+ln -s /mnt/aux/downloads ~/downloads
+```
+
+To move a directory across:
+
+```bash
+mv ~/somedir /mnt/aux/somedir
+ln -s /mnt/aux/somedir ~/somedir
+```
+
+After moving, root space won't fully free until btrfs snapshots holding the old data rotate out. `/mnt/aux` is **not** covered by `omarchy-snapshot` — only put replaceable data here (game installs, media, downloads). Encryption-sensitive data must stay on the LUKS-backed root.
+
 ## HDMI Dropouts on AMD iGPU (card2)
 
 Display connected to the motherboard HDMI (AMD iGPU) instead of the RTX 5090 to save ~500MB VRAM for ComfyUI. The 2880x1800@100Hz mode needs a 563 MHz TMDS pixel clock, which is near the 600 MHz max and above the 340 MHz scrambling threshold. The iGPU's aggressive power management in `auto` mode can cause intermittent HDMI link drops (visible as brief screen blackouts and `Connector HDMI-A-2 disconnected` in the Hyprland log).
