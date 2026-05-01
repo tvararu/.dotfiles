@@ -559,18 +559,18 @@ sudo systemctl edit ollama.service
 sudo ufw allow 11434/tcp
 ```
 
-## ComfyUI (comfyui-api)
+## ComfyUI
 
-Headless ComfyUI via [SaladTechnologies/comfyui-api](https://github.com/SaladTechnologies/comfyui-api). Runs as a Docker container with GPU passthrough on the RTX 5090.
+ComfyUI via [mmartial/comfyui-nvidia-docker](https://github.com/mmartial/ComfyUI-Nvidia-Docker) on `ubuntu24_cuda13.1-latest`. The image clones upstream ComfyUI HEAD on first boot into a persistent venv at `~/srv/comfyui/`, so subsequent restarts skip the install step.
 
-- **API port**: 8300, **UI port**: 8188
-- **Image**: `ghcr.io/saladtechnologies/comfyui-api:comfy0.12.3-api1.17.1-torch2.8.0-cuda12.8-runtime`
-- **Models**: shared from `~/models` (mounted at `/opt/ComfyUI/models`)
-- **Outputs**: `~/srv/comfyui-api/output`
-- **Manifest**: `~/srv/comfyui-api/manifest.yml` — declares custom nodes, cloned on each boot
-- **Startup script**: `~/srv/comfyui-api/startup.sh` — installs deps and applies patches on boot
+- **Port**: 8188
+- **Run dir**: `~/srv/comfyui/` (venv, ComfyUI source, custom_nodes, uv cache — all persistent)
+- **Models**: `~/models` bind-mounted to `/host_models`, symlinked into `/comfy/mnt/ComfyUI/models` by `user_script.bash`
+- **Plugin bootstrap**: `~/srv/comfyui/user_script.bash` (mmartial auto-runs any file of that name)
 
 ### Custom nodes
+
+Declared inline in `user_script.bash` — idempotent git-clone + `pip install -r requirements.txt` per repo:
 
 | Node pack | Repo |
 |-----------|------|
@@ -579,29 +579,17 @@ Headless ComfyUI via [SaladTechnologies/comfyui-api](https://github.com/SaladTec
 | comfy_mtb | melMass/comfy_mtb |
 | Easy-Use | yolain/ComfyUI-Easy-Use |
 | MMAudio | kijai/ComfyUI-MMAudio |
-| TRELLIS2 (3D generation) | visualbruno/ComfyUI-Trellis2 |
-
-### TRELLIS2 setup
-
-The visualbruno TRELLIS2 plugin needs significant patching for the RTX 5090 (Blackwell, sm_120). All of this is handled by `startup.sh`:
-
-- **System libs**: `libgl1`, `libopengl0`, `libglib2.0-0`, `gcc` (triton JIT)
-- **CUDA wheels**: cumesh, nvdiffrast, flex_gemm, o_voxel from [PozzettiAndrea/cuda-wheels](https://github.com/PozzettiAndrea/cuda-wheels) (cp311+cu128+torch2.8 — the repo ships cp312-only wheels)
-- **PyPI deps**: trimesh, plyfile, easydict, lpips, spconv-cu126, scikit-image, meshlib, pymeshlab, opencv-python-headless, scipy, open3d, plotly, rembg
-- **Blackwell compat**: Fakes compute capability to (9,0) for spconv/cumm, replaces flex_gemm triton kernels with PyTorch fallbacks, forces `ATTN_BACKEND=sdpa` and `SPARSE_CONV_BACKEND=spconv`
-- **Runtime patches**: Removes stale libcuda stub from image, stubs `tiled_flexible_dual_grid_to_mesh` in o_voxel, strips `remove_inner_faces` kwarg from cumesh calls
-
-When using `Trellis2LoadModel`, set `backend: "sdpa"` and `conv_backend: "spconv"`.
-
-The 8300 API's base64 image input is broken (corrupts files). Pass image URLs instead — ComfyUI fetches them at execution time.
-
-Previously tried PozzettiAndrea/ComfyUI-TRELLIS2 but its comfy-env subprocess isolation caused socket timeouts during mesh decoding on the 5090.
+| VAE-Utils | spacepxl/ComfyUI-VAE-Utils |
+| RES4LYF | ClownsharkBatwing/RES4LYF |
+| rgthree-comfy | rgthree/rgthree-comfy |
+| sdxl_prompt_styler | twri/sdxl_prompt_styler |
 
 ### Notes
 
-- There's also a standalone ComfyUI install at `~/srv/comfy/ComfyUI/` with many more nodes (Manager, Impact Pack, Florence2, SAM2, etc.) — not used by the API container.
-- The container re-clones custom nodes on every restart from the manifest; no persistent custom_nodes volume.
-- Boot takes ~90s (apt-get + pip installs + clone + ComfyUI init). Restarts are faster (~40s) since packages are cached in the running container.
+- Bind-mounting models *inside* the ComfyUI tree (e.g. `~/models:/comfy/mnt/ComfyUI/models`) breaks mmartial's init — Docker pre-creates the parent dir, mmartial then tries `git remote set-url` on a non-repo and loops on "subscript failed". Mount outside the tree and symlink in.
+- `FORCE_CHOWN=true` is required — mmartial creates `/comfy/mnt/ComfyUI/` as root before chowning to `WANTED_UID`, and refuses to start if the perms don't match.
+- The persistent venv means a `docker compose up -d --force-recreate comfyui` is fast (~30s); only image upgrades trigger a fresh torch+deps install.
+- To upgrade ComfyUI itself: `git -C ~/srv/comfyui/ComfyUI pull && docker restart comfyui`.
 
 ## Xbox One S Controller (Bluetooth)
 
