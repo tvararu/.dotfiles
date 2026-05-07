@@ -584,6 +584,9 @@ Declared inline in `user_script.bash` — idempotent git-clone + `pip install -r
 | rgthree-comfy | rgthree/rgthree-comfy |
 | sdxl_prompt_styler | twri/sdxl_prompt_styler |
 | ComfyUI-LTXVideo | Lightricks/ComfyUI-LTXVideo |
+| KJNodes | kijai/ComfyUI-KJNodes |
+| Inpaint-CropAndStitch | lquesada/ComfyUI-Inpaint-CropAndStitch |
+| RMBG | 1038lab/ComfyUI-RMBG |
 
 ### Notes
 
