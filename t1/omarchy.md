@@ -561,6 +561,24 @@ sudo ufw allow in on tailscale0 to any port 11434 proto tcp
 
 Reachable from other tailnet devices at `http://t1:11434` (MagicDNS) or `http://100.73.138.96:11434`. LAN clients on `192.168.1.0/24` are dropped at the firewall. The 0.0.0.0 bind avoids boot-ordering races against `tailscaled`.
 
+## llama-server (Qwen3.6 MTP)
+
+Runs `ghcr.io/ggml-org/llama.cpp:server-cuda` via docker compose alongside ollama. Used for Qwen3.6 specifically because ollama doesn't support its MTP draft head yet and can't load its GGUFs cleanly (separate `mmproj` files). MTP speculative decoding gets ~300 tok/s on structured output vs ~100 tok/s without — 65 % draft acceptance on HTML generation in testing.
+
+- **Image**: `ghcr.io/ggml-org/llama.cpp:server-cuda` (tracks llama.cpp main; MTP merged upstream)
+- **Model**: `unsloth/Qwen3.6-35B-A3B-MTP-GGUF:UD-Q4_K_XL`, auto-downloaded via `-hf` flag on first run (~23 GB)
+- **Cache**: `~/srv/llama-server/cache` bind-mounted to `/root/.cache/huggingface` so the GGUF survives container recreates
+- **Bind**: `100.73.138.96:8001:8001` — same tailnet-only posture as ollama
+- **Endpoint**: OpenAI-compatible at `http://t1:8001/v1` (chat completions, models, embeddings)
+
+Key flags in `command:`:
+
+- `-ngl 99 -fa on --parallel 1` — all layers on GPU, flash attention on, single request slot (keeps KV cache small enough to fit the model + draft state in 32 GB VRAM next to ComfyUI)
+- `--spec-type draft-mtp --spec-draft-n-max 6` — enables MTP, max 6 speculative tokens per step
+- Sampling: `--temp 1.0 --top-p 0.95 --top-k 20 --min-p 0.00 --presence-penalty 1.5` (Unsloth's recommended values for Qwen3.6)
+
+VRAM coexistence: at full context the model uses ~31.5 GB / 32 GB. Won't fit alongside another GPU model loaded simultaneously. If ComfyUI is holding VRAM and llama-server fails to load, free ComfyUI's models with `curl -X POST http://localhost:8188/free -H 'Content-Type: application/json' -d '{"unload_models": true, "free_memory": true}'`.
+
 ## ComfyUI
 
 ComfyUI via [mmartial/comfyui-nvidia-docker](https://github.com/mmartial/ComfyUI-Nvidia-Docker) on `ubuntu24_cuda13.1-latest`. The image clones upstream ComfyUI HEAD on first boot into a persistent venv at `~/srv/comfyui/`, so subsequent restarts skip the install step.
