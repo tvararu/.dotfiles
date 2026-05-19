@@ -9,23 +9,26 @@
 {
   "cli_default_open_behavior": "new_window",
   "project_panel": {
-    "dock": "right"
+    "dock": "right",
   },
   "outline_panel": {
-    "dock": "right"
+    "dock": "right",
   },
   "collaboration_panel": {
-    "dock": "right"
+    "dock": "right",
   },
   "git_panel": {
-    "dock": "right"
+    "dock": "right",
   },
   "agent": {
+    "profiles": {
+      
+    },
     "dock": "left",
     "tool_permissions": {
       "default": "allow",
     },
-    "play_sound_when_agent_done": true,
+    "play_sound_when_agent_done": "always",
     "inline_assistant_model": {
       "provider": "openrouter",
       "model": "openrouter/free",
@@ -41,8 +44,8 @@
   "agent_servers": {
     "claude-acp": {
       "type": "registry",
-      "default_mode": "plan"
-    }
+      "default_mode": "plan",
+    },
   },
   "auto_install_extensions": {
     "dockerfile": true,
@@ -60,8 +63,7 @@
   "base_keymap": "Atom",
   "buffer_font_family": "Iosevka Nerd Font Mono",
   "buffer_font_size": 16,
-  "context_servers": {
-    },
+  "context_servers": {},
   "cursor_blink": false,
   "format_on_save": "on",
   "git": { "inline_blame": { "enabled": false } },
