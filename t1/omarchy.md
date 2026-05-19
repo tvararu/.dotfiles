@@ -552,14 +552,22 @@ sudo cp -a ~/srv/ollama/models/manifests /var/lib/ollama/manifests
 sudo chown -R ollama:ollama /var/lib/ollama
 ```
 
-Exposed to the Tailscale tailnet only (not the LAN). A systemd drop-in flips the bind to all interfaces, and ufw restricts ingress to the `tailscale0` interface:
+Exposed to the Tailscale tailnet only (not the LAN). A systemd drop-in binds directly to the tailscale IP, so the port never listens on `enp7s0` and no firewall rule is needed:
 
 ```bash
-sudo systemctl edit ollama.service   # adds Environment="OLLAMA_HOST=0.0.0.0:11434"
-sudo ufw allow in on tailscale0 to any port 11434 proto tcp
+sudo tee /etc/systemd/system/ollama.service.d/override.conf > /dev/null <<'EOF'
+[Unit]
+After=tailscaled.service
+Wants=tailscaled.service
+
+[Service]
+Environment="OLLAMA_HOST=100.73.138.96:11434"
+EOF
+sudo systemctl daemon-reload
+sudo systemctl restart ollama
 ```
 
-Reachable from other tailnet devices at `http://t1:11434` (MagicDNS) or `http://100.73.138.96:11434`. LAN clients on `192.168.1.0/24` are dropped at the firewall. The 0.0.0.0 bind avoids boot-ordering races against `tailscaled`.
+Reachable from other tailnet devices at `http://t1:11434` (MagicDNS) or `http://100.73.138.96:11434`. LAN clients on `192.168.1.0/24` get connection refused — the kernel rejects at bind level. `After=tailscaled.service` orders ollama after tailscale so `100.73.138.96` exists at bind time; the base unit's `Restart=on-failure` provides retry safety.
 
 ## llama-server (Qwen3.6 MTP)
 
