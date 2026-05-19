@@ -552,12 +552,14 @@ sudo cp -a ~/srv/ollama/models/manifests /var/lib/ollama/manifests
 sudo chown -R ollama:ollama /var/lib/ollama
 ```
 
-To expose on the LAN, add `Environment=OLLAMA_HOST=0.0.0.0:11434` via a drop-in:
+Exposed to the Tailscale tailnet only (not the LAN). A systemd drop-in flips the bind to all interfaces, and ufw restricts ingress to the `tailscale0` interface:
 
 ```bash
-sudo systemctl edit ollama.service
-sudo ufw allow 11434/tcp
+sudo systemctl edit ollama.service   # adds Environment="OLLAMA_HOST=0.0.0.0:11434"
+sudo ufw allow in on tailscale0 to any port 11434 proto tcp
 ```
+
+Reachable from other tailnet devices at `http://t1:11434` (MagicDNS) or `http://100.73.138.96:11434`. LAN clients on `192.168.1.0/24` are dropped at the firewall. The 0.0.0.0 bind avoids boot-ordering races against `tailscaled`.
 
 ## ComfyUI
 
