@@ -156,7 +156,7 @@
     "default_width": 756,
     "detect_venv": "off",
     "dock": "right",
-    "line_height": "comfortable",
+    "line_height": "standard",
     "max_scroll_history_lines": 100000,
   },
   "theme": {
