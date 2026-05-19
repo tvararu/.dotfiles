@@ -31,8 +31,9 @@
       "model": "openrouter/free",
     },
     "default_model": {
-      "provider": "openrouter",
-      "model": "x-ai/grok-code-fast-1",
+      "enable_thinking": false,
+      "provider": "llama.cpp",
+      "model": "qwen3.6-mtp",
     },
     "default_profile": "ask",
     "default_width": 756,
@@ -109,6 +110,27 @@
     "SCSS": { "tab_size": 2 },
   },
   "language_models": {
+    "openai_compatible": {
+      "llama.cpp": {
+        "api_url": "http://t1:8001/v1",
+        "available_models": [
+          {
+            "name": "qwen3.6-mtp",
+            "max_tokens": 200000,
+            "max_output_tokens": 32000,
+            "max_completion_tokens": 262144,
+            "capabilities": {
+              "tools": true,
+              "images": false,
+              "parallel_tool_calls": false,
+              "prompt_cache_key": false,
+              "chat_completions": true,
+              "interleaved_reasoning": false
+            }
+          }
+        ]
+      }
+    },
     "ollama": {
       "available_models": [
         { "name": "gpt-oss", "max_tokens": 131072, "supports_tools": true },
