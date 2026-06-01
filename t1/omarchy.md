@@ -716,3 +716,47 @@ If dropouts persist, lower the refresh rate to 60Hz (pixel clock drops to ~340 M
 # ~/.config/hypr/monitors.conf
 monitor = HDMI-A-2,2880x1800@60,0x0,2
 ```
+
+## UPERFECT EDID HDR Strip (NVIDIA HDMI-A-1)
+
+The UPERFECT UColor O2 advertises HDR (PQ EOTF) over HDMI. Steam Big Picture inside gamescope auto-enables HDR if the panel reports support, which triggers NVIDIA bug #5240452 at >2560x1440@120 — bottom of the screen renders as garbage. Disabling HDR on the monitor doesn't help because gamescope still signals BT.2020/HDR_OUTPUT_METADATA at the DRM level; the panel then receives BT.2020-encoded pixels and treats them as sRGB → washed-out colors. No gamescope CLI flag suppresses the HDR path on NVIDIA.
+
+Fix: strip the HDR Static Metadata block from the panel EDID at the kernel level so the panel "no longer" advertises HDR. gamescope's auto-enable can't fire and the entire HDR signalling chain is skipped.
+
+The EDID's CEA-861 extension block has the HDR Static Metadata DBC tag at bytes 175–181 (`e6 06 05 01 62 62 00`). Byte 177 is the EOTF bitmap — bit 0 = SDR gamma, bit 2 = PQ HDR. Clear bit 2 (`0x05` → `0x01`), then recompute the extension-block checksum at byte 255 (sum of bytes 128–254 plus checksum must be 0 mod 256, so `0x5f` → `0x63`).
+
+```python
+# generate /lib/firmware/edid/uperfect-sdr.bin
+import pathlib
+b = bytearray(pathlib.Path('/sys/class/drm/card1-HDMI-A-1/edid').read_bytes())
+b[177] = 0x01
+b[255] = (-sum(b[128:255])) & 0xff
+pathlib.Path('uperfect-sdr.bin').write_bytes(bytes(b))
+```
+
+Install and wire into the boot path:
+
+```bash
+sudo install -Dm0644 uperfect-sdr.bin /lib/firmware/edid/uperfect-sdr.bin
+echo 'FILES+=(/lib/firmware/edid/uperfect-sdr.bin)' | sudo tee /etc/mkinitcpio.conf.d/edid-uperfect.conf
+```
+
+Add to `KERNEL_CMDLINE` in `/etc/default/limine`:
+
+```
+KERNEL_CMDLINE[default]+=" drm.edid_firmware=HDMI-A-1:edid/uperfect-sdr.bin"
+```
+
+```bash
+sudo limine-mkinitcpio
+sudo reboot
+```
+
+Verify:
+
+```bash
+od -An -tx1 -v /sys/class/drm/card1-HDMI-A-1/edid | awk 'NR==12 {print "byte 177 =", $2}'
+# want: byte 177 = 01
+```
+
+The blob must be in initramfs (not just rootfs) because nvidia-drm probes connectors during early KMS, before the rootfs firmware tree is mounted. Confirm with `sudo lsinitcpio /boot/EFI/Linux/omarchy_linux.efi | grep edid`.
