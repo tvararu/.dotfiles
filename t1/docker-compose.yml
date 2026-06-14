@@ -98,10 +98,37 @@ services:
               count: all
               capabilities: [gpu]
 
-  llama-qwen36-mtp:
-    container_name: llama-qwen36-mtp
+  # Qwopus 27B dense, Claude-distilled. Manual start: docker compose up -d llama-qwopus
+  llama-qwopus:
+    container_name: llama-qwopus
     image: ghcr.io/ggml-org/llama.cpp:server-cuda
     restart: unless-stopped
+    profiles: ["qwopus"]
+    ports:
+      - "100.73.138.96:8001:8001"
+    volumes:
+      - ~/srv/llama-server/cache:/root/.cache/huggingface
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    command: >
+      -hf Jackrong/Qwopus3.6-27B-v2-MTP-GGUF:Q4_K_M
+      -ngl 99 -fa on --parallel 1 --no-mmproj
+      --host 0.0.0.0 --port 8001
+      --spec-type draft-mtp --spec-draft-n-max 6
+      --temp 1.0 --top-p 0.95
+
+  # Qwen3.6 35B-A3B MoE, fast. Manual start: docker compose up -d llama-qwen36-a3b
+  # (stop llama-qwopus first — both bind port 8001 and can't share VRAM)
+  llama-qwen36-a3b:
+    container_name: llama-qwen36-a3b
+    image: ghcr.io/ggml-org/llama.cpp:server-cuda
+    restart: unless-stopped
+    profiles: ["a3b"]
     ports:
       - "100.73.138.96:8001:8001"
     volumes:
