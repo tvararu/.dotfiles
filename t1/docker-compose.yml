@@ -115,7 +115,7 @@ services:
               capabilities: [gpu]
     command: >
       -hf unsloth/Qwen3.6-35B-A3B-MTP-GGUF:UD-Q4_K_XL
-      -ngl 99 -fa on --parallel 1
+      -ngl 99 -fa on --parallel 1 --no-mmproj
       --host 0.0.0.0 --port 8001
       --spec-type draft-mtp --spec-draft-n-max 6
       --temp 1.0 --top-p 0.95 --top-k 20 --min-p 0.00 --presence-penalty 1.5
