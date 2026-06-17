@@ -7,9 +7,12 @@
 // custom settings, run `zed: open default settings` from the
 // command palette (cmd-shift-p / ctrl-shift-p)
 {
+  "edit_predictions": {
+    "provider": "zed",
+  },
   "cli_default_open_behavior": "new_window",
   "project_panel": {
-    "dock": "right",
+    "dock": "left",
   },
   "outline_panel": {
     "dock": "right",
@@ -21,10 +24,8 @@
     "dock": "right",
   },
   "agent": {
-    "profiles": {
-      
-    },
-    "dock": "left",
+    "profiles": {},
+    "dock": "right",
     "tool_permissions": {
       "default": "allow",
     },
@@ -127,11 +128,11 @@
               "parallel_tool_calls": false,
               "prompt_cache_key": false,
               "chat_completions": true,
-              "interleaved_reasoning": false
-            }
-          }
-        ]
-      }
+              "interleaved_reasoning": false,
+            },
+          },
+        ],
+      },
     },
     "ollama": {
       "available_models": [
