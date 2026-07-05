@@ -149,6 +149,24 @@ echo -e '[Unit]\nAfter=tailscaled.service' | sudo tee /etc/systemd/system/docker
 sudo systemctl daemon-reload
 ```
 
+### Docker published ports over Tailscale (ufw-docker)
+
+The ufw-docker ruleset (in `/etc/ufw/after.rules`) only allows RFC1918 LAN
+sources through to Docker-published ports; Tailscale sources are CGNAT
+(`100.64.0.0/10`), so their SYNs are silently dropped in `DOCKER-USER`
+(`[UFW DOCKER BLOCK]` in kernel log). Host-bound services (INPUT path, e.g.
+llama-server on the tailscale IP) are unaffected — only the FORWARD/DNAT path
+to containers is filtered. Symptom: connection *timeout* from tailnet peers
+while closed ports get *refused*.
+
+Allow per-port with `ufw route allow` (checked before the drop rules):
+
+```bash
+sudo ufw route allow proto tcp from 100.64.0.0/10 to any port 3724 comment 'wow auth from tailnet'
+sudo ufw route allow proto tcp from 100.64.0.0/10 to any port 8085 comment 'wow world from tailnet'
+sudo ufw route allow proto tcp from 100.64.0.0/10 to any port 8888 comment 'playerbots tcp from tailnet'
+```
+
 ## TPM-Backed SSH Keys
 
 SSH keys stored in TPM hardware - private key never leaves the chip.
