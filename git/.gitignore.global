@@ -4,3 +4,4 @@
 .vscode
 *.un~
 .playwright-mcp
+**/.claude/settings.local.json
