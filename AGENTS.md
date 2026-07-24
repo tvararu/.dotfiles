@@ -29,9 +29,23 @@ stow fish git nvim tmux
 - Always use `yay` instead of `pacman` on Arch/Omarchy
 - `sys/t1/maintenance.md` contains Omarchy-specific system setup (keyboard, DDC
   brightness, boot)
+- `sys/sol/maintenance.md` contains setup and maintenance log for `sol`, the
+  home NAS (plain Arch, systemd-boot, ZFS)
 - macOS-specific code uses `if test (uname) = Darwin` guards in fish
 - After completing any Omarchy setup/config task, update `sys/t1/maintenance.md`
   with the steps
+- After completing any sol setup/maintenance task, update
+  `sys/sol/maintenance.md` with the steps
+
+## Sol system administration
+
+- Plain Arch on `linux-lts`, **not** Omarchy: systemd-boot (not Limine), plain
+  `mkinitcpio -P`
+- ZFS via `zfs-dkms` — after a kernel-bearing upgrade, defer module-loading ops
+  (ufw, `zpool scrub`) until after reboot
+- Data lives on ZFS pool `pool` at `/mnt/pool` (raidz1); never touch the pool
+  disks
+- sol has no git push access — author changes on the box, commit from elsewhere
 
 ## Omarchy system administration
 

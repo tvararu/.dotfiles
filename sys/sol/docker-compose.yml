@@ -1,0 +1,23 @@
+services:
+  jellyfin:
+    container_name: jellyfin
+    image: jellyfin/jellyfin
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+      - ~/srv/jellyfin/config:/config
+      - ~/srv/jellyfin/cache:/cache
+      - /mnt/pool:/media
+
+  transmission:
+    container_name: transmission
+    image: lscr.io/linuxserver/transmission:4.0.5
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+      - ~/srv/transmission/config:/config
+      - /mnt/pool:/mnt/pool
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/London
