@@ -1,9 +1,15 @@
 services:
   jellyfin:
     container_name: jellyfin
-    image: jellyfin/jellyfin
+    image: jellyfin/jellyfin:10.10.7
     restart: unless-stopped
     network_mode: host
+    devices:
+      - /dev/dri/renderD128:/dev/dri/renderD128
+      - /dev/dri/card1:/dev/dri/card1
+    group_add:
+      - "989"   # render (host GID, Arch-specific — keep in sync if host rebuilt)
+      - "985"   # video
     volumes:
       - ~/srv/jellyfin/config:/config
       - ~/srv/jellyfin/cache:/cache
@@ -14,10 +20,10 @@ services:
     image: lscr.io/linuxserver/transmission:4.0.5
     restart: unless-stopped
     network_mode: host
-    volumes:
-      - ~/srv/transmission/config:/config
-      - /mnt/pool:/mnt/pool
     environment:
       - PUID=1000
       - PGID=1000
       - TZ=Europe/London
+    volumes:
+      - ~/srv/transmission/config:/config
+      - /mnt/pool:/mnt/pool
