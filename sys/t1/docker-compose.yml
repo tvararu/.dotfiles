@@ -49,7 +49,7 @@ services:
     environment:
       - PUID=1000
       - PGID=1000
-      - TZ=Asia/Bangkok
+      - TZ=Europe/London
       - NVIDIA_VISIBLE_DEVICES=all
     deploy:
       resources:

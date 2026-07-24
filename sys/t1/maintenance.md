@@ -1,4 +1,4 @@
-# Omarchy setup log
+# t1
 
 This is a log of the various customisations I've done to my Omarchy setup.
 
@@ -473,9 +473,7 @@ chmod +x ~/.local/bin/sunshine-res
     },
     {
       "name": "Steam Big Picture",
-      "detached": [
-        "setsid steam steam://open/bigpicture"
-      ],
+      "detached": ["setsid steam steam://open/bigpicture"],
       "prep-cmd": [
         {
           "do": "",
@@ -600,25 +598,25 @@ ComfyUI via [mmartial/comfyui-nvidia-docker](https://github.com/mmartial/ComfyUI
 
 Declared inline in `user_script.bash` — idempotent git-clone + `pip install -r requirements.txt` per repo:
 
-| Node pack | Repo |
-|-----------|------|
-| VideoHelperSuite | Kosinkadink/ComfyUI-VideoHelperSuite |
-| VFI (video frame interpolation) | GACLove/ComfyUI-VFI |
-| comfy_mtb | melMass/comfy_mtb |
-| Easy-Use | yolain/ComfyUI-Easy-Use |
-| MMAudio | kijai/ComfyUI-MMAudio |
-| VAE-Utils | spacepxl/ComfyUI-VAE-Utils |
-| RES4LYF | ClownsharkBatwing/RES4LYF |
-| rgthree-comfy | rgthree/rgthree-comfy |
-| sdxl_prompt_styler | twri/sdxl_prompt_styler |
-| ComfyUI-LTXVideo | Lightricks/ComfyUI-LTXVideo |
-| KJNodes | kijai/ComfyUI-KJNodes |
-| Inpaint-CropAndStitch | lquesada/ComfyUI-Inpaint-CropAndStitch |
-| RMBG | 1038lab/ComfyUI-RMBG |
+| Node pack                       | Repo                                   |
+| ------------------------------- | -------------------------------------- |
+| VideoHelperSuite                | Kosinkadink/ComfyUI-VideoHelperSuite   |
+| VFI (video frame interpolation) | GACLove/ComfyUI-VFI                    |
+| comfy_mtb                       | melMass/comfy_mtb                      |
+| Easy-Use                        | yolain/ComfyUI-Easy-Use                |
+| MMAudio                         | kijai/ComfyUI-MMAudio                  |
+| VAE-Utils                       | spacepxl/ComfyUI-VAE-Utils             |
+| RES4LYF                         | ClownsharkBatwing/RES4LYF              |
+| rgthree-comfy                   | rgthree/rgthree-comfy                  |
+| sdxl_prompt_styler              | twri/sdxl_prompt_styler                |
+| ComfyUI-LTXVideo                | Lightricks/ComfyUI-LTXVideo            |
+| KJNodes                         | kijai/ComfyUI-KJNodes                  |
+| Inpaint-CropAndStitch           | lquesada/ComfyUI-Inpaint-CropAndStitch |
+| RMBG                            | 1038lab/ComfyUI-RMBG                   |
 
 ### Notes
 
-- Bind-mounting models *inside* the ComfyUI tree (e.g. `~/models:/comfy/mnt/ComfyUI/models`) breaks mmartial's init — Docker pre-creates the parent dir, mmartial then tries `git remote set-url` on a non-repo and loops on "subscript failed". Mount outside the tree and symlink in.
+- Bind-mounting models _inside_ the ComfyUI tree (e.g. `~/models:/comfy/mnt/ComfyUI/models`) breaks mmartial's init — Docker pre-creates the parent dir, mmartial then tries `git remote set-url` on a non-repo and loops on "subscript failed". Mount outside the tree and symlink in.
 - `FORCE_CHOWN=true` is required — mmartial creates `/comfy/mnt/ComfyUI/` as root before chowning to `WANTED_UID`, and refuses to start if the perms don't match.
 - The persistent venv means a `docker compose up -d --force-recreate comfyui` is fast (~30s); only image upgrades trigger a fresh torch+deps install.
 - To upgrade ComfyUI itself: `git -C ~/srv/comfyui/ComfyUI pull && docker restart comfyui`.

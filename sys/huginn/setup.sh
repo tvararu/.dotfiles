@@ -8,7 +8,7 @@ echo " Setting up system and application defaults."
 echo " Asking for the administrator password upfront."
 sudo -v
 
-# Keep-alive: update existing `sudo` time stamp until `macos.sh` has finished.
+# Keep-alive: update existing `sudo` time stamp until `setup.sh` has finished.
 while true; do sudo -n true; sleep 60; kill -0 "$$" || exit; done 2>/dev/null &
 
 echo "\n Global changes."

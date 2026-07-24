@@ -5,7 +5,7 @@ Dotfiles for macOS and Linux.
 ## macOS setup
 
 ```sh
-./macos.sh
+./sys/huginn/setup.sh
 ```
 
 ## License

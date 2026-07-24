@@ -8,13 +8,17 @@ Personal dotfiles for macOS and Linux (Omarchy). Uses GNU Stow for symlinking.
 
 ## Structure
 
-Each directory contains dotfiles in their target path structure.
+Each top-level directory is a stow package containing dotfiles in their target
+path structure, except `sys/`, which holds per-machine system docs and service
+definitions (not stowable; a catch-all `.stow-local-ignore` guards it).
+
+Machines: `huginn` (this MacBook), `t1` (Omarchy desktop), `sol` (NAS).
 
 ## Commands
 
 ```bash
-# macOS setup
-./macos.sh
+# macOS (huginn) setup
+./sys/huginn/setup.sh
 
 # Stow a config (from repo root)
 stow fish git nvim tmux
@@ -23,9 +27,11 @@ stow fish git nvim tmux
 ## Platform notes
 
 - Always use `yay` instead of `pacman` on Arch/Omarchy
-- `t1/omarchy.md` contains Omarchy-specific system setup (keyboard, DDC brightness, boot)
+- `sys/t1/maintenance.md` contains Omarchy-specific system setup (keyboard, DDC
+  brightness, boot)
 - macOS-specific code uses `if test (uname) = Darwin` guards in fish
-- After completing any Omarchy setup/config task, update `t1/omarchy.md` with the steps
+- After completing any Omarchy setup/config task, update `sys/t1/maintenance.md`
+  with the steps
 
 ## Omarchy system administration
 
