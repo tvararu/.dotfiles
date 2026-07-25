@@ -12,7 +12,8 @@ Each top-level directory is a stow package containing dotfiles in their target
 path structure, except `sys/`, which holds per-machine system docs and service
 definitions (not stowable; a catch-all `.stow-local-ignore` guards it).
 
-Machines: `huginn` (this MacBook), `t1` (Omarchy desktop), `sol` (NAS).
+Machines: `huginn` (this MacBook), `t1` (Omarchy desktop), `sol` (NAS), `mimir`
+(Ubuntu VM on huginn, via OrbStack).
 
 ## Commands
 
@@ -31,11 +32,15 @@ stow fish git nvim tmux
   brightness, boot)
 - `sys/sol/maintenance.md` contains setup and maintenance log for `sol`, the
   home NAS (plain Arch, systemd-boot, ZFS)
+- `sys/mimir/maintenance.md` contains setup and maintenance log for `mimir`, the
+  Ubuntu VM Claude runs in; `sys/mimir/cloud-init.yml` provisions it
 - macOS-specific code uses `if test (uname) = Darwin` guards in fish
 - After completing any Omarchy setup/config task, update `sys/t1/maintenance.md`
   with the steps
 - After completing any sol setup/maintenance task, update
   `sys/sol/maintenance.md` with the steps
+- After completing any mimir setup task, update `sys/mimir/maintenance.md` with
+  the steps, and fold VM-creation-time changes into `sys/mimir/cloud-init.yml`
 
 ## Sol system administration
 

@@ -1,0 +1,100 @@
+#cloud-config
+# orb create -c sys/mimir/cloud-init.yml ubuntu <name>
+#
+# Tooling is deliberately minimal: mise owns everything it can, apt only covers
+# what mise cannot provide (git, a linker for rust, unzip for bun).
+package_update: true
+packages:
+  - tmux
+  - curl
+  - git
+  - build-essential
+  - unzip
+
+write_files:
+  - path: /home/deity/.config/mise/config.toml
+    owner: deity:deity
+    defer: true
+    content: |
+      [tools]
+      bun = "latest"
+      node = "lts"
+      rust = "latest"
+      uv = "latest"
+
+      [settings]
+      auto_install = false
+      idiomatic_version_file_enable_tools = []
+      experimental = true
+      npm.package_manager = "bun"
+
+  - path: /home/deity/.gitconfig
+    owner: deity:deity
+    defer: true
+    content: |
+      [user]
+        name = Theodor Vararu
+        email = theo@vararu.org
+      [init]
+        defaultBranch = main
+      [core]
+        excludesfile = ~/.gitignore.global
+        editor = vim
+      [merge]
+        conflictstyle = zdiff3
+      [diff]
+        colorMoved = default
+      [commit]
+        gpgsign = true
+      [gpg]
+        format = ssh
+      [gpg "ssh"]
+        allowedSignersFile = ~/.gitallowedsigners
+        defaultKeyCommand = sh -c 'echo key::$(ssh-add -L)'
+
+  - path: /home/deity/.gitignore.global
+    owner: deity:deity
+    defer: true
+    content: |
+      *.swp
+      *.swo
+      .DS_Store
+      .vscode
+      *.un~
+      .playwright-mcp
+      **/.claude/settings.local.json
+
+  - path: /usr/local/sbin/mimir-setup.sh
+    permissions: "0755"
+    content: |
+      #!/usr/bin/env bash
+      set -euo pipefail
+
+      curl -fsSL https://claude.ai/install.sh | bash
+      curl -fsSL https://mise.run | sh
+
+      cat >> ~/.bashrc <<'BASHRC'
+
+      export PATH="$HOME/.local/bin:$PATH"
+
+      # mise: interactive shells get the full activation hook; non-interactive
+      # shells fall back to the shims on PATH from ~/.profile (.bashrc returns
+      # early before reaching this line)
+      eval "$(mise activate bash)"
+      BASHRC
+
+      cat >> ~/.profile <<'PROFILE'
+
+      # mise shims, so tools resolve in non-interactive shells too
+      if [ -d "$HOME/.local/share/mise/shims" ] ; then
+          PATH="$HOME/.local/share/mise/shims:$PATH"
+      fi
+      export PATH
+      PROFILE
+
+      ~/.local/bin/mise install
+
+runcmd:
+  # write_files creates missing parent dirs as root
+  - [chown, -R, "deity:deity", /home/deity/.config]
+  - [su, -l, deity, -c, /usr/local/sbin/mimir-setup.sh]
