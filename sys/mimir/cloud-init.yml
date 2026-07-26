@@ -21,6 +21,7 @@ write_files:
       node = "lts"
       rust = "latest"
       uv = "latest"
+      "npm:@playwright/mcp" = "latest"
 
       [settings]
       auto_install = false
@@ -51,6 +52,18 @@ write_files:
       [gpg "ssh"]
         allowedSignersFile = ~/.gitallowedsigners
         defaultKeyCommand = sh -c 'echo key::$(ssh-add -L)'
+
+  - path: /home/deity/.claude/settings.json
+    owner: deity:deity
+    defer: true
+    content: |
+      {
+        "attribution": {
+          "commit": "",
+          "pr": "",
+          "sessionUrl": false
+        }
+      }
 
   - path: /home/deity/.gitignore.global
     owner: deity:deity
@@ -96,5 +109,5 @@ write_files:
 
 runcmd:
   # write_files creates missing parent dirs as root
-  - [chown, -R, "deity:deity", /home/deity/.config]
+  - [chown, -R, "deity:deity", /home/deity/.config, /home/deity/.claude]
   - [su, -l, deity, -c, /usr/local/sbin/mimir-setup.sh]
