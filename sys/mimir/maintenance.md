@@ -87,6 +87,12 @@ key material lives in the VM. Signing works without a Touch ID prompt, and
 Secretive is unreliable when AFK or with the screen off; if signing fails,
 commit with `--no-gpg-sign` rather than debugging it.
 
+Repos with `hk` hooks — anything from omakase, and megin — fail to commit with
+`.git/hooks/commit-msg: exec: hk: not found`. `hk` is a mise shim and an agent's
+shell does not have `~/.local/share/mise/shims` on PATH. Prefix the commit with
+`export PATH="$HOME/.local/share/mise/shims:$PATH" &&`; the shim still needs the
+repo as cwd to resolve its version, so this cannot be fixed by a global default.
+
 `gpg.ssh.defaultKeyCommand` pulls the key from the agent instead of the
 macOS-only `signingkey` path, which is the only difference that matters versus
 huginn's gitconfig. Two intentional deviations besides: no `delta` pager (ANSI
