@@ -177,12 +177,14 @@ true`. Nothing below is enforced; it's all convention.
   `/Users/deity/Code` get symlinked in as needed
 - `mac` and `orb <cmd>` execute arbitrary commands on macOS; `orbctl` can
   delete or clone OrbStack machines, including this one
-- The forwarded SSH agent is root on `fenrir`, `gromit`, `upright` and
-  `nucleara`, and `tvararu` on GitHub — the widest reach of anything here
+- The forwarded SSH agent is the widest reach of anything here: root on several
+  personal hosts, and push access to GitHub. Which hosts is deliberately not
+  written down here — `ssh-add -L` and `~/.ssh/config.local` on huginn are the
+  authority. Assume the worst and don't SSH anywhere
 - `/dev/vdb1` is one pool shared with the Docker machine's volumes at
   `/mnt/machines`, so filling the VM's disk fills the Mac's
-- `/mnt/machines/docker/volumes` is live service state (`gromit_data`,
-  `typesense-demo_postgres-data`, kamal registry) — never written to
+- `/mnt/machines/docker/volumes` is live state for unrelated running services —
+  never written to
 - The VM is case-sensitive, APFS is not
 
 Destructive git in symlinked repos is explicitly fine — recovery is version

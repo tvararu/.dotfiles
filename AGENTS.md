@@ -60,7 +60,8 @@ stow fish git nvim tmux
 - Hooks config: `/etc/mkinitcpio.conf.d/omarchy_hooks.conf` (drop-in overrides main config)
 - Kernel cmdline: `/etc/default/limine` (not GRUB)
 - Never add `ip=` kernel parameters — breaks Plymouth password prompt
-- LUKS auto-unlock uses Clevis + TPM2 (hook: `clevis` before `encrypt`)
+- LUKS unlock goes through Clevis (hook: `clevis` before `encrypt`) — changing
+  hook order or regenerating without it will lock the machine out at boot
 - For boot/initramfs changes: research Omarchy repo + community discussions first, never guess
 
 ## Commits
