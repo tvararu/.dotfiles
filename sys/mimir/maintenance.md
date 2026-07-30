@@ -31,7 +31,72 @@ which the VM deliberately lacks. Ignore it once:
 mise trust --ignore /Users/deity/.config/mise/config.toml
 ```
 
-Then `mise trust --yes && mise install` in the repo as usual.
+Then `mise trust --yes && mise install` in the repo as usual — except where the
+repo declares an encrypted env, where trusting is a trap. See below.
+
+## Python venvs never live in a symlinked repo
+
+Every repo here is a shared mount, so a venv created inside one writes through to
+the Mac. A venv uv built on macOS has a Mach-O `.venv/bin/python3` and a
+`pyvenv.cfg` pointing at a `macos-aarch64` interpreter; one `uv sync` from the VM
+replaces those with Linux binaries and breaks every `uv run` on huginn. Unlike
+`node_modules` that is expensive to notice, and nothing in the repo warns you.
+
+The global `~/.config/mise/config.toml` therefore redirects uv out of the tree:
+
+```toml
+[env]
+UV_PROJECT_ENVIRONMENT = "{{ env.HOME }}/.venvs/{{ cwd | split(pat='/') | last }}"
+```
+
+Templated on cwd rather than a fixed path, so two projects can't end up sharing
+one venv. Being a mise `[env]`, it only applies when uv is reached through a
+shim, `mise x`, or an activated shell; a uv found on PATH some other way still
+writes `.venv`. There is no `project-environment` key in `uv.toml` — the
+environment variable is the only lever.
+
+Sync with `--frozen` so a shared `uv.lock` can't be rewritten from in here, and
+check the Mac's `.venv` inode and `head -c 4` magic afterwards to prove it was
+left alone. uv resolves the VM's `/usr/bin/python3` rather than whatever the Mac
+pinned, so confirm the interpreter drift is harmless for the project's actual
+imports before relying on it.
+
+## Repos that declare an encrypted env
+
+A repo whose `mise.toml` decrypts `[env]` values via `age` needs its key readable
+from the VM, and its `age.key_file` is likely written as a `~`-relative path that
+only resolves on the Mac — `~` is `/home/deity` in here, not `/Users/deity`.
+
+Trusting such a config makes things worse rather than better. Untrusted, mise
+refuses the config; trusted, it attempts decryption and fails, and that failure is
+*fatal*, so every mise call in the directory dies — including a bare
+`bun --version` through a shim. No setting downgrades it to a warning.
+
+Two fixes. `MISE_AGE_KEY_FILE` overrides the repo's own setting and needs no file
+copying, but it has to be exported in every shell that enters the directory, and
+an agent's shell doesn't reliably source `~/.profile`. Copying the key to the path
+the repo's config already names is more robust — it works for bare shim calls with
+no environment set up at all:
+
+```bash
+mkdir -m 700 -p ~/Code/<repo>/config
+cp /Users/deity/Code/<repo>/config/secret.key ~/Code/<repo>/config/secret.key
+chmod 600 ~/Code/<repo>/config/secret.key
+```
+
+Note `~/Code` here is a small shadow tree holding only the key, distinct from
+`~/code` where the repos are symlinked. Those two coexist because the VM is
+case-sensitive, which is confusing enough to be worth saying out loud. Prefer
+either fix to symlinking `/home/deity/Code -> /Users/deity/Code`, which aliases
+the Mac's entire source tree into the VM's home to solve one path.
+
+Whichever route, the plaintext then enters the environment of every shell in that
+directory, so make it a deliberate choice. Verify decryption by listing variable
+*names* with the values stripped — `mise env | sed -E 's/=.*/=<redacted>/'` —
+never by printing `mise env` raw into a terminal an agent is reading.
+
+A `python` entry in such a repo can read as `(missing)` and stay that way when uv
+supplies the interpreter and no task uses mise's python.
 
 ## Post-create steps
 
