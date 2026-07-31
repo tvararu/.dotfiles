@@ -57,3 +57,35 @@ Merging by `(series, season, episode)` alone is **destructive**: shows with a/b/
 segments per slot, and specials collected into S00E00, legitimately share one
 episode number across genuinely different files. Match on identical base names
 *and* equal runtimes before merging anything.
+
+## HDR: do not enable Jellyfin's tone mapping
+
+HDR10/HDR10+ sources **cannot be tone mapped in hardware on sol.** Every backend is dead on Vega 8 / RADV Raven / Mesa 24.0.9:
+
+| Backend | Result |
+| ------- | ------ |
+| OpenCL | absent in container — `Failed to get number of OpenCL platforms: -1001` |
+| Vulkan / libplacebo | `Failed mapping frame id 0` — dma-buf import broken |
+| `tonemap_vaapi` (VPP) | Intel-only; radeonsi has no VPP tone mapping |
+| software @ full 4K | **0.79× realtime** — unusable |
+
+With `EnableTonemapping=false` (the current, correct setting) Jellyfin emits
+`setparams=…bt709` before `scale_vaapi`, which only **relabels** BT.2020/PQ as
+BT.709 without converting it — washed-out, grey colour. **Turning tone mapping on
+makes it worse**, because the only remaining path is the 0.79× software one.
+
+So: for HDR sources, **direct play and let the client tone map**. On a LAN that is
+free and looks correct; macOS/Safari handle it natively. Only cap the bitrate when
+genuinely bandwidth-limited, and accept wrong colour if you do.
+
+A chain that does work at **~2.2× realtime**, if it is ever worth wiring up
+manually, scales on the GPU *first* so the software tonemap runs on ~9× fewer
+pixels:
+
+```
+scale_vaapi=w=1280:h=580:format=p010,hwdownload,format=p010le,\
+tonemapx=tonemap=bt2390:format=nv12,hwupload=derive_device=vaapi
+```
+
+Jellyfin cannot generate this; it would need a working OpenCL ICD (Mesa rusticl) or
+an ffmpeg wrapper.
