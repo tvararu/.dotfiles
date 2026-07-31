@@ -13,7 +13,7 @@ path structure, except `sys/`, which holds per-machine system docs and service
 definitions (not stowable; a catch-all `.stow-local-ignore` guards it).
 
 Machines: `huginn` (this MacBook), `t1` (Omarchy desktop), `sol` (NAS), `mimir`
-(Ubuntu VM on huginn, via OrbStack).
+(Ubuntu VM on huginn, via OrbStack), `luna` (Ubuntu VM on sol, via Incus).
 
 ## Commands
 
@@ -34,6 +34,9 @@ stow fish git nvim tmux
   home NAS (plain Arch, systemd-boot, ZFS)
 - `sys/mimir/maintenance.md` contains setup and maintenance log for `mimir`, the
   Ubuntu VM Claude runs in; `sys/mimir/cloud-init.yml` provisions it
+- `sys/luna/maintenance.md` contains setup and maintenance log for `luna`, the
+  Incus VM on sol; `sys/luna/cloud-init.yml` provisions it and
+  `sys/sol/incus-preseed.yml` configures the Incus host
 - macOS-specific code uses `if test (uname) = Darwin` guards in fish
 - After completing any Omarchy setup/config task, update `sys/t1/maintenance.md`
   with the steps
@@ -41,6 +44,8 @@ stow fish git nvim tmux
   `sys/sol/maintenance.md` with the steps
 - After completing any mimir setup task, update `sys/mimir/maintenance.md` with
   the steps, and fold VM-creation-time changes into `sys/mimir/cloud-init.yml`
+- After completing any luna setup task, update `sys/luna/maintenance.md` with the
+  steps, and fold VM-creation-time changes into `sys/luna/cloud-init.yml`
 
 ## Sol system administration
 

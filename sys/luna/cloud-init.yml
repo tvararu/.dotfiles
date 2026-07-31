@@ -1,0 +1,148 @@
+#cloud-config
+# Provisions `luna`, the Incus VM on sol. See sys/luna/maintenance.md.
+#
+# Applied before first boot with:
+#   incus config set luna cloud-init.user-data - < sys/luna/cloud-init.yml
+#
+# Tooling mirrors mimir: mise owns everything it can, apt covers only what mise
+# cannot provide (git, build-essential as a linker for rust, unzip for bun).
+# Deviation from mimir: jq/ripgrep/htop come from apt rather than cargo, because
+# compiling them on 2 vCPUs is not a good use of anyone's afternoon.
+#
+# Networking is zero-trust: luna reaches other machines only over Tailscale, as
+# its own tailnet node governed by tailnet ACLs. sol's firewall blocks the LAN
+# and the tailnet CIDR outright, so there is no network-position path to
+# anything — reachability is identity, not routing. tailscaled is installed and
+# enabled here but NOT authenticated; `tailscale up` needs an interactive login.
+package_update: true
+package_upgrade: true
+packages:
+  - tmux
+  - curl
+  - git
+  - build-essential
+  - unzip
+  - ca-certificates
+  - jq
+  - ripgrep
+  - htop
+
+timezone: Europe/London
+
+# No `default` user — the Ubuntu cloud image's `ubuntu` account is not created.
+#
+# No openssh-server either, and no authorized_keys: Tailscale SSH is a complete
+# SSH server inside tailscaled that claims port 22 on the Tailscale IP alone, so
+# luna listens on nothing reachable from sol's bridge and holds no static keys.
+# Access is `incus exec luna` from sol (out-of-band, always works) or
+# `ssh deity@luna` over the tailnet. Tailscale SSH still needs the local account
+# to exist with a real shell and home, which is what this stanza provides.
+users:
+  - name: deity
+    shell: /bin/bash
+    groups: [sudo]
+    sudo: ["ALL=(ALL) NOPASSWD:ALL"]
+    lock_passwd: true
+
+# 4 GiB is enough to work in but not enough to link a large rust binary without
+# help. The swapfile is the difference between a slow build and a dead one.
+swap:
+  filename: /swapfile
+  size: 2147483648
+  maxsize: 2147483648
+
+write_files:
+  - path: /home/deity/.config/mise/config.toml
+    owner: deity:deity
+    defer: true
+    content: |
+      [tools]
+      bun = "latest"
+      node = "lts"
+      rust = "latest"
+      uv = "latest"
+
+      [settings]
+      auto_install = false
+      idiomatic_version_file_enable_tools = []
+      experimental = true
+      npm.package_manager = "bun"
+
+  - path: /home/deity/.gitconfig
+    owner: deity:deity
+    defer: true
+    content: |
+      [user]
+        name = Theodor Vararu
+        email = theo@vararu.org
+      [init]
+        defaultBranch = main
+      [core]
+        excludesfile = ~/.gitignore.global
+        editor = vim
+      [merge]
+        conflictstyle = zdiff3
+      [diff]
+        colorMoved = default
+      # Unlike mimir, sol forwards no SSH agent, so there is no key to sign with
+      # by default. Connect with `ssh -A` and flip gpgsign on and the
+      # defaultKeyCommand below picks the forwarded key up unchanged.
+      [commit]
+        gpgsign = false
+      [gpg]
+        format = ssh
+      [gpg "ssh"]
+        allowedSignersFile = ~/.gitallowedsigners
+        defaultKeyCommand = sh -c 'echo key::$(ssh-add -L)'
+
+  - path: /home/deity/.gitignore.global
+    owner: deity:deity
+    defer: true
+    content: |
+      *.swp
+      *.swo
+      .DS_Store
+      .vscode
+      *.un~
+      .playwright-mcp
+      **/.claude/settings.local.json
+
+  - path: /usr/local/sbin/luna-setup.sh
+    permissions: "0755"
+    content: |
+      #!/usr/bin/env bash
+      set -euo pipefail
+
+      curl -fsSL https://claude.ai/install.sh | bash
+      curl -fsSL https://mise.run | sh
+
+      cat >> ~/.bashrc <<'BASHRC'
+
+      export PATH="$HOME/.local/bin:$PATH"
+
+      # mise: interactive shells get the full activation hook; non-interactive
+      # shells fall back to the shims on PATH from ~/.profile (.bashrc returns
+      # early before reaching this line)
+      eval "$(mise activate bash)"
+      BASHRC
+
+      cat >> ~/.profile <<'PROFILE'
+
+      # mise shims, so tools resolve in non-interactive shells too
+      if [ -d "$HOME/.local/share/mise/shims" ] ; then
+          PATH="$HOME/.local/share/mise/shims:$PATH"
+      fi
+      export PATH
+      PROFILE
+
+      ~/.local/bin/mise install
+
+runcmd:
+  # Tailscale first — it is quick, and it is the only way in once sol's firewall
+  # is closed. Left unauthenticated; finish with:
+  #   incus exec luna -- tailscale up --ssh --hostname=luna
+  - [sh, -c, "curl -fsSL https://tailscale.com/install.sh | sh"]
+  - [systemctl, enable, --now, tailscaled]
+  # write_files creates missing parent dirs as root
+  - [chown, -R, "deity:deity", /home/deity/.config]
+  - [su, -l, deity, -c, /usr/local/sbin/luna-setup.sh]
