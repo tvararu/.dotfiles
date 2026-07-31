@@ -89,3 +89,38 @@ tonemapx=tonemap=bt2390:format=nv12,hwupload=derive_device=vaapi
 
 Jellyfin cannot generate this; it would need a working OpenCL ICD (Mesa rusticl) or
 an ffmpeg wrapper.
+
+## Exposing Jellyfin publicly (temporary)
+
+Tailscale Funnel publishes Jellyfin at `https://sol.gentoo-bangus.ts.net/` with a
+real cert. `tailscaled` terminates TLS and dials `127.0.0.1:8096`, so **no ufw rule
+and no router change are needed** and the LAN stays closed.
+
+`OperatorUser` is `deity`, so these need no `sudo`:
+
+```bash
+tailscale funnel --bg 8096        # on
+tailscale funnel status
+tailscale funnel --https=443 off  # off
+```
+
+- **WebSockets work**, but only over HTTP/1.1. The listener negotiates h2 by ALPN,
+  and over h2 the `Upgrade` header is illegal and gets stripped — a WS handshake
+  there returns 404. Browsers open a separate HTTP/1.1 connection for `wss://`, so
+  this is invisible in practice. When testing by hand, `curl --http1.1` or the
+  result is misleading.
+- Funnel only accepts public ports **443, 8443, 10000**.
+- The hostname lands in Certificate Transparency logs as soon as the cert issues —
+  assume scanners find it within hours. Jellyfin has no real brute-force
+  protection, so use a throwaway limited user, not the admin account, and turn the
+  funnel off afterwards.
+- Tailscale's AUP discourages bulk media distribution over Funnel; it is for
+  lending someone an episode, not a permanent public server.
+- **Cap the bitrate in the client before watching.** Left on Auto, a client that
+  advertises HEVC/HDR support gets a *direct stream*: Jellyfin copies the video
+  untouched (`-codec:v copy`) and only converts audio. The S02 4K HDR files are
+  **~15 Mbps**, which neither Funnel's relay nor a home uplink will carry, so
+  playback stalls repeatedly. sol is not the bottleneck — remuxing runs at ~62×
+  realtime. Picking an explicit quality (e.g. 1080p / 4 Mbps) makes Jellyfin
+  actually transcode down, and VAAPI does that at ~2.5–3.5× realtime: comfortable
+  for *one* stream, not two.
