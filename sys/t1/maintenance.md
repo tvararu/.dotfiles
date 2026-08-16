@@ -122,6 +122,21 @@ HOOKS=(base udev plymouth keyboard autodetect microcode modconf kms keymap conso
 sudo limine-mkinitcpio
 ```
 
+Rebuilding is only needed for hook changes. A bind or unbind does not need one —
+the binding lives in a LUKS2 token in the partition header, not in the
+initramfs. The `tpm_crb` driver behind `/dev/tpm0` on this board is built into
+the kernel, so no TPM module has to be pulled into the image either.
+
+After binding, prove the TPM actually releases the key before rebooting into a
+prompt you cannot answer:
+
+```bash
+sudo clevis luks pass -d <partition> -s <slot> >/dev/null && echo TPM-UNSEAL-OK
+```
+
+That runs the same unseal the boot hook does; the redirect keeps the recovered
+passphrase off the screen.
+
 ## Boot: Disable Limine Timeout
 
 ```
