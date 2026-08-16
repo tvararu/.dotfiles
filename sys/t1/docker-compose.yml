@@ -59,13 +59,6 @@ services:
               count: all
               capabilities: [gpu]
 
-  jellyfin-vue:
-    container_name: jellyfin-vue
-    image: ghcr.io/jellyfin/jellyfin-vue:unstable
-    restart: unless-stopped
-    ports:
-      - "8099:80"
-
   cloudflared:
     container_name: cloudflared
     image: cloudflare/cloudflared:latest
