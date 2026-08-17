@@ -582,9 +582,19 @@ sudo systemctl restart ollama
 
 Reachable from other tailnet devices at `http://t1:11434` (MagicDNS) or `http://100.73.138.96:11434`. LAN clients on `192.168.1.0/24` get connection refused — the kernel rejects at bind level. `After=tailscaled.service` orders ollama after tailscale so `100.73.138.96` exists at bind time; the base unit's `Restart=on-failure` provides retry safety.
 
-## llama-server (Qwen3.6 MTP)
+## llama-server (Qwen MTP)
 
-Runs `ghcr.io/ggml-org/llama.cpp:server-cuda` via docker compose alongside ollama. Used for Qwen3.6 specifically because ollama doesn't support its MTP draft head yet and can't load its GGUFs cleanly (separate `mmproj` files). MTP speculative decoding gets ~300 tok/s on structured output vs ~100 tok/s without — 65 % draft acceptance on HTML generation in testing.
+Runs `ghcr.io/ggml-org/llama.cpp:server-cuda` via docker compose alongside ollama. Used instead of ollama because ollama doesn't support the MTP draft head yet and can't load these GGUFs cleanly (separate `mmproj` files). MTP speculative decoding gets ~300 tok/s on structured output vs ~100 tok/s without — 65 % draft acceptance on HTML generation in testing.
+
+Three compose profiles, one model at a time — all three bind port 8001 and none of them fit in VRAM together:
+
+| Profile  | Service            | Model                                    | Weights |
+|----------|--------------------|------------------------------------------|---------|
+| `a3b`    | `llama-qwen36-a3b` | `unsloth/Qwen3.6-35B-A3B-MTP-GGUF`       | 23 GB   |
+| `qwopus` | `llama-qwopus`     | `Jackrong/Qwopus3.6-27B-v2-MTP-GGUF`     | 17 GB   |
+| `qwen38` | `llama-qwen38`     | `unsloth/Qwen3.8-27B-GGUF`               | 18 GB   |
+
+Start one with `docker compose up -d <service>` (profiles keep them out of a bare `compose up`). Stop whichever is running first.
 
 - **Image**: `ghcr.io/ggml-org/llama.cpp:server-cuda` (tracks llama.cpp main; MTP merged upstream)
 - **Model**: `unsloth/Qwen3.6-35B-A3B-MTP-GGUF:UD-Q4_K_XL`, auto-downloaded via `-hf` flag on first run (~23 GB)
@@ -599,6 +609,25 @@ Key flags in `command:`:
 - Sampling: `--temp 1.0 --top-p 0.95 --top-k 20 --min-p 0.00 --presence-penalty 1.5` (Unsloth's recommended values for Qwen3.6)
 
 VRAM coexistence: at full context the model uses ~31.5 GB / 32 GB. Won't fit alongside another GPU model loaded simultaneously. If ComfyUI is holding VRAM and llama-server fails to load, free ComfyUI's models with `curl -X POST http://localhost:8188/free -H 'Content-Type: application/json' -d '{"unload_models": true, "free_memory": true}'`.
+
+### Qwen3.8 27B (profile `qwen38`)
+
+Qwen3.8 shipped Aug 2026 with only two open sizes — a 27B dense and a 2.4T-A95B. There is **no A3B-class MoE in 3.8**, so this is not a like-for-like replacement for the 35B-A3B: it activates all 27B params per token instead of 3B, which costs roughly 3x decode speed for a better model. Both are kept; pick per task.
+
+- **Model**: `unsloth/Qwen3.8-27B-GGUF:UD-Q4_K_XL` (~18 GB). The MTP head ships **inside the main repo** — there is no separate `-MTP-GGUF` repo for 3.8, unlike 3.6
+- **Speed**: 97 tok/s measured on t1 (800-token generation, 0.56 draft acceptance, mean draft len 2.69). Compare ~300 tok/s for the A3B — the cost of a dense model
+- **VRAM**: 22.1 GB / 32 GB loaded at 128 K context, so ComfyUI can stay resident alongside it. The A3B cannot do this
+- **`--spec-draft-n-max 3`**, not 6 — the 5090 sweet spot for this model. Worth re-sweeping 2–4 if it feels slow
+- **`--presence-penalty 0.0`** — Qwen's thinking-mode recommendation. The `1.5` used for the A3B is the *non-thinking* value and hurts here
+- **`-c 131072 --cache-type-k q4_0 --cache-type-v q4_0`** — native context is 262 K, which is far too much KV at f16. Quantized KV at 128 K keeps the whole thing well under 32 GB, so unlike the A3B this one leaves room for ComfyUI
+- Vision is compiled out via `--no-mmproj` (the model is natively multimodal). MTP does not support `-np > 1`, hence `--parallel 1`
+- The image's baked-in healthcheck curls `:8080`, but all three services serve on `:8001`, so `docker ps` reports **unhealthy** forever. `llama-qwen38` overrides it; `a3b` and `qwopus` still show the false red. Nothing restarts on it — `unless-stopped` only acts on exit
+
+Verify MTP is actually engaging after any flag change — the acceptance line only appears when the draft model loaded:
+
+```bash
+docker logs llama-qwen38 2>&1 | grep -E "draft acceptance|tokens per second"
+```
 
 ## ComfyUI
 
