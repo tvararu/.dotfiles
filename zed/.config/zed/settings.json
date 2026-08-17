@@ -131,13 +131,13 @@
               "interleaved_reasoning": false,
             },
           },
-          // profile qwen38 — capped at the server's -c 131072, not the
-          // model's native 262144
+          // profile qwen38 — matches the server's -c 262144, the model's
+          // full native context (no rope scaling)
           {
             "name": "qwen3.8-mtp",
-            "max_tokens": 131072,
+            "max_tokens": 262144,
             "max_output_tokens": 32000,
-            "max_completion_tokens": 131072,
+            "max_completion_tokens": 262144,
             "capabilities": {
               "tools": true,
               "images": false,

@@ -616,10 +616,29 @@ Qwen3.8 shipped Aug 2026 with only two open sizes — a 27B dense and a 2.4T-A95
 
 - **Model**: `unsloth/Qwen3.8-27B-GGUF:UD-Q4_K_XL` (~18 GB). The MTP head ships **inside the main repo** — there is no separate `-MTP-GGUF` repo for 3.8, unlike 3.6
 - **Speed**: 97 tok/s measured on t1 (800-token generation, 0.56 draft acceptance, mean draft len 2.69). Compare ~300 tok/s for the A3B — the cost of a dense model
-- **VRAM**: 22.1 GB / 32 GB loaded at 128 K context, so ComfyUI can stay resident alongside it. The A3B cannot do this
+- **VRAM**: 25.7 GB / 32 GB loaded at the full 262 K context, so ComfyUI can still stay resident alongside it. The A3B cannot do this
 - **`--spec-draft-n-max 3`**, not 6 — the 5090 sweet spot for this model. Worth re-sweeping 2–4 if it feels slow
 - **`--presence-penalty 0.0`** — Qwen's thinking-mode recommendation. The `1.5` used for the A3B is the *non-thinking* value and hurts here
-- **`-c 131072 --cache-type-k q4_0 --cache-type-v q4_0`** — native context is 262 K, which is far too much KV at f16. Quantized KV at 128 K keeps the whole thing well under 32 GB, so unlike the A3B this one leaves room for ComfyUI
+- **`-c 262144 --cache-type-k q4_0 --cache-type-v q4_0`** — the model's full native context. f16 KV would need ~17 GB and not fit; quantized KV costs ~28 KiB/token, so 262 K lands at 25.7 GB
+
+#### Why 262144 and not higher
+
+This is a **hybrid attention/SSM model**, not a pure transformer — the GGUF declares `full_attention_interval = 4` plus `ssm.*` keys, so only ~16 of its 65 layers keep a growing KV cache and the rest hold fixed-size SSM state. That is why context is far cheaper here than layer count suggests.
+
+Measured ceiling on the 5090 (32 GB), q4_0 KV, probing until load failure:
+
+| `-c`   | VRAM      | Notes                        |
+|--------|-----------|------------------------------|
+| 131072 | 22149 MiB |                              |
+| 262144 | 25733 MiB | native max, no rope scaling  |
+| 393216 | 29319 MiB | needs YaRN 1.5x              |
+| 458752 | 31111 MiB | needs YaRN 1.75x             |
+| 491520 | 32007 MiB | highest that loads — 98 % of the card |
+| 524288 | —         | fails to load                |
+
+Anything past 262 K needs `--rope-scaling yarn`, and llama.cpp's YaRN is **static** — the scale applies to every request regardless of actual length, so short prompts degrade too. Qwen advise against enabling it unless long contexts are genuinely the workload. Confirmed locally: at `--temp 0`, the 131072 and 262144 configs return byte-identical output while the YaRN config returns a consistently different one.
+
+Decode speed is flat across all of these — 94.0 / 92.4 / 94.1 tok/s at 131072 / 262144 / 458752 (three deterministic runs each, ~1 tok/s spread). Attention cost tracks tokens *in* the cache, not the allocation, so raising `-c` is free until you actually fill it. Benchmark at `--temp 0`: at temp 1.0 the draft acceptance rate swings per generation and swamps the signal.
 - Vision is compiled out via `--no-mmproj` (the model is natively multimodal). MTP does not support `-np > 1`, hence `--parallel 1`
 - The image's baked-in healthcheck curls `:8080`, but all three services serve on `:8001`, so `docker ps` reports **unhealthy** forever. `llama-qwen38` overrides it; `a3b` and `qwopus` still show the false red. Nothing restarts on it — `unless-stopped` only acts on exit
 
