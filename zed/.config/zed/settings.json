@@ -131,6 +131,22 @@
               "interleaved_reasoning": false,
             },
           },
+          // profile qwen38 — capped at the server's -c 131072, not the
+          // model's native 262144
+          {
+            "name": "qwen3.8-mtp",
+            "max_tokens": 131072,
+            "max_output_tokens": 32000,
+            "max_completion_tokens": 131072,
+            "capabilities": {
+              "tools": true,
+              "images": false,
+              "parallel_tool_calls": false,
+              "prompt_cache_key": false,
+              "chat_completions": true,
+              "interleaved_reasoning": false,
+            },
+          },
         ],
       },
     },
