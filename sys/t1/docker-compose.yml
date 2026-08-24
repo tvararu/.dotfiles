@@ -1,3 +1,6 @@
+# Pin the project name so it does not vary with the invocation directory.
+name: t1
+
 services:
   comfyui:
     container_name: comfyui
@@ -33,7 +36,7 @@ services:
     environment:
       - PUID=1000
       - PGID=1000
-      - TZ=Asia/Bangkok
+      - TZ=Europe/London
       - USER=${TRANSMISSION_USER}
       - PASS=${TRANSMISSION_PASS}
 
@@ -59,13 +62,13 @@ services:
               count: all
               capabilities: [gpu]
 
-  cloudflared:
-    container_name: cloudflared
-    image: cloudflare/cloudflared:latest
+  # yt-dlp proof-of-origin token provider, used by the Jellyfin YouTube library.
+  bgutil-pot:
+    container_name: bgutil-pot
+    image: brainicism/bgutil-ytdlp-pot-provider:latest
     restart: unless-stopped
-    command: tunnel run --token ${CLOUDFLARED_TOKEN}
-    networks:
-      - kamal
+    ports:
+      - "127.0.0.1:4416:4416"
 
   aitoolkit:
     container_name: aitoolkit
@@ -82,7 +85,7 @@ services:
       - ~/srv/aitoolkit/config:/app/ai-toolkit/config
     environment:
       - NODE_ENV=production
-      - TZ=Asia/Bangkok
+      - TZ=Europe/London
     deploy:
       resources:
         reservations:
@@ -173,7 +176,3 @@ services:
       -c 262144 --cache-type-k q4_0 --cache-type-v q4_0
       --spec-type draft-mtp --spec-draft-n-max 3
       --temp 1.0 --top-p 0.95 --top-k 20 --min-p 0.00 --presence-penalty 0.0
-
-networks:
-  kamal:
-    external: true
