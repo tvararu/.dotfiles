@@ -699,6 +699,57 @@ Declared inline in `user_script.bash` — idempotent git-clone + `pip install -r
 - To upgrade ComfyUI itself: `git -C ~/srv/comfyui/ComfyUI pull && docker restart comfyui`.
 - `user_script.bash` patches ComfyUI-VAE-Utils to PR #22 ([spacepxl/ComfyUI-VAE-Utils#22](https://github.com/spacepxl/ComfyUI-VAE-Utils/pull/22)) — restores `CustomVAE.decode()` after ComfyUI #11405/#11406 bypassed `decode_tiled_3d` and broke Qwen 2x decode (dark/burned output). Drop the patch block once upstream merges.
 
+## Home Assistant (Qingping air monitor)
+
+Home Assistant via the official `ghcr.io/home-assistant/home-assistant:stable` image, reading a Qingping Air Monitor Lite (CGDN1 — CO2, PM2.5, PM10, temperature, humidity) over HomeKit on the LAN. The point is local history and alerting without the vendor cloud: the sensor is firewalled off the internet at the router and still reports fine, because HomeKit Accessory Protocol is plain local IP once paired.
+
+- **Port**: 8123, plus 21063 for the HomeKit bridge
+- **Config**: `~/srv/homeassistant/` (root-owned — the official image ignores `PUID`/`PGID` and runs as root)
+- **Networking**: `network_mode: host`, mandatory — HomeKit pairing and the bridge both need mDNS, which a published port cannot carry
+- **Exposure**: ufw allows 21063/tcp and 5353/udp from the LAN only; 8123 stays LAN-blocked and is reached over tailscale
+- **History**: no extra database. The recorder defaults to SQLite and its long-term statistics table is never purged — hourly min/max/mean kept forever for `state_class: measurement` sensors. `purge_keep_days` governs only full-resolution state
+
+### Mode selection is a setup-time decision
+
+The CGDN1 speaks HomeKit, Mi Home or Qingping+, and only one at a time. There is no on-device selector — the mode is decided by whichever app first adds it, and changing it means holding the top bar for 8 seconds to reset the network config and starting over.
+
+HomeKit is the right choice here, but the obvious route is a trap: scanning the setup code in Apple Home pairs it *to Apple Home*, and HomeKit accessories pair to exactly one controller, so Home Assistant would get nothing. The working sequence is:
+
+1. Add it in Apple Home by scanning the code. This joins it to Wi-Fi and fixes it in HomeKit mode.
+2. Remove the accessory from Apple Home. This un-pairs it but leaves the Wi-Fi credentials intact.
+3. Pair it in HA via `homekit_controller` using the same setup code.
+4. Enable HA's HomeKit Bridge to publish it back to Apple Home.
+
+The device is 2.4GHz only (802.11 b/g/n), so the router needs a 2.4GHz AP — the Slate's was present but its interface was both disabled and `hidden='1'`.
+
+### Blocking it from the internet
+
+A static DHCP lease pins its address, and a firewall rule in the `lan` zone matching its MAC rejects forward to `wan`. Set `option proto 'all'`, or fw4 emits TCP and UDP rules only and everything else still escapes. DNS and NTP need no exception: traffic to the router's own dnsmasq hits the `input` chain, not `forward`. The rule's counter climbing while HA keeps receiving readings is the proof it works.
+
+### What the bridge round-trip costs
+
+Everything arrives in HA intact — CO2 in ppm, PM2.5/PM10 densities, temperature, humidity, a 1–5 air-quality rating, and battery. Going back out through the bridge is lossier, so the bridge is filtered to only the entities that survive:
+
+| Entity                | Survives  | Notes                                                                    |
+| --------------------- | --------- | ------------------------------------------------------------------------ |
+| CO2                   | Improved  | Becomes a `CarbonDioxideSensor`; HA adds peak-level and a `CarbonDioxideDetected` flag at 1000 ppm |
+| Temperature, humidity | Yes       | Direct mapping                                                            |
+| PM2.5, PM10           | Reshaped  | Two separate `AirQualitySensor` accessories, each with its own recomputed rating |
+| Air quality rating    | **No**    | `SensorDeviceClass.AQI` has no branch in `get_accessory`                   |
+| Battery               | **No**    | No battery branch, and `EntityCategory.DIAGNOSTIC` is excluded by default  |
+
+The CO2 flag is what drives alerting — enabling notifications on that accessory in the Home app avoids needing the HA companion app, whose iOS push would otherwise relay through Nabu Casa.
+
+### Notes
+
+- `advertise_ip` must be set explicitly. Inside the container the hostname resolves to the tailscale address, so the bridge would otherwise advertise an IP no iOS device on the LAN can reach.
+- t1 has ethernet and Wi-Fi on the same subnet, which makes mDNS ambiguous. `/etc/sysctl.d/30-arp-multihome.conf` sets `arp_ignore=1`/`arp_announce=2` and avahi is restricted to the wired interface. On Wi-Fi failover the advertised IP goes stale and HomeKit breaks until the cable is back — the fallback exists for SSH, not for HomeKit.
+- Bluetooth gets `/run/dbus` and `NET_ADMIN`/`NET_RAW` despite this being a Wi-Fi setup. HA discovers `hci0` regardless and recreates the config entry on every start; without them it retries a failing scanner indefinitely. Deleting the entry does not stick.
+- Keep the sensor on USB-C. On battery it powers itself off after 30 minutes (`power_off_time`), which looks exactly like the device going `Unavailable` for no reason.
+- Do not enable the Qingping app's **Bluetooth Gateway** function — it is mutually exclusive with HomeKit.
+- `attempted pair verify without being paired first` right after pairing is your other Apple devices racing the iCloud propagation of the pairing. It settles on its own.
+- Keep the printed setup code. HA needs the same code and it is unrecoverable if lost.
+
 ## Xbox One S Controller (Bluetooth)
 
 Controller: 045E:02FD (Model 1708). Works with the kernel's built-in `hid-microsoft` driver — no extra packages needed.
