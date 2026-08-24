@@ -70,6 +70,26 @@ services:
     ports:
       - "127.0.0.1:4416:4416"
 
+  # host networking is required: HomeKit pairing and the HomeKit Bridge both need
+  # mDNS, and a published port cannot carry multicast. Exposure is gated by ufw.
+  homeassistant:
+    container_name: homeassistant
+    image: ghcr.io/home-assistant/home-assistant:stable
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+      - ~/srv/homeassistant:/config
+      - /run/dbus:/run/dbus:ro
+      - /etc/localtime:/etc/localtime:ro
+    # HA auto-discovers hci0 whether or not we intend to use Bluetooth, and
+    # without dbus and these caps it retries a failing scanner forever. Granting
+    # them silences that and keeps the BLE path available as a fallback.
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    environment:
+      - TZ=Europe/London
+
   aitoolkit:
     container_name: aitoolkit
     image: ostris/aitoolkit:latest
