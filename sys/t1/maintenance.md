@@ -738,7 +738,7 @@ Everything arrives in HA intact — CO2 in ppm, PM2.5/PM10 densities, temperatur
 | Air quality rating    | **No**    | `SensorDeviceClass.AQI` has no branch in `get_accessory`                   |
 | Battery               | **No**    | No battery branch, and `EntityCategory.DIAGNOSTIC` is excluded by default  |
 
-The CO2 flag is what drives alerting — enabling notifications on that accessory in the Home app avoids needing the HA companion app, whose iOS push would otherwise relay through Nabu Casa.
+No alerting is configured, deliberately — this is a history-first setup, reviewed in the morning rather than pushed. Worth knowing the options if that changes: Apple Home can notify on the `CarbonDioxideDetected` flag, but only with a home hub (HomePod or Apple TV) on the network, and Macs and iPhones stopped qualifying years ago. Failing that, the HA companion app works at the cost of relaying iOS push through Nabu Casa, or a self-hosted `ntfy` keeps the chain local.
 
 ### Notes
 
