@@ -145,6 +145,20 @@ timeout: 0
 graphics: yes
 ```
 
+## Network
+
+Behind a GL.iNet GL-AXT1800 (Slate AX) as the main router, uplinked to the room's
+wall ethernet. Wired primary, wireless fallback.
+
+- **Router LAN**: `192.168.8.0/24`, gateway `192.168.8.1` — picked to avoid
+  colliding with docker (`172.17`/`172.19`/`172.20.0.0/16`) and incus
+  (`10.123.55.0/24`)
+- **Wired**: `enp7s0` holds the default route.
+  `/etc/systemd/network/20-ethernet.network` sets `DHCP=yes` and `RouteMetric=100`
+  against wlan0's `600`, so plugging in takes over with no configuration
+- **Wireless**: managed by iwd, not NetworkManager. wlan0 stays associated with
+  `AutoConnect`, so it picks up the default route if the cable drops
+
 ## Tailscale
 
 ```bash
@@ -580,7 +594,7 @@ sudo systemctl daemon-reload
 sudo systemctl restart ollama
 ```
 
-Reachable from other tailnet devices at `http://t1:11434` (MagicDNS) or `http://100.73.138.96:11434`. LAN clients on `192.168.1.0/24` get connection refused — the kernel rejects at bind level. `After=tailscaled.service` orders ollama after tailscale so `100.73.138.96` exists at bind time; the base unit's `Restart=on-failure` provides retry safety.
+Reachable from other tailnet devices at `http://t1:11434` (MagicDNS) or `http://100.73.138.96:11434`. LAN clients get connection refused — the kernel rejects at bind level. `After=tailscaled.service` orders ollama after tailscale so `100.73.138.96` exists at bind time; the base unit's `Restart=on-failure` provides retry safety.
 
 ## llama-server (Qwen MTP)
 
