@@ -844,6 +844,38 @@ Deliberately not implemented. The board is a B850I AORUS PRO with an ITE Super I
 
 The broker is the reusable part. Point a copy of the publisher at t1 over the tailnet — bind mosquitto to the tailnet address as the `llama-*` services already do, rather than exposing it to the LAN — and give sol its own broker user. Worth adding ZFS pool health, scrub status and per-drive temps there, and keeping the slow SMART interval since sol's disks actually spin.
 
+## Eight Sleep (Pod 5)
+
+Sleep and bed data from an Eight Sleep Pod 5, recorded alongside the bedroom air monitor. The point is the pairing: overnight CO2 and sleep quality land in the same recorder with long-term statistics, which makes "does ventilation actually improve sleep" a measurable question rather than a preference. Recording only — nothing writes back to the bed.
+
+- **Integration**: [lukas-clarke/eight_sleep](https://github.com/lukas-clarke/eight_sleep), a custom component in `~/srv/homeassistant/custom_components/eight_sleep`
+- **Version**: source tag `1.0.24.beta.5`. **The manifest inside it still reads `1.0.23`** — the author does not bump it for betas, so HA reports the older number. Check the directory contents, not the version HA displays
+- **Config**: UI config flow, email and password only; `client_id`/`client_secret` are optional and left blank
+- **Entities**: 52 — one set per bed side (bed/target temperature, heart rate, HRV, breath rate, sleep stage, fitness/quality/routine scores, time slept, presence start/end, alarms) plus hub-level water, priming and room temperature
+- **Cloud polling**, 5-minute interval. There is no local path; the pod talks to Eight Sleep's servers and the integration polls their API
+
+### Why the core integration is not used
+
+Home Assistant still ships an `eight_sleep` integration, but it is a **removal stub**: its `async_setup_entry` does nothing except raise a permanent repair issue, and its config flow has no steps. HA removed it because the Eight Sleep API "now requires a unique secret which is inaccessible outside of their apps". A custom component of the same domain shadows the built-in one, which is how this works at all.
+
+### The beta is required, not merely preferred
+
+Latest stable is `1.0.23` (2026-02). The fix stopping the config flow from offering the Pod 5 *pillow* instead of the hub landed only in `1.0.24.beta.5`, along with a `KeyError: 'sku'` fix for incomplete hardware info. On stable, Pod 5 setup can select the wrong device entirely.
+
+### Installed without HACS
+
+HACS is installed at `custom_components/hacs` (release zip 2.0.5, extracted rather than `wget | bash`), but **its config flow is not completed** — that needs an interactive GitHub device-code login. It is not required for this integration: HACS only downloads a directory from a GitHub tag, which the release archive does directly. Complete the HACS setup if you want update notifications; until then, updating means re-extracting a newer tag.
+
+### Notes
+
+- **Credentials are stored in plaintext.** HA writes every integration's config entry to `/config/.storage/core.config_entries` unencrypted, mode 0644. This applies to the MQTT password too. The disk is LUKS-encrypted, but Clevis auto-unlocks at boot, so it protects a pulled drive and not a stolen running machine.
+- **Presence and sleep stage are unreliable** by the author's own admission — Eight Sleep computes presence retroactively, so leaving the bed for an hour does not end it. The integration infers presence from heart-rate gaps instead. Do not build anything on either.
+- **Bed temperature is only meaningful while the pod is active.**
+- **Neither side may be in away mode during setup**, or session data is missing and setup can fail.
+- **Nothing reaches Apple Home.** The HomeKit bridge filter is `include_entities`, an allowlist naming only the air monitor's sensors, so the bed's climate and alarm entities stay inside HA even though they are enabled.
+- **The realistic failure mode is Eight Sleep rotating the client secret**, which breaks the integration until the maintainer extracts a new one. Account action over API use has not been reported.
+- **Custom integrations break on HA updates** on the author's schedule, not Home Assistant's. Worth skimming release notes before updating HA.
+
 ## Xbox One S Controller (Bluetooth)
 
 Controller: 045E:02FD (Model 1708). Works with the kernel's built-in `hid-microsoft` driver — no extra packages needed.
