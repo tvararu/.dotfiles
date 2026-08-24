@@ -783,6 +783,67 @@ No alerting is configured, deliberately — this is a history-first setup, revie
 - `attempted pair verify without being paired first` right after pairing is your other Apple devices racing the iCloud propagation of the pairing. It settles on its own.
 - Keep the printed setup code. HA needs the same code and it is unrecoverable if lost.
 
+## Host metrics (MQTT → Home Assistant)
+
+t1 lives in a cupboard, so its own temperatures are recorded into Home Assistant alongside everything else. A Python daemon on the host publishes to a local Mosquitto broker using MQTT discovery; HA picks the sensors up as a single `t1` device. Recording only — no alerts and no automated mitigation.
+
+The publisher runs on the **host, not in a container**, because the two most important sources are unreachable from inside one: the NVIDIA GPU is absent from hwmon entirely and only `nvidia-smi` can see it, and SMART needs the raw block devices.
+
+- **Broker**: `eclipse-mosquitto:2`, bound to `127.0.0.1:1883`. The publisher is on the host and HA is host-networked, so nothing crosses the LAN and **no ufw rule is needed**
+- **Broker config**: `sys/t1/mosquitto.conf`; credentials in `~/srv/mosquitto/passwd` (generated on the box with `mosquitto_passwd`, never committed), users `ha` and `t1`
+- **Publisher**: `sys/t1/t1-metrics.py`, run by `t1-metrics.service` — symlinked into `/etc/systemd/system/`, so repo edits apply after `systemctl daemon-reload && systemctl restart t1-metrics`
+- **Credentials**: `/etc/t1-metrics.env`, mode 0600, read by the unit via `EnvironmentFile`
+- **Intervals**: sensors and GPU every 30s; SMART every 10 minutes, since attributes move slowly and polling wakes the device
+- **Retention**: every sensor is published with `state_class: measurement`, which is what puts it in HA's long-term statistics — hourly min/max/mean kept forever. Without it the data would silently vanish at `purge_keep_days`
+
+### What the hardware exposes
+
+| Source | Provides |
+| --- | --- |
+| `k10temp` | CPU `Tctl`, `Tccd1` |
+| `nvidia-smi` | 5090 temp, fan %, power, utilisation, clock, thermal-slowdown flags |
+| `amdgpu` | iGPU edge temp and package power |
+| `nvme` ×2 | composite / controller / NAND temps |
+| `smartctl` | wear, spare, power-on hours, media errors, critical warning |
+| `gigabyte_wmi` | six board temps, **unlabelled** |
+| `r8169` | onboard NIC temp |
+
+Fan RPM is **not available**. No driver on this board exposes `fan*_input`; the only fan reading of any kind is the GPU's, via `nvidia-smi`. See *Fan speeds* below.
+
+### Idle baseline
+
+Recorded 2026-08-24 at genuine idle (load 0.01, GPU 13W/180MHz), for comparison against later readings:
+
+| Sensor | Idle | Throttles at |
+| --- | --- | --- |
+| NVMe 990 EVO Plus composite | 71.8°C | 80.8°C |
+| NVMe 9100 PRO composite | 72.8°C | 83.8°C |
+| CPU `Tctl` | 61.9°C | ~95°C |
+| Board sensor 2 | 76°C | — |
+| Onboard NIC | 70°C | 120°C |
+| RTX 5090 | 56°C | ~88°C |
+
+An NVMe with airflow idles at 35–50°C, so these are roughly 20°C high and about 9°C from throttling before any work starts. The machine is thermally constrained at rest, not merely at risk of it.
+
+### Notes
+
+- **Chip names, not `hwmonN` paths.** hwmon numbering is not stable across reboots, so the script keys off libsensors chip names. NVMe drives are identified by model for the same reason — `nvme0`/`nvme1` enumeration order is not guaranteed and would swap the two drives' history.
+- **`acpitz` reads ~17°C and is fiction** — a fixed ACPI zone, excluded. `gigabyte_wmi` `temp6` reads −55°C (unconnected header) and is filtered by a sanity range.
+- **Board sensors are unlabelled.** `temp1`–`temp5` are published as "Board sensor N"; identify which is which by watching load response before renaming.
+- **AMD exposes no throttle flag** without an out-of-tree module, so CPU frequency is published alongside temperature as the proxy. The GPU has real flags (`clocks_event_reasons.*_thermal_slowdown`), which are the most direct evidence of heat constraint on the machine.
+- **Arch ships paho-mqtt 1.6.1**, which predates the `CallbackAPIVersion` argument; the client construction accepts either API so a package bump does not break it.
+- **`python-paho-mqtt` from the repos, not pip** — PEP 668 blocks `pip install` on Arch.
+- **The service runs as root** because smartctl needs the block devices, so `PrivateDevices` is deliberately absent from the unit. `ProtectHome` is `read-only` rather than `yes` because the script itself lives in the repo under `/home`.
+- **Last Will is the point of using a daemon** rather than a timer: if the publisher dies, HA marks the entities unavailable instead of showing stale readings indefinitely.
+
+### Fan speeds
+
+Deliberately not implemented. The board is a B850I AORUS PRO with an ITE Super I/O chip that has no in-kernel driver; RPM would need the out-of-tree [it87](https://github.com/frankcrawford/it87) DKMS module plus `acpi_enforce_resources=lax` on the kernel command line. That means editing `/etc/default/limine` and regenerating the UKI on a Clevis-unlocked machine, and the kernel's own it87 documentation warns of races and unexpected reboots when ACPI and the driver share the chip. Not worth it unless the recorded data raises a question only fan speed can answer.
+
+### Adding sol later
+
+The broker is the reusable part. Point a copy of the publisher at t1 over the tailnet — bind mosquitto to the tailnet address as the `llama-*` services already do, rather than exposing it to the LAN — and give sol its own broker user. Worth adding ZFS pool health, scrub status and per-drive temps there, and keeping the slow SMART interval since sol's disks actually spin.
+
 ## Xbox One S Controller (Bluetooth)
 
 Controller: 045E:02FD (Model 1708). Works with the kernel's built-in `hid-microsoft` driver — no extra packages needed.
