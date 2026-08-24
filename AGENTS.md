@@ -78,3 +78,7 @@ tpope style, no Conventional Commits prefix in this repo:
 - Blank line, then 1-3 sentence body explaining "why"
 - Always `git add` and `git commit` as separate commands
 - Separate commits per logical change
+- Prefix git with `mise exec --` — the `commit-msg` hook execs `hk`, which is
+  mise-managed and missing from a bare PATH (same for `gh`)
+- `hk` auto-wraps the body to 72 cols and fails the commit if the subject
+  exceeds 50 chars, so don't hand-wrap
