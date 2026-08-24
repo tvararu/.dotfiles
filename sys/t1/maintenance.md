@@ -8,6 +8,19 @@ This is a log of the various customisations I've done to my Omarchy setup.
 yay -S fish git-delta lsd mosh tmux
 ```
 
+## Remote administration
+
+- `sudo` prompts for a password and cannot run unattended. For privileged work
+  driven from a remote or automated session, write a script and run it as a
+  single `sudo sh <path>` — one prompt, and the steps stay reviewable before
+  they execute.
+- Run docker compose from `$HOME`. `~/docker-compose.yml` symlinks to
+  `.dotfiles/sys/t1/docker-compose.yml`, and it is that symlink which makes
+  `$HOME` the project directory so `~/.env` resolves. Running from `sys/t1/`
+  instead resolves the credentials in it to **empty strings** with no error —
+  which silently breaks transmission's auth. `name: t1` in the file pins the
+  project name regardless of where it is invoked.
+
 ## Keyboard: Apple GB ISO Layout
 
 ```
@@ -158,6 +171,26 @@ wall ethernet. Wired primary, wireless fallback.
   against wlan0's `600`, so plugging in takes over with no configuration
 - **Wireless**: managed by iwd, not NetworkManager. wlan0 stays associated with
   `AutoConnect`, so it picks up the default route if the cable drops
+
+### Router administration
+
+GL.iNet firmware 4.x sits on OpenWrt 23.05, so `uci` and `fw4` work directly and
+the stock web UI is not the only way in.
+
+```bash
+ssh root@192.168.8.1     # key auth; ssh-copy-id once from a new host
+uci show firewall
+fw4 reload               # after uci commit firewall
+```
+
+- `br-lan` bridges the ethernet ports and both radios, so wired and wireless
+  clients share one L2 domain and mDNS crosses between them without a reflector
+- The 2.4GHz AP is a separate `wifi-iface` from the 5GHz one and shipped both
+  disabled and `hidden='1'`. 2.4GHz-only IoT gear needs it enabled and visible
+- dnsmasq answers for `t1` with **both** interface addresses, so anything
+  resolving it by name may get the Wi-Fi one. Use the wired address explicitly
+  where it matters
+- Per-client internet blocking is documented under Home Assistant below
 
 ## Tailscale
 
