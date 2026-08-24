@@ -1,0 +1,31 @@
+[Unit]
+Description=Publish t1 host health metrics to MQTT
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+EnvironmentFile=/etc/t1-metrics.env
+ExecStart=/usr/bin/python3 /home/deity/.dotfiles/sys/t1/t1-metrics.py
+Restart=always
+RestartSec=10
+
+# Runs as root because smartctl needs raw block device access. PrivateDevices is
+# therefore deliberately absent; everything else is locked down. ProtectHome is
+# read-only rather than yes because the script itself lives in the repo.
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=read-only
+PrivateTmp=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+RestrictNamespaces=yes
+RestrictRealtime=yes
+LockPersonality=yes
+SystemCallFilter=@system-service
+SystemCallErrorNumber=EPERM
+
+[Install]
+WantedBy=multi-user.target
