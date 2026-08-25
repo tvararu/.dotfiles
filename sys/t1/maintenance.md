@@ -907,6 +907,24 @@ Removal was dropped entirely rather than worked around. The download archive alr
 - **Long downloads cannot stack.** systemd will not run two copies of a `oneshot` in parallel; a trigger arriving mid-download merges into the running job.
 - **Subtitles are deliberately off**, and the shared config's `--write-subs`/`--embed-subs` are negated in the unit rather than removed from that file, which other machines still use. If they are ever wanted, note that `--sub-langs` values are **regexes** and must be exact: `"en.*"` looks reasonable and is a disaster, because YouTube exposes auto-translated tracks as `en-ar`, `en-zh-CN`, `en-de-DE` and dozens more. It matched all of them, fired ~50 subtitle requests per video, and earned an HTTP 429 that aborted the video outright. Use `"en"`, plus `--write-auto-subs` — most YouTube videos carry only auto-generated captions, so `--write-subs` alone produces nothing.
 
+### Metadata and artwork
+
+Metadata comes from the `.info.json` files yt-dlp writes alongside each video, read by the YoutubeMetadata plugin's **local** provider. The plugin's **remote** provider is deliberately disabled.
+
+| Layer | Source |
+| --- | --- |
+| Episode metadata | local `.info.json`, via the plugin's local reader |
+| Episode thumbnail | embedded in the file by `--embed-thumbnail` |
+| Channel artwork | `poster.jpg` per channel directory, from `sys/t1/yt-posters.sh` |
+
+The remote provider is disabled because it cannot work here: it calls `new YoutubeDLP()` with no path, so NYoutubeDL scans `PATH` for a binary named literally `youtube-dl` — dead upstream and absent from the container. `PluginConfiguration.cs` exposes only an `IDType` enum, so there is **no setting to point it at yt-dlp**. Making it work would mean a `DOCKER_MODS` package install plus a `custom-cont-init.d` symlink, giving a second yt-dlp inside the container with no PO token provider, while the host already runs one that has `bgutil-pot` wired up. It was left failing for days, logging 250 errors a day, and cost nothing — every episode already had metadata and a thumbnail without it.
+
+`yt-posters.sh` runs as `ExecStartPost` on `yt-queue.service`. It derives each channel's URL from the `channel_url` field already present in any video's `.info.json`, so there is no list of channels to maintain, and skips any directory that already has a poster. `--playlist-items 0` fetches the channel's own thumbnail without touching a video.
+
+- **The library config is Jellyfin runtime state, not in this repo.** It lives in `~/srv/jellyfin/data/root/default/YouTube/options.xml`. `YoutubeMetadata` was removed from `MetadataFetchers` and `ImageFetchers` for both Series and Episode; it stays in `LocalMetadataReaderOrder`, which is the local path and the thing actually doing the work. The `*Order` lists are only ordering and were left alone. A backup sits beside the file.
+- **Retiring the remote provider also disables manual "Identify" search** in the Jellyfin UI. Filenames carry `[videoid]` and the local reader keys off exactly that, so nothing routine depends on it.
+- **Jellyfin picked the posters up without a library scan**, on restart alone.
+
 ### Optional one-liners
 
 Each is a flag on `ExecStart`, deliberately left off:
