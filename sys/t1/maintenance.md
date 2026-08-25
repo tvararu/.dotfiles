@@ -905,7 +905,7 @@ Removal was dropped entirely rather than worked around. The download archive alr
 - **`DENO_DIR` and `--cache-dir` are redirected onto `/mnt/aux`.** Deno solves YouTube's JS challenges and yt-dlp caches nsig signatures; both default to writing under `$HOME`, which `ProtectHome=read-only` forbids. Redirecting them is what lets the home directory stay read-only.
 - **`yt-dlp-update.service` deliberately omits `ProtectHome`**, unlike every other unit here — it is the one service that must write to `/home`, and `ReadWritePaths=/home/deity/.local/bin` is its only writable path.
 - **Long downloads cannot stack.** systemd will not run two copies of a `oneshot` in parallel; a trigger arriving mid-download merges into the running job.
-- **Subtitles need `--write-auto-subs`.** The shared config sets `--write-subs`/`--embed-subs`, but most YouTube videos carry only auto-generated captions, so those flags alone produce nothing — verified by `ffprobe` on an existing download, which has no subtitle stream, and by there being zero `.srt`/`.vtt` files in the library.
+- **Subtitles need `--write-auto-subs`, and `--sub-langs` must be exact.** The shared config sets `--write-subs`/`--embed-subs`, but most YouTube videos carry only auto-generated captions, so those flags alone produce nothing. `--sub-langs` values are **regexes**: `"en.*"` looks reasonable and is a disaster, because YouTube exposes auto-translated tracks as `en-ar`, `en-zh-CN`, `en-de-DE` and dozens more. It matched all of them, fired ~50 subtitle requests per video, and earned an HTTP 429 that aborted the video outright. Use `"en"`, which anchors to the single track.
 
 ### Optional one-liners
 
