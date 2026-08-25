@@ -25,12 +25,16 @@ Environment=DENO_DIR=/mnt/aux/yt-queue/deno
 # absolute /downloads/... path in ~/.config/yt-dlp/config. That config is shared
 # with other machines where the fish function maps $PWD onto /downloads, so it
 # must not be edited to suit this host.
+# Writing playlist metafiles is yt-dlp's default, so without the negation the
+# playlist's own info.json and thumbnail land in the library as a phantom entry
+# named after the account, with no media behind it.
 ExecStart=/home/deity/.local/bin/yt-dlp \
     --download-archive /mnt/aux/yt-queue/archive.txt \
     --cache-dir /mnt/aux/yt-queue/cache \
     -P home:/mnt/aux/media/youtube \
     -P temp:/mnt/aux/yt-queue/tmp \
     -o "%%(uploader)s/%%(uploader)s - %%(upload_date)s - %%(title)s [%%(id)s].%%(ext)s" \
+    --no-write-playlist-metafiles \
     --write-auto-subs --sub-langs "en.*" \
     ${YT_QUEUE_URL}
 
