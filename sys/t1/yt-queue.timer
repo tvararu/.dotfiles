@@ -1,0 +1,12 @@
+[Unit]
+Description=Hourly sync of the YouTube queue playlist
+
+[Timer]
+OnCalendar=hourly
+# Don't hit YouTube exactly on the hour along with everyone else's cron.
+RandomizedDelaySec=5m
+# Catch up after downtime rather than silently skipping the missed run.
+Persistent=true
+
+[Install]
+WantedBy=timers.target

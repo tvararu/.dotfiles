@@ -1,0 +1,52 @@
+[Unit]
+Description=Sync the YouTube queue playlist into the Jellyfin library
+# bgutil-pot serves the proof-of-origin tokens yt-dlp needs for most formats, so
+# docker must be up. Not Requires= — a run that fails simply retries next hour.
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=deity
+Group=deity
+
+# Holds YT_QUEUE_URL. The playlist is unlisted, so its URL is a capability and
+# does not belong in this repo, which is public and name-attributed.
+EnvironmentFile=/etc/default/yt-queue
+
+# Deno solves YouTube's JS challenges and yt-dlp caches nsig signatures; both
+# default to writing under $HOME, which ProtectHome forbids. Redirected onto
+# /mnt/aux so the home directory can stay read-only.
+Environment=DENO_DIR=/mnt/aux/yt-queue/deno
+
+# %% is a literal % to systemd — without the doubling it would try to expand
+# yt-dlp's %(uploader)s template as its own specifiers and refuse to start.
+# -o is relative and resolves under "-P home:", which is what overrides the
+# absolute /downloads/... path in ~/.config/yt-dlp/config. That config is shared
+# with other machines where the fish function maps $PWD onto /downloads, so it
+# must not be edited to suit this host.
+ExecStart=/home/deity/.local/bin/yt-dlp \
+    --download-archive /mnt/aux/yt-queue/archive.txt \
+    --cache-dir /mnt/aux/yt-queue/cache \
+    -P home:/mnt/aux/media/youtube \
+    -P temp:/mnt/aux/yt-queue/tmp \
+    -o "%%(uploader)s/%%(uploader)s - %%(upload_date)s - %%(title)s [%%(id)s].%%(ext)s" \
+    --write-auto-subs --sub-langs "en.*" \
+    ${YT_QUEUE_URL}
+
+# Reads config and plugins from ~, writes only to /mnt/aux — hence ProtectHome
+# read-only rather than the writable exception t1-metrics.service needs.
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/mnt/aux/media/youtube /mnt/aux/yt-queue
+PrivateTmp=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+RestrictNamespaces=yes
+RestrictRealtime=yes
+LockPersonality=yes
+SystemCallFilter=@system-service
+SystemCallErrorNumber=EPERM

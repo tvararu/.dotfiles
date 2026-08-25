@@ -1,0 +1,31 @@
+[Unit]
+Description=Update the yt-dlp zipapp
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=deity
+Group=deity
+ExecStart=/home/deity/.local/bin/yt-dlp -U
+
+# Staleness is the main failure mode for this pipeline: YouTube breaks extractors
+# regularly and yt-dlp warns once a build is 90 days old. This updates the zipapp
+# only — /usr/bin/yt-dlp is pacman's and is not on the yt-queue path.
+#
+# ProtectSystem=strict makes the whole hierarchy read-only, so ReadWritePaths is
+# the sole writable exception. ProtectHome is deliberately unset: it would make
+# /home read-only and this is the one unit that must write there.
+NoNewPrivileges=yes
+ProtectSystem=strict
+ReadWritePaths=/home/deity/.local/bin
+PrivateTmp=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+RestrictNamespaces=yes
+RestrictRealtime=yes
+LockPersonality=yes
+SystemCallFilter=@system-service
+SystemCallErrorNumber=EPERM
