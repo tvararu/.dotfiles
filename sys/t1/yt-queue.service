@@ -35,7 +35,7 @@ ExecStart=/home/deity/.local/bin/yt-dlp \
     -P temp:/mnt/aux/yt-queue/tmp \
     -o "%%(uploader)s/%%(uploader)s - %%(upload_date)s - %%(title)s [%%(id)s].%%(ext)s" \
     --no-write-playlist-metafiles \
-    --write-auto-subs --sub-langs "en" \
+    --no-write-subs --no-write-auto-subs --no-embed-subs \
     ${YT_QUEUE_URL}
 
 # Reads config and plugins from ~, writes only to /mnt/aux — hence ProtectHome
