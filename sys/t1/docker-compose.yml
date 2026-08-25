@@ -206,7 +206,8 @@ services:
       start_period: 10m
       retries: 3
     command: >
-      -hf unsloth/Qwen3.8-27B-GGUF:UD-Q4_K_XL
+      -m /root/.cache/huggingface/hub/models--unsloth--Qwen3.8-27B-GGUF/snapshots/f1bfb127c64f7072bdd2cad55f258b9c8b2910fe/Qwen3.8-27B-UD-Q4_K_XL.gguf
+      --offline
       -ngl 99 -fa on --parallel 1 --no-mmproj
       --host 0.0.0.0 --port 8001
       -c 262144 --cache-type-k q4_0 --cache-type-v q4_0
