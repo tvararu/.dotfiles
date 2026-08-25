@@ -876,6 +876,50 @@ HACS is installed at `custom_components/hacs` (release zip 2.0.5, extracted rath
 - **The realistic failure mode is Eight Sleep rotating the client secret**, which breaks the integration until the maintainer extracts a new one. Account action over API use has not been reported.
 - **Custom integrations break on HA updates** on the author's schedule, not Home Assistant's. Worth skimming release notes before updating HA.
 
+## YouTube queue → Jellyfin
+
+Saving a video to an unlisted playlist on a burner account gets it downloaded and into the Jellyfin YouTube library within the hour, with no further action. An hourly systemd timer runs the yt-dlp already installed on the host; there is no extra service, container, or database.
+
+- **Queue playlist**: unlisted, on the burner account. The URL lives in `/etc/default/yt-queue` as `YT_QUEUE_URL`, mode 0600 — an unlisted playlist URL is a capability, and this repo is public and name-attributed
+- **Downloader**: `~/.local/bin/yt-dlp`, the self-updating zipapp — **not** pacman's `/usr/bin/yt-dlp`
+- **Units**: `sys/t1/yt-queue.{service,timer}` and `sys/t1/yt-dlp-update.{service,timer}`, symlinked into `/etc/systemd/system/` so repo edits apply after `systemctl daemon-reload`
+- **Cadence**: hourly, `RandomizedDelaySec=5m`, `Persistent=true` so a missed run catches up after downtime
+- **Dedup**: `--download-archive /mnt/aux/yt-queue/archive.txt`. This is the entire state machine — re-running is idempotent and costs one playlist fetch
+- **Library**: files land in `/mnt/aux/media/youtube/<Uploader>/`, which Jellyfin watches with `EnableRealtimeMonitor`, so **no library scan is needed**
+- **Freshness**: a separate weekly timer runs `yt-dlp -U`. Extractor staleness is the main failure mode; yt-dlp itself warns once a build is 90 days old
+
+### Why not Watch Later
+
+Watch Later is a **system-managed playlist**. The Data API allows `list` and `insert` but blocks `update` and `delete`, so items cannot be removed programmatically — only browser automation or the undocumented internal endpoint can do it. An ordinary unlisted playlist avoids this, and has a second benefit that matters more: **unlisted is readable anonymously**, so no `cookies.txt` is involved and there is nothing to rotate or refresh.
+
+Removal was dropped entirely rather than worked around. The download archive already guarantees nothing downloads twice, so draining the playlist would have been cosmetic — and it was the only part requiring an OAuth client and a stored refresh token.
+
+### Notes
+
+- **`~/.config/yt-dlp/config` must not be edited to suit this host.** Its `--output` is `/downloads/%(uploader)s/...`, an absolute path that only makes sense inside the container the `yt-dlp` fish function runs, which bind-mounts `$PWD` onto `/downloads`. There is no `/downloads` on t1. That config is shared with other machines still using the fish function, so the units pass `-P` and `-o` on the command line instead — yt-dlp treats config-file options as if they preceded command-line ones, so the command line wins.
+- **`%` must be doubled in the unit.** systemd reads `%` as its own specifier prefix, so yt-dlp's `%(uploader)s` template is written `%%(uploader)s`. Without this the unit fails to start.
+- **`-P temp:` keeps partial files out of the library.** Fragments and `.part` files go to `/mnt/aux/yt-queue/tmp`, so Jellyfin's realtime monitor never sees a half-written file appear and disappear.
+- **PO tokens come from the `bgutil-pot` container**, bound to `127.0.0.1:4416`, via the plugin at `~/.config/yt-dlp/plugins/`. The unit is `After=docker.service` but not `Requires=` — if the provider is down the run fails and simply retries next hour. `[pot:bgutil:http] Generating a gvs PO Token` in the journal confirms the chain is live.
+- **The service runs as `deity`**, which is what makes `~/.config/yt-dlp/{config,plugins}` discoverable at all; as root it would silently read a different config and no plugins.
+- **`DENO_DIR` and `--cache-dir` are redirected onto `/mnt/aux`.** Deno solves YouTube's JS challenges and yt-dlp caches nsig signatures; both default to writing under `$HOME`, which `ProtectHome=read-only` forbids. Redirecting them is what lets the home directory stay read-only.
+- **`yt-dlp-update.service` deliberately omits `ProtectHome`**, unlike every other unit here — it is the one service that must write to `/home`, and `ReadWritePaths=/home/deity/.local/bin` is its only writable path.
+- **Long downloads cannot stack.** systemd will not run two copies of a `oneshot` in parallel; a trigger arriving mid-download merges into the running job.
+- **Subtitles need `--write-auto-subs`.** The shared config sets `--write-subs`/`--embed-subs`, but most YouTube videos carry only auto-generated captions, so those flags alone produce nothing — verified by `ffprobe` on an existing download, which has no subtitle stream, and by there being zero `.srt`/`.vtt` files in the library.
+
+### Optional one-liners
+
+Each is a flag on `ExecStart`, deliberately left off:
+
+| Want | Add |
+| --- | --- |
+| Strip sponsor segments | `--sponsorblock-remove sponsor,intro,outro` — **destructive**, cuts the media; `--sponsorblock-mark` only writes chapters |
+| Cap bandwidth | `--limit-rate 50M` |
+| Cap resolution | `-S "res:1080"` |
+
+### Pinchflat
+
+Considered and rejected. It is the right shape — one container, yt-dlp, Jellyfin-correct naming — but the maintainer opened *"READ: Temporary Development Pause"* (issue #800) on 2025-09-26 saying 4–8 weeks minimum, and there has been no release since that day and no code push since 2025-12-16, against 213 open issues trending toward operational rot. It also bundles its own yt-dlp and Deno POT provider, duplicating two things this host already runs. Files land in its expected layout anyway, so adopting it later costs nothing.
+
 ## Xbox One S Controller (Bluetooth)
 
 Controller: 045E:02FD (Model 1708). Works with the kernel's built-in `hid-microsoft` driver — no extra packages needed.
