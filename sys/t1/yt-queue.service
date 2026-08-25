@@ -38,6 +38,12 @@ ExecStart=/home/deity/.local/bin/yt-dlp \
     --no-write-subs --no-write-auto-subs --no-embed-subs \
     ${YT_QUEUE_URL}
 
+# Channel artwork, fetched with the same yt-dlp rather than by the Jellyfin
+# plugin, whose remote provider needs a youtube-dl binary that no longer
+# exists. Leading '-' so a poster that cannot be fetched never fails a sync
+# that downloaded videos successfully.
+ExecStartPost=-/home/deity/.dotfiles/sys/t1/yt-posters.sh
+
 # Reads config and plugins from ~, writes only to /mnt/aux — hence ProtectHome
 # read-only rather than the writable exception t1-metrics.service needs.
 NoNewPrivileges=yes
