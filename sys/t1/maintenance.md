@@ -984,11 +984,49 @@ Saving a video to an unlisted playlist on a burner account gets it downloaded an
 
 - **Queue playlist**: unlisted, on the burner account. The URL lives in `/etc/default/yt-queue` as `YT_QUEUE_URL`, mode 0600 — an unlisted playlist URL is a capability, and this repo is public and name-attributed
 - **Downloader**: `~/.local/bin/yt-dlp`, the self-updating zipapp — **not** pacman's `/usr/bin/yt-dlp`
-- **Units**: `sys/t1/yt-queue.{service,timer}` and `sys/t1/yt-dlp-update.{service,timer}`, symlinked into `/etc/systemd/system/` so repo edits apply after `systemctl daemon-reload`
+- **Units**: `sys/t1/yt-queue.{service,timer}` and `sys/t1/yt-dlp-update.{service,timer}`, **copied** into `/etc/systemd/system/`, deliberately not symlinked (see *The unit must not be symlinked from this repo* under the metrics section). Re-copy and `daemon-reload` after editing them here
 - **Cadence**: hourly, `RandomizedDelaySec=5m`, `Persistent=true` so a missed run catches up after downtime
 - **Dedup**: `--download-archive /mnt/aux/yt-queue/archive.txt`. This is the entire state machine — re-running is idempotent and costs one playlist fetch
 - **Library**: files land in `/mnt/aux/media/youtube/<Uploader>/`, which Jellyfin watches with `EnableRealtimeMonitor`, so **no library scan is needed**
 - **Freshness**: a separate weekly timer runs `yt-dlp -U`. Extractor staleness is the main failure mode; yt-dlp itself warns once a build is 90 days old
+
+### The units must be copied, not symlinked
+
+These were originally symlinked out of `sys/t1/` into `/etc/systemd/system/`, and
+that silently broke at the next reboot for the same reason `t1-metrics.service`
+did — this repo lives under `/home`, which is not mounted when systemd loads
+units:
+
+```
+yt-queue.timer: Failed to open /etc/systemd/system/yt-queue.timer: No such file or directory
+yt-dlp-update.timer: Failed to open /etc/systemd/system/yt-dlp-update.timer: No such file or directory
+```
+
+The timers reported `enabled` and `LoadState=loaded` afterwards, because by the
+time anything asked, `/home` was mounted and the file was readable again. But
+`Active: inactive (dead)`, `Trigger: n/a`, and `systemctl list-timers` showed no
+NEXT — the boot-time start had already failed. Downloads simply stopped, with
+nothing to say so.
+
+Fix, remembering the `*.wants/` symlink is the one systemd actually reads at boot:
+
+```bash
+sudo install -m644 sys/t1/yt-queue.service sys/t1/yt-queue.timer \
+  sys/t1/yt-dlp-update.service sys/t1/yt-dlp-update.timer /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl reenable --now yt-queue.timer yt-dlp-update.timer
+```
+
+Verify a NEXT time actually appears, which is the part `is-enabled` will not tell
+you:
+
+```bash
+systemctl list-timers yt-queue.timer yt-dlp-update.timer
+ls -l /etc/systemd/system/timers.target.wants/
+```
+
+`yt-posters.sh` stays in the repo — like `t1-metrics.py` it is read at service
+*start*, long after `/home` is mounted.
 
 ### Why not Watch Later
 
