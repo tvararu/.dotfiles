@@ -337,6 +337,16 @@ Clean orphans after:
 yay -Rns $(yay -Qdtq)
 ```
 
+**These removals have consequences that were never followed up.** Five keybindings,
+both screen-recording entry points and three Share menu entries still call binaries
+removed here, and fail silently. See [omarchy-divergence.md](omarchy-divergence.md)
+for the full audit against a vanilla Omarchy 3.8.5 VM, with an action checklist.
+
+Note that Omarchy has since added `omarchy-remove-preinstalls`, which does most of
+this list *and* swaps `bindings.conf` for `plain-bindings.conf` so the keybindings
+go with the apps. Don't run it on this box — it would also strip the web apps and
+TUI wrappers that are wanted here.
+
 ## QEMU VM (OpenClaw)
 
 Ubuntu 24.04 VM for running OpenClaw agent.
