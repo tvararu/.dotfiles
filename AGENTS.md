@@ -15,6 +15,22 @@ definitions (not stowable; a catch-all `.stow-local-ignore` guards it).
 Machines: `huginn` (this MacBook), `t1` (Omarchy desktop), `sol` (NAS), `mimir`
 (Ubuntu VM on huginn, via OrbStack), `luna` (Ubuntu VM on sol, via Incus).
 
+## Systemd units
+
+`sys/*/` holds unit files, but this repo lives under `/home`, which is not
+mounted when systemd loads units:
+
+- **Copy units into `/etc/systemd/system/`, never symlink them from here** — a
+  symlinked unit reports `enabled` and `loaded` but silently never starts at boot
+- Run `systemctl reenable` after copying: the `*.wants/` symlink is what systemd
+  reads at boot, and fixing only the unit file leaves it pointing into `/home`
+- `--now` means *try-restart* with `reenable` — a no-op on a stopped unit, so
+  `systemctl start` explicitly afterwards
+- Verify with `systemctl list-timers` showing a real NEXT; `is-enabled` is not
+  evidence that a unit will run
+- Scripts invoked by `ExecStart*` can stay in the repo — they are read at service
+  start, long after `/home` is mounted
+
 ## Commands
 
 ```bash
@@ -46,6 +62,11 @@ stow fish git nvim tmux
   the steps, and fold VM-creation-time changes into `sys/mimir/cloud-init.yml`
 - After completing any luna setup task, update `sys/luna/maintenance.md` with the
   steps, and fold VM-creation-time changes into `sys/luna/cloud-init.yml`
+- `sudo` prompts for a password on t1 — surface privileged commands for the user
+  to run rather than attempting them
+- `maintenance.md` files accumulate stale sections that contradict newer ones —
+  when hardware or paths change, grep for the old identifier and fix or mark
+  every hit, and verify live state rather than trusting the notes
 
 ## Sol system administration
 
