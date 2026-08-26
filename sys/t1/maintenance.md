@@ -97,14 +97,14 @@ ACTION=="add", SUBSYSTEM=="i2c", ATTR{name}=="NVIDIA i2c adapter 3 at 1:00.0", R
 Set the UPERFECT to `1920x1200` first, then mirror the Viture output to it.
 
 ```bash
-# source display (UPERFECT)
-hyprctl keyword monitor "HDMI-A-2,1920x1200@59.95,0x0,1"
+# source display (UPERFECT, on the NVIDIA HDMI)
+hyprctl keyword monitor "HDMI-A-1,1920x1200@59.95,0x0,1"
 
 # find first non-UPERFECT output (when Viture is connected)
-GLASSES=$(hyprctl monitors all | awk '/^Monitor /{print $2}' | grep -v '^HDMI-A-2$' | head -n1)
+GLASSES=$(hyprctl monitors all | awk '/^Monitor /{print $2}' | grep -v '^HDMI-A-1$' | head -n1)
 
 # mirror Viture to UPERFECT at 1920x1200
-hyprctl keyword monitor "$GLASSES,1920x1200@60,0x0,1,mirror,HDMI-A-2"
+hyprctl keyword monitor "$GLASSES,1920x1200@60,0x0,1,mirror,HDMI-A-1"
 ```
 
 If no second monitor appears in `hyprctl monitors all`, the USB-C port/cable is not exposing DisplayPort Alt-Mode yet.
@@ -465,9 +465,44 @@ ssh openclaw
 
 ## Sunshine (Game Streaming via Moonlight)
 
-Stream desktop to Mac (or other devices) via Moonlight. Uses VAAPI encoding on the AMD iGPU with KMS capture. Display is connected to the AMD iGPU (HDMI-A-2), keeping the RTX 5090 free for compute (saves ~1GB VRAM).
+Streams the desktop to a Mac (or anything else running Moonlight). The machine is
+headless for this purpose: an HDMI dummy plug holds an output alive, Hyprland
+renders to it, and Sunshine captures and encodes that output.
 
-Note: NVENC on the 5090 won't work with this setup because KMS captures DMA-BUFs from the AMD GPU which can't be imported cross-GPU. Also, NVIDIA's DRM driver won't create custom modes not in the TV's EDID, so custom resolutions (like 1920x1200) only work on the AMD iGPU.
+**The display lives on the RTX 5090's `HDMI-A-1`.** The AMD iGPU's `HDMI-A-2` is
+unused. This reverses an earlier layout and the reversal matters, because of one
+rule:
+
+> Capture and encode must happen on the **same GPU**. Frames arrive as DMA-BUFs
+> belonging to whichever card owns the scanout; the other card cannot import them.
+
+With the plug on the 5090 that means `encoder = nvenc`, and **no `adapter_name`**
+(it selects a VAAPI device and only makes sense when encoding on the iGPU).
+Pointing the encoder at the wrong card does not fail cleanly — it produces
+`Frame capture failed` in a loop and then segfaults Sunshine mid-handshake, which
+Moonlight reports only as `Error code: -1`.
+
+Do not trust `cardN` numbering; it is not stable across boots. Check the live
+mapping instead:
+
+```bash
+for c in /sys/class/drm/card*-*; do [ -e "$c/status" ] && echo "$(basename $c) $(cat $c/status)"; done
+```
+
+### Capture method
+
+On Hyprland + NVIDIA there is effectively **one** working option:
+
+| Method | Verdict here |
+|---|---|
+| `wlr` | **In use.** wlroots screencopy (`wlgrab` in the logs). |
+| `kms` | Enumerates an *empty* monitor list — nvidia-drm does not expose scanout framebuffers for kmsgrab-style capture. Works fine on the AMD iGPU. |
+| `nvfbc` | No Wayland support. |
+| `kwin` | Wrong compositor. |
+| `x11` | Not applicable under Wayland. |
+
+Newer builds also offer XDG portal / PipeWire capture, which is worth trying if
+`wlr` ever regresses again.
 
 ### Install
 
@@ -475,14 +510,37 @@ Note: NVENC on the 5090 won't work with this setup because KMS captures DMA-BUFs
 yay -S sunshine-bin
 ```
 
+Keep it current. `wlr` capture on a fractionally-scaled output was broken for
+most of 2025 and fixed in the 2026.5 release; an 8-month-stale package presented
+as a black screen with no obvious cause.
+
 ### Setup
 
 ```bash
-# Capability needed for KMS capture
+# Only needed for kms capture, which is unused here — harmless to set.
+# NOTE: a package upgrade wipes file capabilities, so re-apply after upgrading.
 sudo setcap cap_sys_admin+p $(readlink -f $(which sunshine))
 
-# Enable user service
-systemctl --user enable --now sunshine
+systemctl --user enable --now app-dev.lizardbyte.app.Sunshine.service
+```
+
+**The unit was renamed upstream** from `sunshine.service` to
+`app-dev.lizardbyte.app.Sunshine.service`. The new unit declares
+`Alias=sunshine.service`, so the short name works again — but only once the unit
+is enabled, since the alias symlink is created by `enable`. After an upgrade that
+crosses the rename, expect `Unit sunshine.service not found` until you enable the
+new name.
+
+Drop-ins are keyed to the real unit name, so they must live in
+`~/.config/systemd/user/app-dev.lizardbyte.app.Sunshine.service.d/`. One is in
+use, working around pipewire-pulse leaving the default source as a literal
+`@DEFAULT_SOURCE@` token:
+
+```
+# .../app-dev.lizardbyte.app.Sunshine.service.d/pipewire-audio.conf
+[Service]
+Environment="XDG_RUNTIME_DIR=/run/user/1000"
+Environment="PULSE_SERVER=unix:/run/user/1000/pulse/native"
 ```
 
 Open `https://localhost:47990` to set credentials, then pair from Moonlight.
@@ -492,66 +550,52 @@ Open `https://localhost:47990` to set credentials, then pair from Moonlight.
 ```
 # ~/.config/sunshine/sunshine.conf
 system_tray = disabled
-capture = kms
+capture = wlr
+encoder = nvenc
+audio_sink = sink-sunshine-stereo
 ```
 
-### Resolution switching script
-
-Switches Hyprland to 1920x1200 (16:10) when streaming starts, back to 1080p when it stops. The AMD iGPU supports custom modes even if the TV doesn't advertise them.
-
-```bash
-# ~/.local/bin/sunshine-res
-#!/bin/bash
-export HYPRLAND_INSTANCE_SIGNATURE=$(ls -t /run/user/$(id -u)/hypr/ | head -1)
-hyprctl keyword monitor "HDMI-A-2,${1},0x0,${2:-1}"
-```
-
-```bash
-chmod +x ~/.local/bin/sunshine-res
-```
+`audio_sink` is pinned for the same pipewire-pulse reason as the drop-in.
 
 ### App config
+
+No `prep-cmd` resolution switching. It existed to flip between 1080p for a TV and
+1920x1200 for remote desktop; the TV is gone, the output is a dummy plug, and
+`monitors.conf` now fixes a single mode. The old `sunshine-res` helper hardcoded
+`HDMI-A-2` and had been silently doing nothing since the cable moved.
 
 ```json
 // ~/.config/sunshine/apps.json
 {
-  "env": {
-    "PATH": "$(PATH):$(HOME)/.local/bin"
-  },
+  "env": { "PATH": "$(PATH):$(HOME)/.local/bin" },
   "apps": [
-    {
-      "name": "Desktop",
-      "image-path": "desktop.png",
-      "prep-cmd": [
-        {
-          "do": "sunshine-res 1920x1200@60 1.5",
-          "undo": "sunshine-res 1920x1080@60"
-        }
-      ]
-    },
-    {
-      "name": "Desktop (1080p)",
-      "image-path": "desktop.png"
-    },
+    { "name": "Desktop", "image-path": "desktop.png" },
     {
       "name": "Steam Big Picture",
       "detached": ["setsid steam steam://open/bigpicture"],
-      "prep-cmd": [
-        {
-          "do": "",
-          "undo": "setsid steam steam://close/bigpicture"
-        }
-      ],
+      "prep-cmd": [{ "do": "", "undo": "setsid steam steam://close/bigpicture" }],
       "image-path": "steam.png"
     }
   ]
 }
 ```
 
-### Moonlight client settings
+To stream at a different resolution than the host renders, prefer Moonlight's own
+scaling over a `prep-cmd`; recent Sunshine handles scaled outputs natively.
 
-- Resolution: 1920x1200 (or "Native excluding notch" on Mac)
-- Connect via Tailscale IP (100.73.138.96) — auto-uses LAN when on same network
+### Monitor config
+
+A catch-all rule, so the mode survives the plug moving ports:
+
+```
+# ~/.config/hypr/monitors.conf
+env = GDK_SCALE,1.5
+monitor = ,1920x1200@60,auto,1.5
+```
+
+Scale 1.5 means 1920x1200 physical but only **1280x800 logical** — a small
+desktop. Fine for glasses or a portable panel, cramped for remote work. Drop to
+`,1920x1200@60,auto,1` for more usable space.
 
 ### Firewall
 
@@ -560,38 +604,65 @@ sudo ufw allow 47984:48010/tcp
 sudo ufw allow 47984:48010/udp
 ```
 
-### Monitor config
+### Moonlight client settings
 
-```
-# ~/.config/hypr/monitors.conf
-monitor = HDMI-A-2, 1920x1080@60, 0x0, 1.5
-monitor = HDMI-A-1, 1920x1080@60, 0x0, 1.5, mirror, HDMI-A-2
-```
-
-Default is 1080p for TV use. Moonlight's "Desktop" app switches to 1920x1200 via `sunshine-res` on connect, and reverts on disconnect. To manually switch:
-
-```bash
-sunshine-res 1920x1080@60 1.5  # TV / gaming
-sunshine-res 1920x1200@60 1.5  # remote desktop
-```
+- Resolution: 1920x1200 (or "Native excluding notch" on Mac)
+- Connect via the Tailscale IP — auto-uses LAN when on the same network
+- **AV1 is available** on this setup (`av1_nvenc`). The AMD iGPU had no AV1
+  encoder at all, so this is new since the move to the 5090.
 
 ### DPMS
 
-The dummy plug must stay on for KMS capture to work — if DPMS turns it off, Sunshine sees 0x0 resolution and fails. Exclude it from the dpms-off listener in hypridle:
+`hypridle.conf` currently has no `dpms off` listener, so nothing here bites. If
+one is ever added, exclude the streaming output: if DPMS blanks it Sunshine sees a
+0x0 resolution and fails.
 
+### Troubleshooting
+
+Sunshine logs to the journal under the *real* unit name:
+
+```bash
+journalctl --user -u app-dev.lizardbyte.app.Sunshine.service -f
 ```
-# ~/.config/hypr/hypridle.conf
-on-timeout = hyprctl dispatch dpms off HDMI-A-1  # skip dummy plug on HDMI-A-2
+
+Add `min_log_level = 0` to `sunshine.conf` for verbose output — remember to remove
+it, it produced a 17MB `~/.config/sunshine/sunshine.log` in minutes.
+
+| Symptom | Cause |
+|---|---|
+| Moonlight `Error code: -1` | Sunshine crashed mid-handshake. Check for `core-dump` in the journal. |
+| Black screen, session connects | Capture failing. Look for `Frame capture failed`. |
+| `Frame capture failed` | Encoder on a different GPU than the display, or a stale build on a scaled output. |
+| `Unit sunshine.service not found` | Upgrade crossed the unit rename; enable the new name. |
+
+To confirm the compositor itself is rendering (rules out Sunshine entirely):
+
+```bash
+grim /tmp/test.png && ffmpeg -v quiet -i /tmp/test.png -vf scale=1:1 -f rawvideo -pix_fmt rgb24 - | od -An -tu1
 ```
+
+Non-zero RGB means the desktop is live and the fault is in Sunshine's capture
+path. `grim` uses shm buffers where Sunshine uses dmabuf, so `grim` succeeding
+while Sunshine fails points at the dmabuf path specifically.
 
 ## HDMI Dummy Plug (Headless/Remote Access)
 
-4K HDMI dummy plug (reports as AOC 28E850) for headless Sunshine/Moonlight streaming. The plug does NOT work on the RTX 5090 — the NVIDIA HDMI port doesn't detect its HPD signal. Must be plugged into the AMD iGPU's HDMI-A-2 port.
+A 4K HDMI dummy plug keeps an output alive so Hyprland has something to render to
+while the machine runs headless.
+
+It sits on the **RTX 5090's `HDMI-A-1`**. An earlier note in this file claimed the
+plug could not work there because the NVIDIA port ignores its HPD signal — that
+limitation is real, but it is defeated by forcing an EDID at boot, which is
+already wired up (see *UPERFECT EDID HDR Strip*):
 
 ```
-# ~/.config/hypr/monitors.conf
-monitor = HDMI-A-2, 1920x1080@60, 0x0, 1.5
+drm.edid_firmware=HDMI-A-1:edid/uperfect-sdr.bin
 ```
+
+The connector therefore comes up regardless of HPD, and reports the UPERFECT EDID
+rather than the plug's own — so `hyprctl monitors` shows UPERFECT modes no matter
+which of the two is physically attached. Mode selection comes from the
+`monitors.conf` catch-all above.
 
 ## Ollama (native)
 
@@ -997,22 +1068,6 @@ Verify: `journalctl -b -g 045e` should show "gamepad detected" not "parse failed
 
 Enable "Xbox Configuration Support" in Steam Settings → Controller.
 
-## TV Mirroring (HDMI-A-1)
-
-TV plugs into the NVIDIA HDMI-A-1 port. Mirrors the dummy plug (HDMI-A-2) at 1080p.
-
-```
-# ~/.config/hypr/monitors.conf
-monitor = HDMI-A-1, 1920x1080@60, 0x0, 1.5, mirror, HDMI-A-2
-```
-
-Switch resolution manually when needed:
-
-```bash
-sunshine-res 1920x1080@60 1.5  # TV / gaming
-sunshine-res 1920x1200@60 1.5  # remote desktop (Moonlight does this automatically)
-```
-
 ## Bulk Storage on /mnt/aux
 
 Secondary 2 TB NVMe (`/dev/nvme0n1p1`, btrfs+zstd) holds bulky replaceable data. Mounted via fstab so symlinks survive reboots.
@@ -1039,9 +1094,15 @@ ln -s /mnt/aux/somedir ~/somedir
 
 After moving, root space won't fully free until btrfs snapshots holding the old data rotate out. `/mnt/aux` is **not** covered by `omarchy-snapshot` and does not inherit root's protections — only put replaceable data here (game installs, media, downloads). Anything that matters belongs on root.
 
-## HDMI Dropouts on AMD iGPU (card2)
+## HDMI Dropouts on AMD iGPU (historical)
 
-Display connected to the motherboard HDMI (AMD iGPU) instead of the RTX 5090 to save ~500MB VRAM for ComfyUI. The 2880x1800@100Hz mode needs a 563 MHz TMDS pixel clock, which is near the 600 MHz max and above the 340 MHz scrambling threshold. The iGPU's aggressive power management in `auto` mode can cause intermittent HDMI link drops (visible as brief screen blackouts and `Connector HDMI-A-2 disconnected` in the Hyprland log).
+**Not current.** The display now hangs off the RTX 5090 (see *Sunshine*), so none of this
+applies as written — kept because it bites again if the cable ever moves back.
+
+The card number below is whatever the iGPU enumerates as; it is not stable across boots.
+
+With the display on the motherboard HDMI (AMD iGPU) to save ~500MB VRAM for ComfyUI, the
+2880x1800@100Hz mode needs a 563 MHz TMDS pixel clock, which is near the 600 MHz max and above the 340 MHz scrambling threshold. The iGPU's aggressive power management in `auto` mode can cause intermittent HDMI link drops (visible as brief screen blackouts and `Connector HDMI-A-2 disconnected` in the Hyprland log).
 
 Fix: lock the iGPU out of deep power saving states:
 
