@@ -202,21 +202,27 @@ space-bar preview and video thumbnails — worth it only if those are wanted.
 
 ## Action checklist
 
-Reviewed and decided 2026-08-26. Everything below is **applied** except the package
-installs, which need an interactive sudo password.
+Reviewed and decided 2026-08-26. **All twelve are resolved.** Base packages missing
+fell from 36 to 26; the remaining 26 are all deliberate (bucket A, B and the parts of
+C that were kept).
+
+One thing has not taken effect yet: the `uwsm/env` PATH change applies at **next
+login**, and Sunshine's workaround is already gone, so `~/.local/bin` is absent from
+the graphical session until you log out and back in. Nothing currently depends on it
+— the Sunshine Desktop entry launches no command — but a re-login closes the gap.
 
 | # | Action | Decision | Status |
 |---|---|---|---|
 | 1 | Five dead keybindings | delete all five | **done** |
 | 2 | `uwsm/env` PATH + drop Sunshine's workaround | apply both | **done** — `uwsm/env` now byte-identical to upstream |
-| 3 | Screen recording | install `gpu-screen-recorder` | pending package install |
-| 4 | Share menu | reinstall `localsend` | pending package install |
+| 3 | Screen recording | install `gpu-screen-recorder` | **done** — 6.0.1, both entry points live |
+| 4 | Share menu | reinstall `localsend` | **done** — 1.18.2, all three entries live |
 | 5 | Display mode | leave at 1920x1200@60 | no change, by choice |
 | 6 | `tmux.conf` | Omarchy default + the 2 personal lines | **done** — 108 lines |
 | 7 | Extension points | create all three, matching vanilla | **done** — structure now identical to the VM |
 | 8 | Stale forks | refresh kitty, swayosd, waybar | **done** — backups kept as `*.bak.<epoch>` |
 | 9 | `gtk-3.0/bookmarks` | create | **done** |
-| 10 | Nautilus/desktop group | restore all seven | pending package install |
+| 10 | Nautilus/desktop group | restore all seven | **done** — both Nautilus extensions import cleanly |
 | 11 | Skipped migrations | clear both markers | **done** — both re-run on next update |
 | 12 | Printing | leave removed | no change, by choice |
 
@@ -232,12 +238,6 @@ Two things surfaced while applying these:
   environment rather than the systemd user manager's — so without `WAYLAND_DISPLAY`
   it dies on launch while systemd logs "Started waybar". This is almost certainly the
   same mechanism behind the "invisible top bar" seen previously.
-
-The one command still to run:
-
-```bash
-omarchy-pkg-add gpu-screen-recorder localsend gvfs-smb gvfs-nfs gvfs-mtp sushi ffmpegthumbnailer nautilus-python python-gobject
-```
 
 **Never run** `omarchy-reinstall`, `omarchy-reinstall-pkgs` or
 `omarchy-reinstall-configs`. The first two run `pacman -Suu` (downgrades) and reset
