@@ -1014,8 +1014,15 @@ Fix, remembering the `*.wants/` symlink is the one systemd actually reads at boo
 sudo install -m644 sys/t1/yt-queue.service sys/t1/yt-queue.timer \
   sys/t1/yt-dlp-update.service sys/t1/yt-dlp-update.timer /etc/systemd/system/
 sudo systemctl daemon-reload
-sudo systemctl reenable --now yt-queue.timer yt-dlp-update.timer
+sudo systemctl reenable yt-queue.timer yt-dlp-update.timer
+sudo systemctl start yt-queue.timer yt-dlp-update.timer
 ```
+
+The explicit `start` is not redundant. `--now` means *try-restart* when paired
+with `reenable`, and try-restart is a no-op on a stopped unit — it exits `success`
+and starts nothing, which looks identical to having worked. The metrics recipe
+above gets away with `reenable --now` only because that service is long-running
+and was already active at the time.
 
 Verify a NEXT time actually appears, which is the part `is-enabled` will not tell
 you:
