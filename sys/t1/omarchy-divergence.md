@@ -43,7 +43,9 @@ suggests. This is the finding that most justified building the VM.
 
 ## What is actually broken
 
-Each verified by resolving the call site and confirming the binary is absent.
+Each verified by resolving the call site and confirming the binary is absent. One
+candidate that looked like breakage did not survive that test and has been moved
+further down — see "`uwsm/env` lags upstream".
 
 ### Dead keybindings — 5
 
@@ -77,24 +79,6 @@ all present, so `PRINT` and OCR extraction work.
 install day. Separately, `~/.local/share/nautilus-python/extensions/` holds
 `localsend.py` and `transcode.py`, but `nautilus-python` is not installed, so
 Nautilus never loads them — the files sit on disk doing nothing.
-
-### `~/.local/bin` is not on the graphical session PATH
-
-`~/.config/uwsm/env` reads:
-
-```
-export PATH=$OMARCHY_PATH/bin:$PATH
-```
-
-Upstream changed this to append `:$HOME/.local/bin` on **2026-03-12** (`dc238002`).
-That commit shipped **no migration**, and the only migration that ever refreshes
-`uwsm/env` is dated 2025-09-16 — six months earlier — so no existing install has ever
-received it.
-
-15 binaries live in `~/.local/bin`, including `claude`, `yt-dlp`, `codex` and `pi`.
-The login shell has the directory (fish sets it), so terminals are fine; anything
-launched by uwsm as a graphical app is not. This is why Sunshine's `apps.json` needs
-its `"PATH": "$(PATH):$(HOME)/.local/bin"` workaround.
 
 ### Display pinned well below what the panel supports
 
@@ -133,6 +117,37 @@ harmless: vanilla's `~/.config/omarchy/current/theme` is a real directory, exact
 like t1's, and both `themes/` dirs are empty — the theme layout matches.
 
 Skipped migrations are invisible: nothing surfaces them, and no command lists them.
+
+### `uwsm/env` lags upstream — but the consequence was not what it looked like
+
+`~/.config/uwsm/env` read:
+
+```
+export PATH=$OMARCHY_PATH/bin:$PATH
+```
+
+Upstream changed this to append `:$HOME/.local/bin` on **2026-03-12** (`dc238002`).
+That commit shipped **no migration**, and the only migration that ever refreshes
+`uwsm/env` is dated 2025-09-16 — six months earlier — so no existing install has ever
+received it. That much is verified and is a real instance of the delivery gap.
+
+**The impact, however, was nil, and this audit initially claimed otherwise.** The
+first version of this document asserted that 15 binaries in `~/.local/bin` were
+unreachable for graphical apps, and that this was why Sunshine's `apps.json` carried
+a `"PATH": "$(PATH):$(HOME)/.local/bin"` entry. Direct measurement disproved it:
+the Sunshine process, started at 08:50 and predating any change made here, already
+had `~/.local/bin` on its PATH.
+
+The reason is that **systemd's own default user-manager PATH includes
+`$HOME/.local/bin`** (systemd 261 here; upstream since v254). It appears at position
+11, ahead of `/usr/local/sbin` and the rest of the system defaults, independently of
+anything `uwsm/env` does. So Sunshine's `apps.json` entry was redundant rather than
+load-bearing, which is also why removing it changed nothing.
+
+The `uwsm/env` line was still brought in line with upstream — it costs nothing and
+is the correct defensive position if systemd's default ever changes — but it fixed
+no actual breakage. **Verify the consequence, not just the diff:** a config lagging
+upstream does not by itself prove anything is broken.
 
 ### Smaller stale forks
 
@@ -206,15 +221,14 @@ Reviewed and decided 2026-08-26. **All twelve are resolved.** Base packages miss
 fell from 36 to 26; the remaining 26 are all deliberate (bucket A, B and the parts of
 C that were kept).
 
-One thing has not taken effect yet: the `uwsm/env` PATH change applies at **next
-login**, and Sunshine's workaround is already gone, so `~/.local/bin` is absent from
-the graphical session until you log out and back in. Nothing currently depends on it
-— the Sunshine Desktop entry launches no command — but a re-login closes the gap.
+No re-login is needed. An earlier revision of this document said one was, on the
+assumption that `~/.local/bin` reached the session only through `uwsm/env`; systemd's
+default user PATH supplies it regardless, so there was never a gap to close.
 
 | # | Action | Decision | Status |
 |---|---|---|---|
 | 1 | Five dead keybindings | delete all five | **done** |
-| 2 | `uwsm/env` PATH + drop Sunshine's workaround | apply both | **done** — `uwsm/env` now byte-identical to upstream |
+| 2 | `uwsm/env` PATH + drop Sunshine's workaround | apply both | **done** — but see above: this fixed nothing, systemd already provided the path |
 | 3 | Screen recording | install `gpu-screen-recorder` | **done** — 6.0.1, both entry points live |
 | 4 | Share menu | reinstall `localsend` | **done** — 1.18.2, all three entries live |
 | 5 | Display mode | leave at 1920x1200@60 | no change, by choice |
