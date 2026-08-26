@@ -791,10 +791,41 @@ The publisher runs on the **host, not in a container**, because the two most imp
 
 - **Broker**: `eclipse-mosquitto:2`, bound to `127.0.0.1:1883`. The publisher is on the host and HA is host-networked, so nothing crosses the LAN and **no ufw rule is needed**
 - **Broker config**: `sys/t1/mosquitto.conf`; credentials in `~/srv/mosquitto/passwd` (generated on the box with `mosquitto_passwd`, never committed), users `ha` and `t1`
-- **Publisher**: `sys/t1/t1-metrics.py`, run by `t1-metrics.service` — symlinked into `/etc/systemd/system/`, so repo edits apply after `systemctl daemon-reload && systemctl restart t1-metrics`
+- **Publisher**: `sys/t1/t1-metrics.py`, run by `t1-metrics.service` — **copied** into `/etc/systemd/system/`, deliberately not symlinked (see *The unit must not be symlinked from this repo* below). Edits to the `.py` apply after `systemctl restart t1-metrics`; edits to the unit need re-copying first
 - **Credentials**: `/etc/t1-metrics.env`, mode 0600, read by the unit via `EnvironmentFile`
 - **Intervals**: sensors and GPU every 30s; SMART every 10 minutes, since attributes move slowly and polling wakes the device
 - **Retention**: every sensor is published with `state_class: measurement`, which is what puts it in HA's long-term statistics — hourly min/max/mean kept forever. Without it the data would silently vanish at `purge_keep_days`
+
+### The unit must not be symlinked from this repo
+
+`t1-metrics.service` was originally symlinked out of `sys/t1/` into `/etc/systemd/system/`, so that repo edits went live after a `daemon-reload`. On this machine that is a trap, and it stayed hidden until the first reboot after the service was set up:
+
+```
+t1-metrics.service: Failed to open /etc/systemd/system/t1-metrics.service: No such file or directory
+```
+
+This repo is checked out under `/home`, which lives on the encrypted root volume and is **not mounted at the point systemd loads units**. So the unit was simply unreadable at boot: `systemctl is-enabled` answered `enabled`, nothing started, `NRestarts=0`, and the boot journal held that one line and nothing further. Every reboot silently lost host telemetry, and since this setup runs recording-only with no alerting, nothing would have said so.
+
+**There are two symlinks, and fixing one is not enough.** Replacing the unit with a real file still leaves `multi-user.target.wants/t1-metrics.service` pointing back into the repo — and *that* is the one systemd reads at boot to decide what to pull into the target. `systemctl is-enabled` reports `enabled` either way, because systemd does not validate a symlink's target, which is exactly what makes the half-fix look finished.
+
+```bash
+sudo install -m644 sys/t1/t1-metrics.service /etc/systemd/system/t1-metrics.service
+sudo systemctl daemon-reload
+sudo systemctl reenable --now t1-metrics
+```
+
+`reenable` is the step that rewrites the `*.wants/` symlink to the real path. Verify both, not just the unit:
+
+```bash
+systemctl show t1-metrics -p FragmentPath -p LoadState -p ActiveState
+ls -l /etc/systemd/system/multi-user.target.wants/t1-metrics.service
+```
+
+Both paths should be under `/etc/systemd/system/`, with none pointing into `/home`.
+
+**Only the unit file has to move.** `t1-metrics.py` stays in the repo: it is read at service *start*, long after `/home` is mounted — which is also why the unit sets `ProtectHome=read-only` rather than `yes`. The cost is that the unit no longer auto-syncs, so re-copy it whenever it changes here.
+
+Generalises past this service: **a systemd unit cannot live behind a late mount**, and `is-enabled` is not evidence that one will start.
 
 ### What the hardware exposes
 
