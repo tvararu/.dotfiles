@@ -112,7 +112,8 @@ the **mode** is pinned low, by a line that describes itself as temporary.
 repo's `tmux/.config/tmux/tmux.conf` holds exactly those 2 lines, and the file on t1
 is a **real file, not a stow symlink** — so the content was copied over the Omarchy
 default at some point. Lost: `C-Space` prefix, vi copy mode, pane/window bindings,
-and theme integration.
+and its theme colour block. (That block is static colours, not wired to
+`~/.config/omarchy/current/theme` — 83 directives in total.)
 
 Nothing else under `~/.config` is stow-managed, so this is the only place the
 dotfiles repo and Omarchy collide.
@@ -201,21 +202,42 @@ space-bar preview and video thumbnails — worth it only if those are wanted.
 
 ## Action checklist
 
-Each line is independent. Nothing here has been applied.
+Reviewed and decided 2026-08-26. Everything below is **applied** except the package
+installs, which need an interactive sudo password.
 
-| # | Action | Reversible | Why |
+| # | Action | Decision | Status |
 |---|---|---|---|
-| 1 | Delete the 5 dead lines from `~/.config/hypr/bindings.conf` | yes | keys currently do nothing |
-| 2 | `~/.config/uwsm/env`: append `:$HOME/.local/bin` to `PATH` | yes | 15 binaries off-PATH for graphical apps; lets Sunshine's workaround go |
-| 3 | Install `gpu-screen-recorder`, **or** remove the `ALT PRINT` binding and waybar indicator | yes | screen recording dead both ways |
-| 4 | Install `localsend`, **or** delete the 3 Share menu entries and the 2 inert Nautilus extensions | yes | Share menu dead |
-| 5 | Raise the pinned mode in `monitors.conf` (panel supports 2560x1600@120) | yes | keep scale 1.5; only the mode is stale |
-| 6 | Restore Omarchy's `tmux.conf` and re-apply the 2 personal lines on top | yes | recovers prefix, vi copy mode, theme integration |
-| 7 | Copy `extensions/`, `themed/`, `hooks/*.d/` from `~/.local/share/omarchy/config/omarchy/` | yes | purely additive; unblocks sanctioned customisation |
-| 8 | `omarchy-refresh-config kitty/kitty.conf` and `swayosd/config.toml` | yes | backs up and diffs; picks up upstream fixes |
-| 9 | Re-run migration `1769183359` if the Nautilus group is restored | yes | otherwise `nautilus-python` stays absent forever |
-| 10 | Decide on the Nautilus group (bucket D + C) | yes | thumbnails, previews, SMB/NFS browsing |
-| 11 | `touch ~/.config/gtk-3.0/bookmarks` | yes | only genuinely missed install artifact |
+| 1 | Five dead keybindings | delete all five | **done** |
+| 2 | `uwsm/env` PATH + drop Sunshine's workaround | apply both | **done** — `uwsm/env` now byte-identical to upstream |
+| 3 | Screen recording | install `gpu-screen-recorder` | pending package install |
+| 4 | Share menu | reinstall `localsend` | pending package install |
+| 5 | Display mode | leave at 1920x1200@60 | no change, by choice |
+| 6 | `tmux.conf` | Omarchy default + the 2 personal lines | **done** — 108 lines |
+| 7 | Extension points | create all three, matching vanilla | **done** — structure now identical to the VM |
+| 8 | Stale forks | refresh kitty, swayosd, waybar | **done** — backups kept as `*.bak.<epoch>` |
+| 9 | `gtk-3.0/bookmarks` | create | **done** |
+| 10 | Nautilus/desktop group | restore all seven | pending package install |
+| 11 | Skipped migrations | clear both markers | **done** — both re-run on next update |
+| 12 | Printing | leave removed | no change, by choice |
+
+Two things surfaced while applying these:
+
+- **The waybar refresh re-introduced a dead call site.** Upstream's `config.jsonc`
+  hardcodes `"on-click-right": "alacritty"`, which this box does not have. Changed to
+  `xdg-terminal-exec`, matching the convention the same file already uses elsewhere.
+  Worth remembering: refreshing a config toward vanilla can *create* breakage on a
+  box whose package set is not vanilla.
+- **Restarting waybar from a non-graphical shell kills it.** `omarchy-restart-waybar`
+  resolves to `systemd-run --user --scope`, and a scope inherits the caller's
+  environment rather than the systemd user manager's — so without `WAYLAND_DISPLAY`
+  it dies on launch while systemd logs "Started waybar". This is almost certainly the
+  same mechanism behind the "invisible top bar" seen previously.
+
+The one command still to run:
+
+```bash
+omarchy-pkg-add gpu-screen-recorder localsend gvfs-smb gvfs-nfs gvfs-mtp sushi ffmpegthumbnailer nautilus-python python-gobject
+```
 
 **Never run** `omarchy-reinstall`, `omarchy-reinstall-pkgs` or
 `omarchy-reinstall-configs`. The first two run `pacman -Suu` (downgrades) and reset
