@@ -867,8 +867,9 @@ below load 100 % on GPU at 262144, verified 2026-08-27:
 | q8_0 | 262144 | 30527 MiB | 173.69 | 113.03 |
 | **q4_0** | **262144** | **26425 MiB** | **172.64** | **111.55** |
 
-`q4_0` is the pick. It matches what llama.cpp used, runs within 1 % of `q8_0`,
-and leaves 5717 MiB free instead of 1615 MiB. Full context costs about 5 % of
+`q4_0` is the pick. It matches what llama.cpp used and leaves 5717 MiB free
+instead of 1615 MiB. On **decode throughput** it is 0.60 % behind `q8_0` on
+structured output and 1.31 % behind on prose. Full context costs about 5 % of
 decode speed and 4.9 GB of VRAM against the 32768 default. Part of that 5 % is
 disk contention from a concurrent download, so the real cost is lower.
 
@@ -880,8 +881,12 @@ Environment="OLLAMA_KV_CACHE_TYPE=q4_0"
 Environment="OLLAMA_CONTEXT_LENGTH=262144"
 ```
 
-Quantised KV trades some accuracy at long context for the window. That is the
-same trade llama.cpp made here. It was not measured.
+**Those percentages are speed only. No quality comparison was made between the
+two cache types, and accuracy is where they actually differ.** A 4-bit KV cache
+holds every past token at lower precision than an 8-bit one, and the loss
+compounds as the context fills. The benchmark generated 400 tokens from short
+prompts, so it never filled the cache and cannot detect this. llama.cpp ran
+`q4_0` here for months, so the risk is not new, but it is unquantified.
 
 #### Idle unloading
 
