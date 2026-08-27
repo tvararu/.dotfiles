@@ -781,8 +781,20 @@ The unit sets `OLLAMA_MODELS=/var/lib/ollama`.
 
 ### Configuration
 
-Run from `bash`. Fish has no heredoc and fails with `Expected a string, but found
-a redirection`.
+Fish has no heredoc and fails with `Expected a string, but found a redirection`.
+In fish, use `printf`:
+
+```fish
+printf '%s\n' '[Unit]' 'After=tailscaled.service' 'Wants=tailscaled.service' '' \
+  '[Service]' 'Environment="OLLAMA_HOST=100.73.138.96:11434"' \
+  'Environment="OLLAMA_KEEP_ALIVE=5m"' 'Environment="OLLAMA_FLASH_ATTENTION=1"' \
+  'Environment="OLLAMA_KV_CACHE_TYPE=q8_0"' \
+  'Environment="OLLAMA_CONTEXT_LENGTH=262144"' \
+  'RestartPreventExitStatus=' 'Restart=on-failure' 'RestartSec=5' \
+  | sudo tee /etc/systemd/system/ollama.service.d/override.conf > /dev/null
+```
+
+The same thing as a bash heredoc:
 
 ```bash
 sudo tee /etc/systemd/system/ollama.service.d/override.conf > /dev/null <<'EOF'
@@ -874,12 +886,16 @@ about 5 % of decode speed and 4.9 GB of VRAM against the 32768 default. Part of
 that 5 % is disk contention from a concurrent download, so the real cost is
 lower.
 
-**`q8_0` leaves only 1615 MiB spare, and the desktop already holds ~1298 MiB.**
-ollama measures free VRAM at load and splits layers between GPU and CPU to fit.
-With the context pinned it cannot shrink the window to compensate, so it offloads
-layers instead — a large slowdown with no error. Check `ollama ps` reads
-`100% GPU` after a load. If it shows CPU, switch to `q4_0`, which leaves
-5717 MiB and always loads whole.
+`q8_0` leaves 1615 MiB spare. Nothing on this box competes for it: t1 runs
+headless, and the ~1 GB in use is Sunshine (513 MiB, only while streaming), the
+metrics publisher (498 MiB) and walker (51 MiB).
+
+The one failure to know about. ollama measures free VRAM at load and splits
+layers between GPU and CPU to fit. With the context pinned it cannot shrink the
+window to compensate, so it offloads layers instead — a large slowdown with no
+error. If something ever does hold VRAM at load time, `ollama ps` shows a
+`PROCESSOR` other than `100% GPU`. `q4_0` leaves 5717 MiB and always loads
+whole.
 
 262144 is the ceiling. It is the model's trained window, and ollama exposes no
 rope-scaling option to go past it.
