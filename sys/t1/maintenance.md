@@ -231,11 +231,11 @@ docker inspect <c> -f '{{json .NetworkSettings.Ports}}'   # {}
 ```
 
 **Do not bind published ports to a Tailscale IP.** Publish to `127.0.0.1` and
-front it with `tailscale serve` — loopback exists at container start, so the race
+proxy it with `tailscale serve`. Loopback exists at container start, so the race
 cannot happen.
 
 No Docker container binds `100.73.138.96` as of 2026-08-27. Native ollama still
-does, because Serve cannot front it; it survives the race by retrying instead.
+does, because Serve cannot proxy it. It survives the race by retrying instead.
 See *Ollama (native)*.
 
 ### Tailscale accepts inbound before ufw sees it
@@ -243,11 +243,11 @@ See *Ollama (native)*.
 `tailscaled` installs its own `ts-input` chain that ACCEPTs traffic arriving on
 `tailscale0` for this node, ahead of ufw's default-deny. **Every host-bound
 service is reachable from the tailnet with no ufw rule at all.** `8123` (Home
-Assistant) and `9091` (Transmission) have no `allow` rule and both answer over
-the tailnet.
+Assistant) and `9091` (Transmission) have no `allow` rule. Both answer over the
+tailnet.
 
 So **ufw here governs LAN and WAN exposure only.** Tightening a ufw rule does not
-reduce what the tailnet can reach; that is gated by device membership.
+reduce what the tailnet can reach. Device membership gates that.
 
 ### Docker published ports over Tailscale (ufw-docker)
 
@@ -293,10 +293,10 @@ tailscale serve status
 tailscale serve --https=443 off    # disable
 ```
 
-Jellyfin uses it, set up 2026-08-27 after tailnet peers were dropped in
+Jellyfin uses it, configured 2026-08-27 after tailnet peers were dropped in
 `DOCKER-USER`. It is the only backend behind Serve. A second one needs its own
-HTTPS port (`--https=8443`) or a subpath (`--set-path`), since Jellyfin holds `/`
-on `:443`; one cert covers every port.
+HTTPS port (`--https=8443`) or a subpath (`--set-path`), because Jellyfin holds
+`/` on `:443`. One cert covers every port.
 
 No sudo, no ufw change, real Let's Encrypt cert. The config lives in
 `/var/lib/tailscale/tailscaled.state` and survives reboots, but not
@@ -306,11 +306,11 @@ No sudo, no ufw change, real Let's Encrypt cert. The config lives in
 against an allowlist rejects everything proxied through it. ollama returns a bare
 403 this way — see *Ollama (native)*. Check before assuming Serve is a drop-in.
 
-Trade-offs: the stream is proxied through tailscaled rather than going direct,
-the client URL becomes the MagicDNS name, and it covers HTTP only — raw TCP needs
-`--tcp` or a `ufw route allow`. Whether `http://t1:<port>` still works on the LAN
-depends on the container's own bind, not on Serve. Jellyfin still publishes
-`0.0.0.0:8096`, so `http://t1:8096` is unchanged.
+Trade-offs. The stream goes through tailscaled rather than direct. The client
+URL becomes the MagicDNS name. It covers HTTP only — raw TCP needs `--tcp` or a
+`ufw route allow`. Whether `http://t1:<port>` still works on the LAN depends on
+the container's own bind, not on Serve. Jellyfin still publishes `0.0.0.0:8096`,
+so `http://t1:8096` is unchanged.
 
 The HTTPS is incidental. Tailscale is WireGuard, so the transport is already
 encrypted and the peer authenticated by public key. TLS on top matters only for
@@ -769,7 +769,7 @@ direct CUDA on the RTX 5090, journald logs, no container. Replaced the llama.cpp
 compose profiles (`qwen38`, `a3b`, `qwopus`), removed the same day.
 
 Two reasons. It unloads idle models, returning ~20 GB of VRAM to ComfyUI and
-games; the llama.cpp container held its allocation permanently. And it is faster
+games. The llama.cpp container held its allocation permanently. It is also faster
 on the same model — see the benchmark below.
 
 ```bash
@@ -807,7 +807,7 @@ Reachable from the tailnet at `http://t1:11434` or `http://100.73.138.96:11434`.
 LAN clients get connection refused at bind level, so no ufw rule applies.
 
 **The CLI needs `OLLAMA_HOST` set, even on t1.** It defaults to
-`127.0.0.1:11434` while the server binds the tailnet IP, so a bare `ollama ps`
+`127.0.0.1:11434` while the server binds the tailnet IP. A bare `ollama ps` then
 fails with `could not connect to ollama server`. `fish/config.fish` exports it:
 
 ```fish
@@ -816,26 +816,26 @@ test (hostname) = t1; and set -x OLLAMA_HOST t1:11434
 
 #### Why it binds the Tailscale IP rather than loopback + Serve
 
-Everything else moved to `127.0.0.1` + `tailscale serve` on 2026-08-27. **ollama
-cannot use that pattern.** It validates `Host` against an allowlist — `localhost`,
-loopback literals, the machine hostname — and Serve forwards
-`Host: t1.gentoo-bangus.ts.net:8443`, which is not on it. Proxied requests return
-403 with an empty body. Verified 2026-08-27:
+Everything else now binds `127.0.0.1` behind `tailscale serve`, as of
+2026-08-27. **ollama cannot use that pattern.** It validates `Host` against an
+allowlist: `localhost`, loopback literals, and the machine hostname. Serve
+forwards `Host: t1.gentoo-bangus.ts.net:8443`, which is not on that list.
+Proxied requests return 403 with an empty body. Verified 2026-08-27:
 
 ```bash
 curl -o /dev/null -w '%{http_code}\n' -H 'Host: t1' http://127.0.0.1:11434/v1/models          # 200
 curl -o /dev/null -w '%{http_code}\n' -H 'Host: t1.gentoo-bangus.ts.net:8443' http://127.0.0.1:11434/v1/models  # 403
 ```
 
-`OLLAMA_ORIGINS` does not govern this — it feeds gin's CORS middleware, and bare
+`OLLAMA_ORIGINS` does not govern this. It feeds gin's CORS middleware, and bare
 hostnames panic the server at startup (`bad origin: origins must contain '*' or
 include http://,https://,...`). No allowed-hosts knob exists in 0.32.15.
 
 The boot race is handled by retry instead. `After=tailscaled.service` is not
 enough on its own, for the reason in *Docker: start after Tailscale*. Clearing
-`RestartPreventExitStatus` is what makes it recover; before that, ollama had
-failed at every boot in the journal with `bind: cannot assign requested address`
-and `NRestarts=0`.
+`RestartPreventExitStatus` is what makes it recover. Before that, ollama failed
+at every boot in the journal with `bind: cannot assign requested address` and
+`NRestarts=0`.
 
 #### Idle unloading
 
@@ -870,8 +870,11 @@ sudo chown -R ollama:ollama /var/lib/ollama
 (`sha256:f5f1dd8920d4…`). The `-mtp` tag is cosmetic: for 3.8 the MTP head lives
 inside the main GGUF rather than a separate repo.
 
-If ComfyUI is holding VRAM and a model fails to load, free it with
-`curl -X POST http://localhost:8188/free -H 'Content-Type: application/json' -d '{"unload_models": true, "free_memory": true}'`.
+If ComfyUI is holding VRAM and a model fails to load, free it:
+
+```bash
+curl -X POST http://localhost:8188/free -H 'Content-Type: application/json' -d '{"unload_models": true, "free_memory": true}'
+```
 
 #### Other quants of Qwen3.8
 
@@ -890,13 +893,13 @@ tags), which is MLX-only in 0.32.15. So the NVFP4 build does not run on NVIDIA,
 even though the 5090 has native FP4 tensor cores.
 
 `q8_0` leaves 2860 MiB after weights. f16 KV costs ~112 KiB/token, so 32768 ctx
-needs 3584 MiB and does not fit; 8192 does, before counting the ~1300 MiB the
+needs 3584 MiB and does not fit. 8192 fits, before counting the ~1300 MiB the
 desktop holds.
 
-ollama is not limited to its own library — `ollama create` with `FROM ./model.gguf`
+ollama is not limited to its own library. `ollama create` with `FROM ./model.gguf`
 imports any GGUF, including unsloth's `UD-Q4_K_XL` (same size, higher fidelity
-than `Q4_K_M`). Untested whether MTP survives the import; it is worth 1.65–2.47x
-here, so check before switching.
+than `Q4_K_M`). Whether MTP survives the import is untested. MTP is worth
+1.65–2.47x here, so check before switching.
 
 ### Benchmark: why ollama replaced llama.cpp (2026-08-27)
 
@@ -911,31 +914,34 @@ llama.cpp `timings.predicted_per_second`, ollama `eval_count / eval_duration`.
 | llama.cpp + MTP, ctx-matched (32768, f16 KV) | 118.19 ± 1.08 | 92.99 ± 0.37 |
 | **ollama + MTP** (32768, f16 KV) | **180.33 ± 1.67** | **119.43 ± 0.25** |
 
-ollama is +53 % on structured output and +28 % on prose against a context-matched
-llama.cpp; +59 % / +28 % against the config that was deployed. Re-measured on the
-systemd service after the migration: **182.60 ± 1.15** and **120.12 ± 0.68**.
+Against a context-matched llama.cpp, ollama is +53 % on structured output and
++28 % on prose. Against the config that was deployed, +59 % / +28 %. Re-measured
+on the systemd service after the migration: **182.60 ± 1.15** and
+**120.12 ± 0.68**.
 
-Not a context artefact. The ctx-matched row exists to rule that out: dropping
+Not a context artefact. The ctx-matched row exists to rule that out. Dropping
 262144 → 32768 and q4_0 → f16 KV moved structured by 4 % and prose not at all.
 Decode cost tracks tokens in the cache, not the allocation.
 
 It is the draft implementation. Against the same no-MTP baseline, MTP is worth
-1.62x / 1.28x under llama.cpp and 2.47x / 1.65x under ollama — same weights, same
+1.62x / 1.28x under llama.cpp and 2.47x / 1.65x under ollama. Same weights, same
 draft head, same GPU. llama.cpp's acceptance rate was 0.74 structured, 0.54
-prose. That matches llama.cpp
+prose.
+
+That matches llama.cpp
 [PR #27781](https://github.com/ggml-org/llama.cpp/pull/27781), open as of
-2026-08-27, which reports `draft-mtp` misdetecting separate-KV MTP architectures
-— qwen3_5 included — as sharing the target's KV, so the draft head runs from
-stale state at pinned positions. Retest llama.cpp if it lands.
+2026-08-27. It reports `draft-mtp` misdetecting separate-KV MTP architectures,
+qwen3_5 included, as sharing the target's KV. The draft head then runs from stale
+state at pinned positions. Retest llama.cpp if it lands.
 
 Limits of the test:
 
 - Different quant builds. llama.cpp ran unsloth `UD-Q4_K_XL` (17.6 GB), ollama
   ships `Q4_K_M` (16.81 GB). ~4.5 % less weight bandwidth predicts a few percent,
-  not the measured gap — but UD is the higher-fidelity quant and the switch gives
-  it up
-- ollama's own no-MTP baseline was not measured; there is no supported way to
-  disable drafting via the API. Both ratios are against llama.cpp's baseline
+  not the measured gap. But UD is the higher-fidelity quant, and the switch loses
+  it
+- ollama's own no-MTP baseline was not measured. The API has no supported way to
+  disable drafting. Both ratios are against llama.cpp's baseline
 - Throughput only. No quality comparison was made
 
 ### What was given up
@@ -947,7 +953,7 @@ Limits of the test:
   of it — untested
 - **The dynamic quant**, `UD-Q4_K_XL` → `Q4_K_M`
 - **Tuning knobs** — `--spec-draft-n-max`, KV cache type, YaRN scaling
-- **HTTPS**, since Serve cannot front it. Tailscale is WireGuard, so the
+- **HTTPS**, because Serve cannot proxy it. Tailscale is WireGuard, so the
   transport is encrypted and the peer authenticated regardless
 
 ### Cleanup after the migration
@@ -973,7 +979,7 @@ Check for this anywhere a container writes into a bind mount as root:
 `find <dir> -type f -printf '%u\n' | sort | uniq -c`.
 
 A stale exited `llama-qwopus` container still held a mount reference to the
-cache. Use `docker ps -a`; stopped containers keep their mounts.
+cache. Use `docker ps -a`. Stopped containers keep their mounts.
 
 `/var/lib/ollama` holds `qwen3.8:27b-mtp-q4_K_M`, `qwen3.6:35b`, `qwen3.5:4b`
 and a `huihui_ai` abliterated 3.6.
