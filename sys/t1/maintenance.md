@@ -795,7 +795,7 @@ Environment="OLLAMA_HOST=100.73.138.96:11434"
 Environment="OLLAMA_KEEP_ALIVE=5m"
 # Without these ollama picks 32768 from free VRAM. See Context length below.
 Environment="OLLAMA_FLASH_ATTENTION=1"
-Environment="OLLAMA_KV_CACHE_TYPE=q4_0"
+Environment="OLLAMA_KV_CACHE_TYPE=q8_0"
 Environment="OLLAMA_CONTEXT_LENGTH=262144"
 # Arch's unit sets RestartPreventExitStatus=1 and ollama exits 1 when its bind
 # address does not exist yet. Clearing it lets the boot race self-heal.
@@ -867,17 +867,28 @@ below load 100 % on GPU at 262144, verified 2026-08-27:
 | q8_0 | 262144 | 30527 MiB | 173.69 | 113.03 |
 | **q4_0** | **262144** | **26425 MiB** | **172.64** | **111.55** |
 
-`q4_0` is the pick. It matches what llama.cpp used and leaves 5717 MiB free
-instead of 1615 MiB. On **decode throughput** it is 0.60 % behind `q8_0` on
-structured output and 1.31 % behind on prose. Full context costs about 5 % of
-decode speed and 4.9 GB of VRAM against the 32768 default. Part of that 5 % is
-disk contention from a concurrent download, so the real cost is lower.
+`q8_0` is in use. Better KV precision is what long context is for, and `q4_0`
+loses precisely there. On **decode throughput** the two are level: `q4_0` is
+0.60 % behind on structured output and 1.31 % behind on prose. Full context costs
+about 5 % of decode speed and 4.9 GB of VRAM against the 32768 default. Part of
+that 5 % is disk contention from a concurrent download, so the real cost is
+lower.
+
+**`q8_0` leaves only 1615 MiB spare, and the desktop already holds ~1298 MiB.**
+ollama measures free VRAM at load and splits layers between GPU and CPU to fit.
+With the context pinned it cannot shrink the window to compensate, so it offloads
+layers instead — a large slowdown with no error. Check `ollama ps` reads
+`100% GPU` after a load. If it shows CPU, switch to `q4_0`, which leaves
+5717 MiB and always loads whole.
+
+262144 is the ceiling. It is the model's trained window, and ollama exposes no
+rope-scaling option to go past it.
 
 Add to the drop-in:
 
 ```
 Environment="OLLAMA_FLASH_ATTENTION=1"
-Environment="OLLAMA_KV_CACHE_TYPE=q4_0"
+Environment="OLLAMA_KV_CACHE_TYPE=q8_0"
 Environment="OLLAMA_CONTEXT_LENGTH=262144"
 ```
 
