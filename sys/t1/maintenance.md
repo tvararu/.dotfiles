@@ -1036,11 +1036,41 @@ Prefill and decode both fall to about 42% of their 1k rate by 200k, almost in
 lockstep. Time to first token is strongly superlinear: 1.6x the tokens from 128k
 to 200k costs 2.1x the wait.
 
-**The window is real but the top half of it is batch work.** 32k is comfortably
-interactive, 64k is tolerable, 128k means an 84-second wait before the first
-token and 200k means three minutes. Clients are therefore better configured with
-a context cap around 65536 than with the 262144 the server advertises — the
-remainder is usable, but not at a latency anyone waits through interactively.
+**Those are cold numbers and most turns are not cold.** Each request above was
+nonce-prefixed so prefix matching failed and the whole prompt reprocessed. A
+conversation that grows naturally reuses its prefix instead. Measured on live
+agent traffic, 102 turns at ~27k context:
+
+```
+selected slot by LCP similarity, f_sim_best = 0.979   (91/102 above 0.9, none below 0.2)
+restored context checkpoint (n_past = 27044, size = 255.783 MiB)
+prompt eval time = 265.54 ms / 449 tokens
+```
+
+Only the new tokens are prefilled — 96 to 2493 per turn rather than 27,000 — so
+an incremental turn costs a few hundred milliseconds, not the cold figure.
+
+**The cold cost is what you pay on a cache miss**, and the misses that matter
+are:
+
+- **the model unloading.** The prompt cache lives in the `llama-server` heap and
+  dies with the process, so at `OLLAMA_KEEP_ALIVE=5m` a coffee break mid-session
+  costs a full reprocess — 84 s at 128k
+- **anything changing at the front of the prompt**, which invalidates everything
+  after it. ollama 0.33.0 fixed one such case where Claude Code's token-countdown
+  system message was being relocated to the prompt head, busting the cache on
+  every request
+- **slot contention** between interleaved clients, since `-np 1` means one slot
+- **checkpoint invalidation** — 674 `erased invalidated context checkpoint`
+  events in one day, the bug 0.33.1 addresses
+
+**Decode degradation is not cacheable.** 145.6 tok/s at 1k, 86.4 at 128k, 60.0
+at 200k is a function of KV depth, so it applies to every turn however warm the
+cache is. A long session generates more slowly even when it never reprocesses.
+
+That is the real argument for capping client context near 65536: not per-turn
+latency in a warm session, which is fine, but the cost when the cache misses,
+the decode floor, and the abort exposure below.
 
 #### Long prompts can abort the server
 
