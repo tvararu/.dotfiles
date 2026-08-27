@@ -101,8 +101,9 @@ services:
     image: ostris/aitoolkit:latest
     restart: unless-stopped
     shm_size: "16gb"
+    # Loopback only; tailscale serve fronts it. No LAN access by design.
     ports:
-      - "8675:8675"
+      - "127.0.0.1:8675:8675"
     volumes:
       - ~/srv/aitoolkit/hf-cache:/root/.cache/huggingface
       - ~/srv/aitoolkit/aitk_db.db:/app/ai-toolkit/aitk_db.db

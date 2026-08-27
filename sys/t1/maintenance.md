@@ -266,24 +266,23 @@ sudo ufw route allow proto tcp from 100.64.0.0/10 to any port 8085 comment 'wow 
 sudo ufw route allow proto tcp from 100.64.0.0/10 to any port 8888 comment 'playerbots tcp from tailnet'
 ```
 
-Affected here, verified 2026-08-27 from a second tailnet node — these three are
-the only Docker-published ports on the box, so they are the only ones blocked:
+Affected here, verified 2026-08-27 from a second tailnet node — this is the only
+Docker-published port left on the box, so it is the only one blocked:
 
-| Port | Service   |
-| ---- | --------- |
-| 8096 | jellyfin  |
-| 8675 | aitoolkit |
+| Port | Service  |
+| ---- | -------- |
+| 8096 | jellyfin |
 
-8188 was in this list until ComfyUI moved behind `comfyui-proxy.socket`. The
-container now publishes `127.0.0.1:8189` and systemd owns 8188 on the host, so it
-takes the INPUT path and is no longer filtered here — see "Port 8188 moved off
-the Docker path" under ComfyUI. That is the general escape from this problem for
-an HTTP service, alongside `tailscale serve` below.
+8188 left this list when ComfyUI moved behind `comfyui-proxy.socket`, and 8675
+when aitoolkit moved to a loopback publish behind Serve. Both take the INPUT path
+now and are no longer filtered here — see "Port 8188 moved off the Docker path"
+under ComfyUI. That is the general escape from this problem for an HTTP service,
+alongside `tailscale serve` below.
 
-Everything else is `network_mode: host`. All three still work over the LAN,
-which is what the RFC1918 allowance covers. The three `ufw route allow` rules
-above are currently inert — no AzerothCore containers are running — as is the
-`27036` Steam rule.
+Everything else is `network_mode: host`. Jellyfin is the one that still works
+over the LAN, which is what the RFC1918 allowance covers. The three `ufw route
+allow` rules above are currently inert — no AzerothCore containers are running
+— as is the `27036` Steam rule.
 
 #### Tailscale Serve, which needs no firewall rule
 
@@ -298,9 +297,10 @@ tailscale serve --https=443 off    # disable
 ```
 
 Jellyfin uses it, configured 2026-08-27 after tailnet peers were dropped in
-`DOCKER-USER`. It is the only backend behind Serve. A second one needs its own
-HTTPS port (`--https=8443`) or a subpath (`--set-path`), because Jellyfin holds
-`/` on `:443`. One cert covers every port.
+`DOCKER-USER`. Jellyfin holds `/` on `:443`, so each further backend takes its own
+HTTPS port — aitoolkit on `8675`, ComfyUI on `8188`. One cert covers every port.
+`--set-path` is the alternative, but Serve strips the prefix before forwarding, so
+a backend that has its own URL prefix will 404 on its assets.
 
 No sudo, no ufw change, real Let's Encrypt cert. The config lives in
 `/var/lib/tailscale/tailscaled.state` and survives reboots, but not
@@ -933,7 +933,7 @@ test (hostname) = t1; and set -x OLLAMA_HOST t1:11434
 
 #### Why it binds the Tailscale IP rather than loopback + Serve
 
-Everything else now binds `127.0.0.1` behind `tailscale serve`, as of
+aitoolkit and ComfyUI bind `127.0.0.1` behind `tailscale serve`, as of
 2026-08-27. **ollama cannot use that pattern.** It validates `Host` against an
 allowlist: `localhost`, loopback literals, and the machine hostname. Serve
 forwards `Host: t1.gentoo-bangus.ts.net:8443`, which is not on that list.
@@ -1521,7 +1521,7 @@ and `qwen3.8:27b-q8_0`, sharing 44 GB of blobs. Verified 2026-08-27.
 
 ComfyUI via [mmartial/comfyui-nvidia-docker](https://github.com/mmartial/ComfyUI-Nvidia-Docker) on `ubuntu24_cuda13.1-latest`. The image clones upstream ComfyUI HEAD on first boot into a persistent venv at `~/srv/comfyui/`, so subsequent restarts skip the install step.
 
-- **Port**: 8188 on the host, served by `comfyui-proxy.socket`; the container itself publishes `127.0.0.1:8189`
+- **Port**: `127.0.0.1:8188`, held by `comfyui-proxy.socket` and fronted by `tailscale serve` on `:8188`; the container itself publishes `127.0.0.1:8189`
 - **Run dir**: `~/srv/comfyui/` (venv, ComfyUI source, custom_nodes, uv cache — all persistent)
 - **Models**: `~/models` bind-mounted to `/host_models`, symlinked into `/comfy/mnt/ComfyUI/models` by `user_script.bash`
 - **Plugin bootstrap**: `~/srv/comfyui/user_script.bash` (mmartial auto-runs any file of that name)
@@ -1592,8 +1592,11 @@ or LAN access breaks**:
 Tailnet access starts working as a side effect, because `tailscaled` inserts its
 own ACCEPT ahead of ufw (the same reason ollama on `100.73.138.96:11434` is
 reachable with no rule). This also retires the `ufw route allow` workaround that
-Docker-published ports need. To keep it off the tailnet instead, bind the socket
-to the LAN address with `ListenStream=192.168.8.192:8188`.
+Docker-published ports need.
+
+As of 2026-08-27 the socket binds `127.0.0.1:8188` and Serve owns the tailnet side,
+so the INPUT path stopped mattering and the LAN rule went with it. To put it back
+on the LAN, bind `ListenStream=192.168.8.192:8188` and restore the ufw allow.
 
 #### Install
 
@@ -1602,9 +1605,9 @@ sudo install -m 644 ~/.dotfiles/sys/t1/comfyui.service \
                     ~/.dotfiles/sys/t1/comfyui-proxy.service \
                     ~/.dotfiles/sys/t1/comfyui-proxy.socket /etc/systemd/system/
 sudo systemctl daemon-reload
-sudo ufw allow from 192.168.8.0/24 to any port 8188 proto tcp comment 'comfyui from lan'
 sudo systemctl reenable comfyui-proxy.socket
 sudo systemctl start comfyui-proxy.socket
+tailscale serve --bg --https=8188 127.0.0.1:8188
 ```
 
 Copied, not symlinked — `/home` is not mounted when systemd loads units. Only the

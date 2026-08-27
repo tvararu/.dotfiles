@@ -2,10 +2,10 @@
 Description=ComfyUI on-demand listener
 
 [Socket]
-# The LAN-facing port, taken over from the container's own publish. systemd
+# Loopback only, so tailscale serve can own the tailnet side of 8188. systemd
 # accepts the connection immediately and holds it while the backend starts, so
 # a cold request waits ~14s for its response instead of being refused.
-ListenStream=8188
+ListenStream=127.0.0.1:8188
 
 # Default, but load-bearing: systemd-socket-proxyd wants the listening socket
 # itself and multiplexes every connection through one instance. Accept=yes would
