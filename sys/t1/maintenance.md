@@ -800,6 +800,9 @@ owned by `ollama:ollama`). The unit sets `OLLAMA_MODELS=/var/lib/ollama`.
 
 ### Configuration
 
+**Run this from `bash`, not fish** — t1's login shell is fish, which has no
+heredoc and fails with `Expected a string, but found a redirection`.
+
 ```bash
 sudo tee /etc/systemd/system/ollama.service.d/override.conf > /dev/null <<'EOF'
 [Unit]
@@ -823,6 +826,16 @@ sudo systemctl enable --now ollama
 Reachable from other tailnet devices at `http://t1:11434` (MagicDNS) or
 `http://100.73.138.96:11434`. LAN clients get connection refused — the kernel
 rejects at bind level, so no ufw rule is involved either way.
+
+**The `ollama` CLI needs `OLLAMA_HOST` set, even on t1 itself.** It defaults to
+`127.0.0.1:11434` while the server binds the tailnet IP, so a bare `ollama ps`
+or `ollama list` fails with `could not connect to ollama server, run 'ollama
+serve' to start it` — which reads like the service is down when it is fine.
+`fish/config.fish` exports it on this host:
+
+```fish
+test (hostname) = t1; and set -x OLLAMA_HOST t1:11434
+```
 
 #### Why it binds the Tailscale IP and not loopback + Serve
 
@@ -860,8 +873,10 @@ NAME                      SIZE     PROCESSOR    CONTEXT    UNTIL
 qwen3.8:27b-mtp-q4_K_M    17 GB    100% GPU     32768      4 minutes from now
 ```
 
-VRAM goes from ~21.5 GB resident to ~1.3 GB idle. Set `OLLAMA_KEEP_ALIVE=-1` to
-pin a model, or `0` to unload immediately after each request.
+Measured on t1 2026-08-27 with `qwen3.8:27b-mtp-q4_K_M`: **21573 MiB resident →
+1298 MiB after the timeout**, i.e. 30.8 GB of the card back for ComfyUI or a
+game without touching the service. Set `OLLAMA_KEEP_ALIVE=-1` to pin a model, or
+`0` to unload immediately after each request.
 
 ### Models
 
