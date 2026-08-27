@@ -1,0 +1,19 @@
+[Unit]
+Description=Stop Sunshine after an idle period
+# No Requires=/After= on Sunshine. The script exits 0 when Sunshine is already
+# stopped, and binding the two would tear this timer down along with the very
+# service it exists to manage.
+
+[Service]
+Type=oneshot
+# 60 minutes with no Moonlight session. Override here rather than in the script
+# so the value is visible to `systemctl --user cat`.
+Environment=IDLE_SECS=3600
+ExecStart=/home/deity/.dotfiles/sys/t1/sunshine-idle-stop.sh
+
+# Deliberately far less hardened than the system units in this directory. This
+# runs in the *user* manager and its whole purpose is `systemctl --user stop`,
+# which connects to the session bus socket under $XDG_RUNTIME_DIR. ProtectSystem=
+# strict would remount that path read-only, and connecting to a unix socket needs
+# write permission on it, so the stop would fail with EACCES every tick.
+NoNewPrivileges=yes

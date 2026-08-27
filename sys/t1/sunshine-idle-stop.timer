@@ -1,0 +1,17 @@
+[Unit]
+Description=Periodic idle check for Sunshine
+
+[Timer]
+# OnStartupSec=, not OnBootSec=: in a user manager the two differ, and this timer
+# should be relative to the user session starting.
+#
+# The check is cheap - one `ss`, one `systemctl show` - so a short period costs
+# nothing and bounds the overshoot. With IDLE_SECS=3600 Sunshine stops between
+# 60 and 65 minutes after the last disconnect.
+OnStartupSec=5min
+OnUnitActiveSec=5min
+# No Persistent=. Idle state is meaningless across a reboot, and the stamp lives
+# in $XDG_RUNTIME_DIR, which does not survive one.
+
+[Install]
+WantedBy=timers.target
