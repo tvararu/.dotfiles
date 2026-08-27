@@ -793,6 +793,10 @@ Wants=tailscaled.service
 [Service]
 Environment="OLLAMA_HOST=100.73.138.96:11434"
 Environment="OLLAMA_KEEP_ALIVE=5m"
+# Without these ollama picks 32768 from free VRAM. See Context length below.
+Environment="OLLAMA_FLASH_ATTENTION=1"
+Environment="OLLAMA_KV_CACHE_TYPE=q4_0"
+Environment="OLLAMA_CONTEXT_LENGTH=262144"
 # Arch's unit sets RestartPreventExitStatus=1 and ollama exits 1 when its bind
 # address does not exist yet. Clearing it lets the boot race self-heal.
 RestartPreventExitStatus=
@@ -836,6 +840,48 @@ enough on its own, for the reason in *Docker: start after Tailscale*. Clearing
 `RestartPreventExitStatus` is what makes it recover. Before that, ollama failed
 at every boot in the journal with `bind: cannot assign requested address` and
 `NRestarts=0`.
+
+#### Context length
+
+ollama does not read the model's trained context. It picks one of three tiers
+from free VRAM at load time, documented in its help as `4k/32k/256k based on
+VRAM`. With `OLLAMA_CONTEXT_LENGTH` unset it chose **32768**, against a trained
+window of 262144 (`qwen35.context_length` in `ollama show`).
+
+f16 KV is why. This model has `key_length` 256, so its cache is expensive.
+Measured on t1, f16 costs ~70 KiB/token:
+
+| Context | f16 KV | Total VRAM |
+|---|---|---|
+| 32768 | — | 21569 MiB |
+| 65536 | +2210 MiB | 23779 MiB |
+| 131072 | +4480 MiB | 28259 MiB |
+| 262144 | — | ~37 GB, does not fit |
+
+Quantised KV recovers the full window. It needs flash attention. Both configs
+below load 100 % on GPU at 262144, verified 2026-08-27:
+
+| KV type | Context | VRAM | structured | prose |
+|---|---|---|---|---|
+| f16 | 32768 | 21569 MiB | 182.60 | 120.12 |
+| q8_0 | 262144 | 30527 MiB | 173.69 | 113.03 |
+| **q4_0** | **262144** | **26425 MiB** | **172.64** | **111.55** |
+
+`q4_0` is the pick. It matches what llama.cpp used, runs within 1 % of `q8_0`,
+and leaves 5717 MiB free instead of 1615 MiB. Full context costs about 5 % of
+decode speed and 4.9 GB of VRAM against the 32768 default. Part of that 5 % is
+disk contention from a concurrent download, so the real cost is lower.
+
+Add to the drop-in:
+
+```
+Environment="OLLAMA_FLASH_ATTENTION=1"
+Environment="OLLAMA_KV_CACHE_TYPE=q4_0"
+Environment="OLLAMA_CONTEXT_LENGTH=262144"
+```
+
+Quantised KV trades some accuracy at long context for the window. That is the
+same trade llama.cpp made here. It was not measured.
 
 #### Idle unloading
 
@@ -946,11 +992,6 @@ Limits of the test:
 
 ### What was given up
 
-- **Context.** llama.cpp ran 262144 with `--cache-type-k/v q4_0`. ollama defaults
-  to f16 KV and its VRAM heuristic picks 32768. f16 KV at 262 K needs ~17 GB on
-  top of a 17 GB model and does not fit. `OLLAMA_CONTEXT_LENGTH` with
-  `OLLAMA_KV_CACHE_TYPE=q8_0` and `OLLAMA_FLASH_ATTENTION=1` should recover most
-  of it — untested
 - **The dynamic quant**, `UD-Q4_K_XL` → `Q4_K_M`
 - **Tuning knobs** — `--spec-draft-n-max`, KV cache type, YaRN scaling
 - **HTTPS**, because Serve cannot proxy it. Tailscale is WireGuard, so the
