@@ -137,7 +137,7 @@ services:
     restart: unless-stopped
     profiles: ["qwopus"]
     ports:
-      - "100.73.138.96:8001:8001"
+      - "127.0.0.1:8001:8001"
     volumes:
       - ~/srv/llama-server/cache:/root/.cache/huggingface
     deploy:
@@ -162,7 +162,7 @@ services:
     restart: unless-stopped
     profiles: ["a3b"]
     ports:
-      - "100.73.138.96:8001:8001"
+      - "127.0.0.1:8001:8001"
     volumes:
       - ~/srv/llama-server/cache:/root/.cache/huggingface
     deploy:
@@ -188,7 +188,7 @@ services:
     restart: unless-stopped
     profiles: ["qwen38"]
     ports:
-      - "100.73.138.96:8001:8001"
+      - "127.0.0.1:8001:8001"
     volumes:
       - ~/srv/llama-server/cache:/root/.cache/huggingface
     deploy:

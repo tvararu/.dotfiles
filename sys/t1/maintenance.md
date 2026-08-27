@@ -203,13 +203,41 @@ tailscale up
 
 ### Docker: start after Tailscale
 
-Docker containers that bind to Tailscale IPs (e.g. Transmission on `100.73.138.96:9091`) fail to map ports if Tailscale isn't up yet. Fix by ordering Docker after Tailscale:
+Docker containers that bind to Tailscale IPs fail to map ports if Tailscale isn't up yet. Fix by ordering Docker after Tailscale:
 
 ```bash
 sudo mkdir -p /etc/systemd/system/docker.service.d
 echo -e '[Unit]\nAfter=tailscaled.service' | sudo tee /etc/systemd/system/docker.service.d/after-tailscale.conf
 sudo systemctl daemon-reload
 ```
+
+**This is not sufficient, and it bit us on 2026-08-26.** `tailscaled` is
+`Type=notify`, but it signals readiness when the daemon and its local API are up
+— *not* when `tailscale0` has been assigned its address. Docker starts into that
+gap. On the 2026-08-26 boot:
+
+```
+08:50:27  tailscaled active (notify ready)
+08:50:28  llama-qwen38 starts -> docker-proxy fails to bind 100.73.138.96:8001
+08:50:30  docker active
+```
+
+The container came up **healthy with no published port at all** — the
+healthcheck curls itself from inside the namespace, so nothing reported a
+problem. `docker port llama-qwen38` printed nothing for a day. Symptoms to
+recognise:
+
+```bash
+docker port <container>            # silent = nothing published
+ss -ltn | grep <port>              # no listener
+docker inspect <c> -f '{{json .NetworkSettings.Ports}}'   # {}
+```
+
+**Do not bind published ports to a Tailscale IP.** Publish to `127.0.0.1` and
+put `tailscale serve` in front (see *Tailscale Serve* below) — loopback always
+exists at container start, so the race cannot happen. `llama-server` was
+converted on 2026-08-27. Anything still binding `100.73.138.96` has this bug
+latent.
 
 ### Tailscale accepts inbound before ufw sees it
 
@@ -262,20 +290,34 @@ For an **HTTP** service, `tailscale serve` sidesteps the problem entirely.
 locally generated and never enters `FORWARD`/`DOCKER-USER`:
 
 ```bash
-tailscale serve --bg 8096          # https://t1.gentoo-bangus.ts.net/ -> 127.0.0.1:8096
+tailscale serve --bg 8096            # https://t1.gentoo-bangus.ts.net/      -> 127.0.0.1:8096
+tailscale serve --bg --https=8443 8001  # https://t1.gentoo-bangus.ts.net:8443/ -> 127.0.0.1:8001
 tailscale serve status
-tailscale serve --https=443 off    # disable
+tailscale serve --https=443 off      # disable
 ```
 
-This is what **Jellyfin** uses, set up 2026-08-27. No sudo, no ufw change, real
-Let's Encrypt cert, and it persists across reboots — the config lives in
-`/var/lib/tailscale/tailscaled.state` and `tailscaled` restores it on start. It
-does **not** survive `tailscale logout` or a state wipe.
+Two services use it, both set up 2026-08-27:
+
+| URL | Backend | Why |
+|---|---|---|
+| `https://t1.gentoo-bangus.ts.net/` | Jellyfin `127.0.0.1:8096` | tailnet peers were dropped in `DOCKER-USER` |
+| `https://t1.gentoo-bangus.ts.net:8443/` | llama-server `127.0.0.1:8001` | published port raced tailscale0 at boot |
+
+`/` on `:443` is taken by Jellyfin, so a second service needs either its own
+HTTPS port (`--https=8443`, used here — no path rewriting, which matters for an
+OpenAI-compatible API) or a subpath via `--set-path`. One cert covers every port.
+
+No sudo, no ufw change, real Let's Encrypt cert, and it persists across reboots
+— the config lives in `/var/lib/tailscale/tailscaled.state` and `tailscaled`
+restores it on start. It does **not** survive `tailscale logout` or a state wipe.
 
 Trade-offs: the stream is proxied through tailscaled rather than going direct,
-the client URL becomes the MagicDNS name instead of `t1:8096`, and it only
-covers HTTP — raw TCP needs `--tcp` or a `ufw route allow`. `http://t1:8096`
-still works unchanged on the LAN.
+the client URL becomes the MagicDNS name, and it only covers HTTP — raw TCP
+needs `--tcp` or a `ufw route allow`. Whether the plain `http://t1:<port>` URL
+still works on the LAN depends on the container's own bind, not on Serve:
+Jellyfin still publishes `0.0.0.0:8096`, so `http://t1:8096` is unchanged;
+llama-server publishes loopback only, so `http://t1:8001` is gone and Serve is
+the only way in.
 
 The HTTPS is incidental, not the point. Tailscale is already WireGuard, so the
 transport is encrypted and the peer authenticated by public key; TLS on top adds
@@ -781,8 +823,12 @@ Start one with `docker compose up -d <service>` (profiles keep them out of a bar
 - **Image**: `ghcr.io/ggml-org/llama.cpp:server-cuda` (tracks llama.cpp main; MTP merged upstream)
 - **Model**: `unsloth/Qwen3.6-35B-A3B-MTP-GGUF:UD-Q4_K_XL`, auto-downloaded via `-hf` flag on first run (~23 GB)
 - **Cache**: `~/srv/llama-server/cache` bind-mounted to `/root/.cache/huggingface` so the GGUF survives container recreates
-- **Bind**: `100.73.138.96:8001:8001` — same tailnet-only posture as ollama
-- **Endpoint**: OpenAI-compatible at `http://t1:8001/v1` (chat completions, models, embeddings)
+- **Bind**: `127.0.0.1:8001:8001` — loopback only; the tailnet reaches it through
+  Tailscale Serve on `:8443` (see below). Was `100.73.138.96:8001:8001` until
+  2026-08-27, which raced tailscale0 at boot — see *Docker: start after Tailscale*
+- **Endpoint**: OpenAI-compatible at `https://t1.gentoo-bangus.ts.net:8443/v1`
+  (chat completions, models, embeddings). `http://t1:8001/v1` no longer resolves
+  to anything — the port is not published off-host
 
 Key flags in `command:`:
 
