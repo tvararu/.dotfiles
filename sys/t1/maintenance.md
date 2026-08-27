@@ -1334,6 +1334,42 @@ Limits of the test:
   disable drafting, so this is measurable and simply was not done
 - Throughput only. No quality comparison was made
 
+### Quality baseline: 22/30 SWE-bench Verified (2026-08-27)
+
+The first quality measurement ever taken on this box. Everything before it was
+throughput only.
+
+Run by the `crucible` harness against the served endpoint, 30 pinned SWE-bench
+Verified instances, scored by the SWE-bench harness itself. Every resolved
+instance shows a real FAIL_TO_PASS flip with zero PASS_TO_PASS regressions. Zero
+infra failures, zero empty patches.
+
+| repo | resolved |
+|---|---|
+| django | 10/11 |
+| matplotlib | 3/4 |
+| sphinx-doc | 3/5 |
+| sympy | 2/4 |
+| pydata | 2/2 |
+| mwaskom | 1/1 |
+| scikit-learn | 1/1 |
+| astropy | 0/2 |
+
+**Do not quote this as a percentage.** The subset is django-weighted — 11 of 30,
+and django is where the model did best — and at n=30 the 95% interval is roughly
+±16 points. It is a baseline to pair future runs against, not a statement about
+the model on Verified. As a first answer to "can the served model do real
+agentic work", it is clearly yes.
+
+Arm config, for the paired re-run: `qwen3.8:27b-mtp-q4_K_M-d3`,
+`draft_num_predict 3`, ollama 0.32.15, ctx 262144, q8_0 KV, spawns 18:55:58
+port 34525 and 19:46:37 port 41061. Per-instance results retained, and the
+retried-instance list is empty, so every pair in a second arm is clean.
+
+Server side over the run: **842 requests, all HTTP 200**, zero aborts. Prompt
+sizes peaked at 42,478 tokens — 16% of the window — so neither truncation nor
+the 64k abort was ever in play.
+
 ### Tried and rejected: num_batch
 
 Measured 2026-08-27. `num_batch` sets **both** `-b` and `-ub`, not just the
