@@ -18,8 +18,8 @@ yay -S fish git-delta lsd mosh tmux
   `.dotfiles/sys/t1/docker-compose.yml`, and it is that symlink which makes
   `$HOME` the project directory so `~/.env` resolves. Running from `sys/t1/`
   instead resolves the credentials in it to **empty strings** with no error —
-  which silently breaks transmission's auth. `name: t1` in the file pins the
-  project name regardless of where it is invoked.
+  which silently breaks the auth of anything that reads them. `name: t1` in
+  the file pins the project name regardless of where it is invoked.
 
 ## Keyboard: Apple GB ISO Layout
 
@@ -243,8 +243,7 @@ See *Ollama (native)*.
 `tailscaled` installs its own `ts-input` chain that ACCEPTs traffic arriving on
 `tailscale0` for this node, ahead of ufw's default-deny. **Every host-bound
 service is reachable from the tailnet with no ufw rule at all.** `8123` (Home
-Assistant) and `9091` (Transmission) have no `allow` rule. Both answer over the
-tailnet.
+Assistant) has no `allow` rule, and still answers over the tailnet.
 
 So **ufw here governs LAN and WAN exposure only.** Tightening a ufw rule does not
 reduce what the tailnet can reach. Device membership gates that.

@@ -24,7 +24,7 @@ property (`incus config set luna --property description=…`), not a config key.
 
 ## Sizing
 
-sol has 6.9 GiB of RAM and 4 cores, shared with Jellyfin, Transmission and ZFS.
+sol has 6.9 GiB of RAM and 4 cores, shared with Jellyfin and ZFS.
 2 vCPU / 4 GiB leaves the host two cores and ~2.9 GiB.
 
 ZFS ARC is capped at 1 GiB in `/etc/modprobe.d/zfs.conf`. Without it ARC's

@@ -30,22 +30,6 @@ services:
               count: all
               capabilities: [gpu]
 
-  transmission:
-    container_name: transmission
-    image: linuxserver/transmission:4.0.5
-    restart: unless-stopped
-    network_mode: host
-    volumes:
-      - ~/srv/transmission/config:/config
-      - ~/downloads:/downloads
-      - ~/media:/media
-    environment:
-      - PUID=1000
-      - PGID=1000
-      - TZ=Europe/London
-      - USER=${TRANSMISSION_USER}
-      - PASS=${TRANSMISSION_PASS}
-
   jellyfin:
     container_name: jellyfin
     image: linuxserver/jellyfin:latest

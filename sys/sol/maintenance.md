@@ -18,9 +18,9 @@ ZFS pool **`pool`** (data) — `/mnt/pool`:
 
 ## Services (Docker)
 
-Jellyfin and Transmission run as Docker containers (`network_mode: host`,
-`restart: unless-stopped`). Docker starts on boot, so they self-restore — there is
-no systemd unit. **`sys/sol/docker-compose.yml` is the source of truth** (it replaced
+Jellyfin runs as a Docker container (`network_mode: host`, `restart:
+unless-stopped`). Docker starts on boot, so it self-restores — there is no
+systemd unit. **`sys/sol/docker-compose.yml` is the source of truth** (it replaced
 ad-hoc `docker run` scripts). Images are pinned; bump them deliberately.
 
 Deploy / recreate:
@@ -34,8 +34,6 @@ docker compose pull && docker compose up -d
   **HW transcode requires** the two `/dev/dri` devices **and** `group_add` GIDs
   **989 (render)** / **985 (video)**. These are host-specific Arch GIDs — if the host
   is ever rebuilt, re-check `getent group render video` and update the compose.
-- **Transmission** (`:9091` web, `:51413` peer) — config `~/srv/transmission`,
-  `PUID/PGID=1000`, data on `/mnt/pool`.
 
 ## Media layout
 

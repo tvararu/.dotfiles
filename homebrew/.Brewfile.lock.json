@@ -2464,12 +2464,6 @@
           "full_name": "whisky"
         }
       },
-      "transmission": {
-        "version": "4.0.5",
-        "options": {
-          "full_name": "transmission"
-        }
-      },
       "dash": {
         "version": "7.2.1",
         "options": {

@@ -63,7 +63,6 @@ cask "spotify"
 cask "steam"
 cask "tailscale"
 cask "the-unarchiver"
-cask "transmission"
 cask "vlc"
 cask "whisky"
 
