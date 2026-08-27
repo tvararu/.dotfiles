@@ -1124,6 +1124,26 @@ qwen3.8:27b-mtp-q4_K_M    17 GB    100% GPU     32768      4 minutes from now
 Measured 2026-08-27: 21573 MiB resident, 1298 MiB after the timeout.
 `OLLAMA_KEEP_ALIVE=-1` pins a model, `0` unloads after each request.
 
+#### The LLM has priority on this card
+
+Keep-alive is 2h, and any request re-arms the timer, so the model holds ~30 GB
+for most of a working day. **That is the intended ordering, not a problem to
+fix.** Long-running LLM sessions matter more here than ComfyUI, and losing the
+prompt cache costs a full cold reprocess — minutes at 262144.
+
+The consequence is that ComfyUI on `:8188` will often fail to load a checkpoint.
+It surfaces as an out-of-memory or a load failure that reads as a ComfyUI fault,
+so **check `ollama ps` first**. To hand the card over deliberately:
+
+```bash
+curl -s http://t1:11434/api/generate \
+  -d '{"model":"qwen3.8:27b-mtp-q4_K_M-d3","keep_alive":0}'
+```
+
+Do not automate that from `comfyui-start.sh`. An automatic eviction would let a
+background render silently destroy an in-flight session's cache; the manual step
+is the point.
+
 ### Models
 
 Models live at `/var/lib/ollama/{blobs,manifests}`. To migrate a store built
@@ -1418,6 +1438,11 @@ life of the process, with no model resident:
 So the idle cost is the context, not weights, and `POST /free` cannot release it —
 that only unloads models. Only stopping the process returns the memory, which
 matters when llama-server routinely holds 29 GB of the 5090's 32 GB.
+
+**If ComfyUI fails to load a checkpoint, suspect ollama before ComfyUI.** The
+LLM has priority on this card and its keep-alive is 2h, so it will usually be
+holding ~30 GB. Check `ollama ps`, then unload it deliberately — see "The LLM
+has priority on this card" under Ollama.
 
 Unlike Sunshine, this one really does resume on request. ComfyUI is plain HTTP
 over TCP, so `systemd-socket-proxyd` applies, where Sunshine's UDP ruled it out.
