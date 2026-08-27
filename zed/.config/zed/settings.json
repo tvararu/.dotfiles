@@ -113,10 +113,11 @@
     "SCSS": { "tab_size": 2 },
   },
   "language_models": {
-    // t1 runs ollama natively on the tailnet; models unload after 5m idle.
-    // The server serves 262144, but max_tokens is deliberately 65536: measured
-    // time to first token is 12s at 32k, 29s at 64k, 84s at 128k and 179s at
-    // 200k, so the top half of the window is batch work rather than editing.
+    // t1 runs ollama natively on the tailnet. max_tokens matches the window the
+    // server actually allocates, and a client cap would not save VRAM anyway —
+    // the full KV is allocated upfront regardless. It would only force earlier
+    // compaction, and compaction rewrites the prompt front, which invalidates
+    // the prefix cache and forces a full cold reprocess.
     // The -d3 tag is the same weights with draft_num_predict 3 instead of 4:
     // 6% slower on structured output, 9% faster on prose.
     "ollama": {
@@ -124,7 +125,7 @@
       "available_models": [
         {
           "name": "qwen3.8:27b-mtp-q4_K_M-d3",
-          "max_tokens": 65536,
+          "max_tokens": 262144,
           "supports_tools": true,
           "supports_thinking": true,
         },

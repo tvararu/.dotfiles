@@ -885,7 +885,7 @@ In fish, use `printf`:
 ```fish
 printf '%s\n' '[Unit]' 'After=tailscaled.service' 'Wants=tailscaled.service' '' \
   '[Service]' 'Environment="OLLAMA_HOST=100.73.138.96:11434"' \
-  'Environment="OLLAMA_KEEP_ALIVE=5m"' 'Environment="OLLAMA_FLASH_ATTENTION=1"' \
+  'Environment="OLLAMA_KEEP_ALIVE=2h"' 'Environment="OLLAMA_FLASH_ATTENTION=1"' \
   'Environment="OLLAMA_KV_CACHE_TYPE=q8_0"' \
   'Environment="OLLAMA_CONTEXT_LENGTH=262144"' \
   'RestartPreventExitStatus=' 'Restart=on-failure' 'RestartSec=5' \
@@ -902,7 +902,11 @@ Wants=tailscaled.service
 
 [Service]
 Environment="OLLAMA_HOST=100.73.138.96:11434"
-Environment="OLLAMA_KEEP_ALIVE=5m"
+# 2h, not the 5m default: the prompt cache lives in the llama-server heap and
+# dies with the process, so an idle unload costs a full cold reprocess of the
+# whole conversation. At 262144 that is minutes. Holds ~30 GB for 2h after last
+# use, which will block ComfyUI from loading.
+Environment="OLLAMA_KEEP_ALIVE=2h"
 # Without these ollama picks 32768 from free VRAM. See Context length below.
 Environment="OLLAMA_FLASH_ATTENTION=1"
 Environment="OLLAMA_KV_CACHE_TYPE=q8_0"
@@ -1054,8 +1058,9 @@ an incremental turn costs a few hundred milliseconds, not the cold figure.
 are:
 
 - **the model unloading.** The prompt cache lives in the `llama-server` heap and
-  dies with the process, so at `OLLAMA_KEEP_ALIVE=5m` a coffee break mid-session
-  costs a full reprocess — 84 s at 128k
+  dies with the process, so on the 5m default a coffee break mid-session costs a
+  full reprocess — 84 s at 128k, three minutes at 200k. This is why keep-alive
+  is 2h
 - **anything changing at the front of the prompt**, which invalidates everything
   after it. ollama 0.33.0 fixed one such case where Claude Code's token-countdown
   system message was being relocated to the prompt head, busting the cache on
@@ -1068,9 +1073,19 @@ are:
 at 200k is a function of KV depth, so it applies to every turn however warm the
 cache is. A long session generates more slowly even when it never reprocesses.
 
-That is the real argument for capping client context near 65536: not per-turn
-latency in a warm session, which is fine, but the cost when the cache misses,
-the decode floor, and the abort exposure below.
+**Do not cap client context to avoid these costs.** 262144 is the working
+window and anything under 128k is not useful for the agent work this box exists
+for. A client-side cap saves nothing anyway — the server allocates the full KV
+upfront regardless — and it forces earlier compaction, which rewrites the prompt
+front, invalidates the prefix cache and buys a full cold reprocess. A lower cap
+is therefore a way to pay the cold cost *more* often, not less.
+
+The costs above are real, so treat them as things to mitigate rather than avoid:
+
+- keep the model hot, so the cache survives between turns
+- take ollama 0.33.1 for the recurrent-layer prefill fix
+- expect ~60 tok/s decode at the top of the window; that part is not fixable
+  here
 
 #### Long prompts can abort the server
 
