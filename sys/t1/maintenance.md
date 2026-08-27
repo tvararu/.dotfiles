@@ -1264,11 +1264,16 @@ sudo install -m 644 ~/.dotfiles/sys/t1/comfyui.service \
                     ~/.dotfiles/sys/t1/comfyui-proxy.socket /etc/systemd/system/
 sudo systemctl daemon-reload
 sudo ufw allow from 192.168.8.0/24 to any port 8188 proto tcp comment 'comfyui from lan'
-sudo systemctl reenable --now comfyui-proxy.socket
+sudo systemctl reenable comfyui-proxy.socket
+sudo systemctl start comfyui-proxy.socket
 ```
 
 Copied, not symlinked — `/home` is not mounted when systemd loads units. Only the
 socket is enabled; the two services are pulled in on demand and must not be.
+
+`start` is a separate step because `reenable --now` is *try-restart*, which does
+nothing to a unit that is not already running. `is-enabled` returning `enabled`
+with no listener on 8188 is exactly that mistake.
 
 Verify with the container stopped:
 
