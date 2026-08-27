@@ -211,6 +211,18 @@ echo -e '[Unit]\nAfter=tailscaled.service' | sudo tee /etc/systemd/system/docker
 sudo systemctl daemon-reload
 ```
 
+### Tailscale accepts inbound before ufw sees it
+
+`tailscaled` installs its own `ts-input` chain that ACCEPTs traffic arriving on
+`tailscale0` for this node, and it runs ahead of ufw's default-deny. So **every
+host-bound service is reachable from the tailnet with no ufw rule at all** —
+`8123` (Home Assistant) and `9091` (Transmission) have no `allow` rule of any
+kind and both answer over the tailnet.
+
+The consequence worth keeping in mind: **ufw here governs LAN and WAN exposure
+only.** Tightening a ufw rule does not reduce what the tailnet can reach — that
+is gated by device membership, not by the firewall.
+
 ### Docker published ports over Tailscale (ufw-docker)
 
 The ufw-docker ruleset (in `/etc/ufw/after.rules`) only allows RFC1918 LAN
@@ -228,6 +240,48 @@ sudo ufw route allow proto tcp from 100.64.0.0/10 to any port 3724 comment 'wow 
 sudo ufw route allow proto tcp from 100.64.0.0/10 to any port 8085 comment 'wow world from tailnet'
 sudo ufw route allow proto tcp from 100.64.0.0/10 to any port 8888 comment 'playerbots tcp from tailnet'
 ```
+
+Affected here, verified 2026-08-27 from a second tailnet node — these three are
+the only Docker-published ports on the box, so they are the only ones blocked:
+
+| Port | Service   |
+| ---- | --------- |
+| 8096 | jellyfin  |
+| 8188 | comfyui   |
+| 8675 | aitoolkit |
+
+Everything else is `network_mode: host`. All three still work over the LAN,
+which is what the RFC1918 allowance covers. The three `ufw route allow` rules
+above are currently inert — no AzerothCore containers are running — as is the
+`27036` Steam rule.
+
+#### Tailscale Serve: the alternative that needs no firewall rule
+
+For an **HTTP** service, `tailscale serve` sidesteps the problem entirely.
+`tailscaled` dials `127.0.0.1:<port>` from the host, so the connection is
+locally generated and never enters `FORWARD`/`DOCKER-USER`:
+
+```bash
+tailscale serve --bg 8096          # https://t1.gentoo-bangus.ts.net/ -> 127.0.0.1:8096
+tailscale serve status
+tailscale serve --https=443 off    # disable
+```
+
+This is what **Jellyfin** uses, set up 2026-08-27. No sudo, no ufw change, real
+Let's Encrypt cert, and it persists across reboots — the config lives in
+`/var/lib/tailscale/tailscaled.state` and `tailscaled` restores it on start. It
+does **not** survive `tailscale logout` or a state wipe.
+
+Trade-offs: the stream is proxied through tailscaled rather than going direct,
+the client URL becomes the MagicDNS name instead of `t1:8096`, and it only
+covers HTTP — raw TCP needs `--tcp` or a `ufw route allow`. `http://t1:8096`
+still works unchanged on the LAN.
+
+The HTTPS is incidental, not the point. Tailscale is already WireGuard, so the
+transport is encrypted and the peer authenticated by public key; TLS on top adds
+nothing on security grounds, including on hostile café Wi-Fi. It matters only for
+browser secure-context features (PWA install, service workers), which the native
+iOS app — the client that surfaced this — does not use.
 
 ## TPM-Backed SSH Keys
 
