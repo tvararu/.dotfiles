@@ -1183,12 +1183,37 @@ Depth 3 rather than the upstream 4. Measured 2026-08-27, `think: false`, greedy,
 | prose | 32k | 106.50 | 97.37 | **-8.6%** |
 
 Task type decides this, not context depth — the split is stable across both.
-Break-even on time per token is **69.9% structured at 32k**, 77.6% at an empty
-cache, so depth 3 wins for any mix below roughly 70% structured.
 
-It is a 6-9% effect either way and the break-even sits near plausible workload
-values, so this is worth taking because it is free and reversible, not because
-it is decisive. To revert, point clients back at `qwen3.8:27b-mtp-q4_K_M`.
+Those cells ran at the old 500 W cap. Re-measured at 575 W:
+
+| task | context | depth 3 | depth 4 | depth 4 advantage |
+|---|---|---|---|---|
+| structured | empty | 192.98 | 209.43 | +8.5% |
+| structured | 32k | 166.57 | 179.55 | +7.8% |
+| prose | empty | 119.45 | 109.08 | **-8.7%** |
+| prose | 32k | 112.65 | 104.52 | **-7.2%** |
+
+**The power cap moved the answer.** Depth 4 gained more from the extra 75 W
+(+6.9 to +8.2%) than depth 3 did (+5.5 to +5.9%), because a deeper draft does
+more compute per verify step and so benefits more once the card stops being
+power-limited. Break-even on time per token:
+
+| context | at 500 W | at 575 W |
+|---|---|---|
+| empty | 77.6% structured | 66.2% |
+| 32k | 69.9% structured | **61.4%** |
+
+**Depth 3 still ships**, winning below 61.4% structured at production context,
+but by a narrower margin than at 500 W. Two things keep that comfortable:
+
+- these cells ran with `think: false`. Clients with thinking enabled emit
+  reasoning prose before the answer whatever the task, which pushes the mix
+  toward the case depth 3 wins. Zed is the one client with thinking off
+- the effect is single-digit either way, so being wrong is cheap
+
+If the workload ever becomes mostly non-thinking code generation, re-check it —
+depth 4 is competitive now in a way it was not at 500 W. To revert, point
+clients back at `qwen3.8:27b-mtp-q4_K_M`.
 
 Verify the parameter reaches the engine, not just the manifest:
 
