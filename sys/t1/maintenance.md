@@ -273,8 +273,13 @@ the only Docker-published ports on the box, so they are the only ones blocked:
 | Port | Service   |
 | ---- | --------- |
 | 8096 | jellyfin  |
-| 8188 | comfyui   |
 | 8675 | aitoolkit |
+
+8188 was in this list until ComfyUI moved behind `comfyui-proxy.socket`. The
+container now publishes `127.0.0.1:8189` and systemd owns 8188 on the host, so it
+takes the INPUT path and is no longer filtered here — see "Port 8188 moved off
+the Docker path" under ComfyUI. That is the general escape from this problem for
+an HTTP service, alongside `tailscale serve` below.
 
 Everything else is `network_mode: host`. All three still work over the LAN,
 which is what the RFC1918 allowance covers. The three `ufw route allow` rules
@@ -1058,11 +1063,15 @@ the other tags run with **speculation silently off**. That costs about 2.5x on
 structured output, with no error and nothing in the logs to notice. Always pull
 the `-mtp` tag, or set the parameter yourself.
 
-If ComfyUI is holding VRAM and a model fails to load, free it:
+If ComfyUI is holding VRAM and a model fails to load, unload its models:
 
 ```bash
 curl -X POST http://localhost:8188/free -H 'Content-Type: application/json' -d '{"unload_models": true, "free_memory": true}'
 ```
+
+That leaves the 498 MiB CUDA context behind — only stopping the process returns
+it. `docker stop comfyui` does, and ComfyUI now stops itself after 30 idle
+minutes anyway; see "On-demand start" under ComfyUI.
 
 #### Other quants of Qwen3.8
 
@@ -1178,10 +1187,101 @@ and a `huihui_ai` abliterated 3.6.
 
 ComfyUI via [mmartial/comfyui-nvidia-docker](https://github.com/mmartial/ComfyUI-Nvidia-Docker) on `ubuntu24_cuda13.1-latest`. The image clones upstream ComfyUI HEAD on first boot into a persistent venv at `~/srv/comfyui/`, so subsequent restarts skip the install step.
 
-- **Port**: 8188
+- **Port**: 8188 on the host, served by `comfyui-proxy.socket`; the container itself publishes `127.0.0.1:8189`
 - **Run dir**: `~/srv/comfyui/` (venv, ComfyUI source, custom_nodes, uv cache — all persistent)
 - **Models**: `~/models` bind-mounted to `/host_models`, symlinked into `/comfy/mnt/ComfyUI/models` by `user_script.bash`
 - **Plugin bootstrap**: `~/srv/comfyui/user_script.bash` (mmartial auto-runs any file of that name)
+
+### On-demand start (VRAM reclaim)
+
+ComfyUI is not started by docker. `comfyui-proxy.socket` holds port 8188, and the
+first connection starts the container; 30 minutes after the last one closes it is
+stopped again.
+
+The reason is a CUDA context. ComfyUI creates one at import and holds it for the
+life of the process, with no model resident:
+
+| State | VRAM | `torch_vram_total` |
+| ----- | ---- | ------------------ |
+| stopped | 0 MiB | — |
+| running, nothing loaded | 498 MiB | 0 |
+
+So the idle cost is the context, not weights, and `POST /free` cannot release it —
+that only unloads models. Only stopping the process returns the memory, which
+matters when llama-server routinely holds 29 GB of the 5090's 32 GB.
+
+Unlike Sunshine, this one really does resume on request. ComfyUI is plain HTTP
+over TCP, so `systemd-socket-proxyd` applies, where Sunshine's UDP ruled it out.
+A cold request measures **13.9s** to a served `200`, and the client never sees a
+refusal: the socket unit accepts the connection immediately and holds it open
+while the container starts.
+
+Three units, in `sys/t1/`:
+
+| Unit | Role |
+| ---- | ---- |
+| `comfyui-proxy.socket` | owns 8188, starts the proxy on first connection |
+| `comfyui-proxy.service` | `systemd-socket-proxyd` to `127.0.0.1:8189`, `--exit-idle-time=30min` |
+| `comfyui.service` | `docker start`/`stop` with a readiness wait and a queue drain |
+
+The release path is `--exit-idle-time` plus `StopWhenUnneeded=yes`: the proxy
+exits after 30 idle minutes, nothing then requires `comfyui.service`, systemd
+stops it, and the socket re-arms for the next request.
+
+**An open tab counts as busy.** The frontend holds a websocket for progress
+updates, so the idle clock only starts once the last tab is closed. That is
+deliberate — stopping under an open tab would drop the websocket, and the
+frontend's automatic reconnect would restart the container immediately.
+
+`comfyui-stop.sh` waits for `queue_remaining` to reach 0 before stopping, capped
+at `DRAIN_TIMEOUT` (30 min). Without it, queueing a long render and closing the
+tab would drop the connection count to zero and kill the job at the timeout. A
+manual `systemctl stop comfyui` inherits the same wait, so it is not always
+instant.
+
+#### Port 8188 moved off the Docker path
+
+The container now publishes `127.0.0.1:8189` and systemd owns 8188 on the host.
+That changes which firewall chain the port goes through, and **needs a ufw rule
+or LAN access breaks**:
+
+- Before: a Docker-published port, filtered in `DOCKER-USER`, which RETURNs for
+  RFC1918 — hence LAN worked and tailnet was dropped
+- After: a host-bound port on the INPUT path, where the default policy is DROP
+  and no rule for 8188 existed
+
+Tailnet access starts working as a side effect, because `tailscaled` inserts its
+own ACCEPT ahead of ufw (the same reason ollama on `100.73.138.96:11434` is
+reachable with no rule). This also retires the `ufw route allow` workaround that
+Docker-published ports need. To keep it off the tailnet instead, bind the socket
+to the LAN address with `ListenStream=192.168.8.192:8188`.
+
+#### Install
+
+```bash
+sudo install -m 644 ~/.dotfiles/sys/t1/comfyui.service \
+                    ~/.dotfiles/sys/t1/comfyui-proxy.service \
+                    ~/.dotfiles/sys/t1/comfyui-proxy.socket /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo ufw allow from 192.168.8.0/24 to any port 8188 proto tcp comment 'comfyui from lan'
+sudo systemctl reenable --now comfyui-proxy.socket
+```
+
+Copied, not symlinked — `/home` is not mounted when systemd loads units. Only the
+socket is enabled; the two services are pulled in on demand and must not be.
+
+Verify with the container stopped:
+
+```bash
+docker stop comfyui
+time curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:8188/system_stats   # 200, ~14s
+systemctl status comfyui.service comfyui-proxy.service
+```
+
+To change the idle window, edit `--exit-idle-time` in `comfyui-proxy.service`.
+`docker compose up -d` still starts the container directly, which is harmless —
+the next idle period stops it.
+
 
 ### Custom nodes
 
