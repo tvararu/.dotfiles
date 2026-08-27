@@ -1303,7 +1303,7 @@ Declared inline in `user_script.bash` — idempotent git-clone + `pip install -r
 | RES4LYF                         | ClownsharkBatwing/RES4LYF              |
 | rgthree-comfy                   | rgthree/rgthree-comfy                  |
 | sdxl_prompt_styler              | twri/sdxl_prompt_styler                |
-| ComfyUI-LTXVideo                | Lightricks/ComfyUI-LTXVideo            |
+| ~~ComfyUI-LTXVideo~~ (disabled) | Lightricks/ComfyUI-LTXVideo            |
 | KJNodes                         | kijai/ComfyUI-KJNodes                  |
 | Inpaint-CropAndStitch           | lquesada/ComfyUI-Inpaint-CropAndStitch |
 | RMBG                            | 1038lab/ComfyUI-RMBG                   |
@@ -1314,6 +1314,12 @@ Declared inline in `user_script.bash` — idempotent git-clone + `pip install -r
 - `FORCE_CHOWN=true` is required — mmartial creates `/comfy/mnt/ComfyUI/` as root before chowning to `WANTED_UID`, and refuses to start if the perms don't match.
 - The persistent venv means a `docker compose up -d --force-recreate comfyui` is fast (~30s); only image upgrades trigger a fresh torch+deps install.
 - To upgrade ComfyUI itself: `git -C ~/srv/comfyui/ComfyUI pull && docker restart comfyui`.
+- ComfyUI-LTXVideo is disabled. `pyramid_blending.py` imports `pad` from
+  `kornia.geometry.transform.pyramid`, which kornia has removed, so the pack
+  raised `ImportError` on every start and loaded none of its nodes. It is dropped
+  from `user_script.bash` and the clone renamed to `ComfyUI-LTXVideo.disabled`;
+  ComfyUI skips any `custom_nodes` directory with that suffix. Undo both to
+  re-enable once upstream catches up with kornia.
 - `user_script.bash` patches ComfyUI-VAE-Utils to PR #22 ([spacepxl/ComfyUI-VAE-Utils#22](https://github.com/spacepxl/ComfyUI-VAE-Utils/pull/22)) — restores `CustomVAE.decode()` after ComfyUI #11405/#11406 bypassed `decode_tiled_3d` and broke Qwen 2x decode (dark/burned output). Drop the patch block once upstream merges.
 
 ## Home Assistant (Qingping air monitor)
