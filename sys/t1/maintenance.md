@@ -235,9 +235,13 @@ docker inspect <c> -f '{{json .NetworkSettings.Ports}}'   # {}
 
 **Do not bind published ports to a Tailscale IP.** Publish to `127.0.0.1` and
 put `tailscale serve` in front (see *Tailscale Serve* below) — loopback always
-exists at container start, so the race cannot happen. `llama-server` was
-converted on 2026-08-27. Anything still binding `100.73.138.96` has this bug
-latent.
+exists at container start, so the race cannot happen.
+
+`llama-qwen38` above is the worked example, kept because the failure is so
+quiet; the container itself was retired on 2026-08-27 when inference moved to
+ollama. **No Docker container binds `100.73.138.96` any more.** The one service
+that still does is native ollama, which cannot use Serve at all — it handles the
+same race by retrying instead, see *Ollama (native)*.
 
 ### Tailscale accepts inbound before ufw sees it
 
@@ -257,7 +261,7 @@ The ufw-docker ruleset (in `/etc/ufw/after.rules`) only allows RFC1918 LAN
 sources through to Docker-published ports; Tailscale sources are CGNAT
 (`100.64.0.0/10`), so their SYNs are silently dropped in `DOCKER-USER`
 (`[UFW DOCKER BLOCK]` in kernel log). Host-bound services (INPUT path, e.g.
-llama-server on the tailscale IP) are unaffected — only the FORWARD/DNAT path
+ollama on the tailscale IP) are unaffected — only the FORWARD/DNAT path
 to containers is filtered. Symptom: connection *timeout* from tailnet peers
 while closed ports get *refused*.
 
@@ -290,34 +294,36 @@ For an **HTTP** service, `tailscale serve` sidesteps the problem entirely.
 locally generated and never enters `FORWARD`/`DOCKER-USER`:
 
 ```bash
-tailscale serve --bg 8096            # https://t1.gentoo-bangus.ts.net/      -> 127.0.0.1:8096
-tailscale serve --bg --https=8443 8001  # https://t1.gentoo-bangus.ts.net:8443/ -> 127.0.0.1:8001
+tailscale serve --bg 8096          # https://t1.gentoo-bangus.ts.net/ -> 127.0.0.1:8096
 tailscale serve status
-tailscale serve --https=443 off      # disable
+tailscale serve --https=443 off    # disable
 ```
 
-Two services use it, both set up 2026-08-27:
+One service uses it, set up 2026-08-27:
 
 | URL | Backend | Why |
 |---|---|---|
 | `https://t1.gentoo-bangus.ts.net/` | Jellyfin `127.0.0.1:8096` | tailnet peers were dropped in `DOCKER-USER` |
-| `https://t1.gentoo-bangus.ts.net:8443/` | llama-server `127.0.0.1:8001` | published port raced tailscale0 at boot |
 
-`/` on `:443` is taken by Jellyfin, so a second service needs either its own
-HTTPS port (`--https=8443`, used here — no path rewriting, which matters for an
-OpenAI-compatible API) or a subpath via `--set-path`. One cert covers every port.
+A second service would need its own HTTPS port (`--https=8443`) or a subpath via
+`--set-path`, since Jellyfin holds `/` on `:443`. One cert covers every port.
+An `:8443` mapping did front llama-server between 12:00 and 14:00 on 2026-08-27;
+it was removed when inference moved to ollama.
 
 No sudo, no ufw change, real Let's Encrypt cert, and it persists across reboots
 — the config lives in `/var/lib/tailscale/tailscaled.state` and `tailscaled`
 restores it on start. It does **not** survive `tailscale logout` or a state wipe.
 
+**Serve does not work for every backend.** It forwards the original `Host`
+header, so a service that validates `Host` against an allowlist rejects
+everything proxied through it. ollama does exactly this and returns a bare 403 —
+see *Ollama (native)*. Check before assuming Serve is a drop-in.
+
 Trade-offs: the stream is proxied through tailscaled rather than going direct,
 the client URL becomes the MagicDNS name, and it only covers HTTP — raw TCP
 needs `--tcp` or a `ufw route allow`. Whether the plain `http://t1:<port>` URL
-still works on the LAN depends on the container's own bind, not on Serve:
-Jellyfin still publishes `0.0.0.0:8096`, so `http://t1:8096` is unchanged;
-llama-server publishes loopback only, so `http://t1:8001` is gone and Serve is
-the only way in.
+still works on the LAN depends on the container's own bind, not on Serve —
+Jellyfin still publishes `0.0.0.0:8096`, so `http://t1:8096` is unchanged.
 
 The HTTPS is incidental, not the point. Tailscale is already WireGuard, so the
 transport is encrypted and the peer authenticated by public key; TLS on top adds
@@ -772,32 +778,27 @@ which of the two is physically attached. Mode selection comes from the
 
 ## Ollama (native)
 
-> **Status 2026-08-27: this service is down and unused.** It has failed at every
-> boot in the journal (Aug 16, 24, 26) with `listen tcp 100.73.138.96:11434:
-> bind: cannot assign requested address` — the same tailscale0 race described in
-> *Docker: start after Tailscale*. Left broken deliberately; nothing depends on
-> it. A **user-space** ollama was used for the 2026-08-27 benchmark instead (see
-> *ollama vs llama.cpp*), which does not touch this unit.
+The **only** local inference stack on t1 as of 2026-08-27. Runs natively as a
+systemd service — direct CUDA access on the RTX 5090, journald logs, no
+container. The llama.cpp compose profiles it replaced (`qwen38`, `a3b`,
+`qwopus`) were removed the same day.
 
+Two reasons for the switch:
 
-Runs natively as a systemd service rather than in docker — direct CUDA access on the RTX 5090, simpler ops, journald logs.
+1. **It unloads idle models.** `OLLAMA_KEEP_ALIVE` evicts the weights after the
+   timeout, returning ~20 GB of VRAM to ComfyUI and games. The llama.cpp
+   container held its allocation for as long as it ran, which in practice meant
+   permanently.
+2. **It is faster on the same model** — see the benchmark below.
 
 ```bash
 yay -S --needed ollama-cuda
-sudo systemctl enable --now ollama.service
 ```
 
-The package creates the `ollama` system user and `/var/lib/ollama` (700 perms, owned by `ollama:ollama`). The service unit sets `OLLAMA_MODELS=/var/lib/ollama` and binds `127.0.0.1:11434`.
+The package creates the `ollama` system user and `/var/lib/ollama` (700 perms,
+owned by `ollama:ollama`). The unit sets `OLLAMA_MODELS=/var/lib/ollama`.
 
-Models live at `/var/lib/ollama/{blobs,manifests}`. To migrate from a previous docker setup that used `~/srv/ollama`:
-
-```bash
-sudo cp -a ~/srv/ollama/models/blobs     /var/lib/ollama/blobs
-sudo cp -a ~/srv/ollama/models/manifests /var/lib/ollama/manifests
-sudo chown -R ollama:ollama /var/lib/ollama
-```
-
-Exposed to the Tailscale tailnet only (not the LAN). A systemd drop-in binds directly to the tailscale IP, so the port never listens on `enp7s0` and no firewall rule is needed:
+### Configuration
 
 ```bash
 sudo tee /etc/systemd/system/ollama.service.d/override.conf > /dev/null <<'EOF'
@@ -807,152 +808,153 @@ Wants=tailscaled.service
 
 [Service]
 Environment="OLLAMA_HOST=100.73.138.96:11434"
+Environment="OLLAMA_KEEP_ALIVE=5m"
+# Arch's unit sets RestartPreventExitStatus=1, and ollama exits 1 when its bind
+# address does not exist yet. Clearing it is what makes the boot race below
+# self-heal instead of failing permanently.
+RestartPreventExitStatus=
+Restart=on-failure
+RestartSec=5
 EOF
 sudo systemctl daemon-reload
-sudo systemctl restart ollama
+sudo systemctl enable --now ollama
 ```
 
-Reachable from other tailnet devices at `http://t1:11434` (MagicDNS) or `http://100.73.138.96:11434`. LAN clients get connection refused — the kernel rejects at bind level. `After=tailscaled.service` orders ollama after tailscaled, but **that is not enough and this does not work** — tailscaled is `Type=notify` and signals readiness before `tailscale0` has an address, so the bind fails anyway.
+Reachable from other tailnet devices at `http://t1:11434` (MagicDNS) or
+`http://100.73.138.96:11434`. LAN clients get connection refused — the kernel
+rejects at bind level, so no ufw rule is involved either way.
 
-The base unit's `Restart=on-failure` provides **no** retry safety here, contrary to what this section used to claim: Arch's `ollama.service` sets `RestartPreventExitStatus=1`, and ollama exits 1 on bind failure — precisely the status that suppresses restart. `NRestarts=0` across every failed boot. The fix, if this is ever wanted back, is the same as llama-server's: bind `127.0.0.1` and front it with `tailscale serve`.
+#### Why it binds the Tailscale IP and not loopback + Serve
 
-## llama-server (Qwen MTP)
-
-Runs `ghcr.io/ggml-org/llama.cpp:server-cuda` via docker compose. Originally chosen over ollama because ollama couldn't drive the MTP draft head and couldn't load these GGUFs cleanly (separate `mmproj` files). **That rationale expired** — ollama 0.32.15 does drive MTP, and benchmarks faster on the same model (see *ollama vs llama.cpp*, 2026-08-27). MTP speculative decoding gets ~300 tok/s on structured output vs ~100 tok/s without — 65 % draft acceptance on HTML generation in testing.
-
-Three compose profiles, one model at a time — all three bind port 8001 and none of them fit in VRAM together:
-
-| Profile  | Service            | Model                                    | Weights |
-|----------|--------------------|------------------------------------------|---------|
-| `a3b`    | `llama-qwen36-a3b` | `unsloth/Qwen3.6-35B-A3B-MTP-GGUF`       | 23 GB   |
-| `qwopus` | `llama-qwopus`     | `Jackrong/Qwopus3.6-27B-v2-MTP-GGUF`     | 17 GB   |
-| `qwen38` | `llama-qwen38`     | `unsloth/Qwen3.8-27B-GGUF`               | 18 GB   |
-
-Start one with `docker compose up -d <service>` (profiles keep them out of a bare `compose up`). Stop whichever is running first.
-
-- **Image**: `ghcr.io/ggml-org/llama.cpp:server-cuda` (tracks llama.cpp main; MTP merged upstream)
-- **Model**: `unsloth/Qwen3.6-35B-A3B-MTP-GGUF:UD-Q4_K_XL`, auto-downloaded via `-hf` flag on first run (~23 GB)
-- **Cache**: `~/srv/llama-server/cache` bind-mounted to `/root/.cache/huggingface` so the GGUF survives container recreates
-- **Bind**: `127.0.0.1:8001:8001` — loopback only; the tailnet reaches it through
-  Tailscale Serve on `:8443` (see below). Was `100.73.138.96:8001:8001` until
-  2026-08-27, which raced tailscale0 at boot — see *Docker: start after Tailscale*
-- **Endpoint**: OpenAI-compatible at `https://t1.gentoo-bangus.ts.net:8443/v1`
-  (chat completions, models, embeddings). `http://t1:8001/v1` no longer resolves
-  to anything — the port is not published off-host
-
-Key flags in `command:`:
-
-- `-ngl 99 -fa on --parallel 1` — all layers on GPU, flash attention on, single request slot (keeps KV cache small enough to fit the model + draft state in 32 GB VRAM next to ComfyUI)
-- `--spec-type draft-mtp --spec-draft-n-max 6` — enables MTP, max 6 speculative tokens per step
-- Sampling: `--temp 1.0 --top-p 0.95 --top-k 20 --min-p 0.00 --presence-penalty 1.5` (Unsloth's recommended values for Qwen3.6)
-
-VRAM coexistence: at full context the model uses ~31.5 GB / 32 GB. Won't fit alongside another GPU model loaded simultaneously. If ComfyUI is holding VRAM and llama-server fails to load, free ComfyUI's models with `curl -X POST http://localhost:8188/free -H 'Content-Type: application/json' -d '{"unload_models": true, "free_memory": true}'`.
-
-### Qwen3.8 27B (profile `qwen38`)
-
-Qwen3.8 shipped Aug 2026 with only two open sizes — a 27B dense and a 2.4T-A95B. There is **no A3B-class MoE in 3.8**, so this is not a like-for-like replacement for the 35B-A3B: it activates all 27B params per token instead of 3B, which costs roughly 3x decode speed for a better model. Both are kept; pick per task.
-
-- **Model**: `unsloth/Qwen3.8-27B-GGUF:UD-Q4_K_XL` (~18 GB). The MTP head ships **inside the main repo** — there is no separate `-MTP-GGUF` repo for 3.8, unlike 3.6
-- **Speed**: 97 tok/s measured on t1 (800-token generation, 0.56 draft acceptance, mean draft len 2.69). Compare ~300 tok/s for the A3B — the cost of a dense model
-- **VRAM**: 25.7 GB / 32 GB loaded at the full 262 K context, so ComfyUI can still stay resident alongside it. The A3B cannot do this
-- **`--spec-draft-n-max 3`**, not 6 — the 5090 sweet spot for this model. Worth re-sweeping 2–4 if it feels slow
-- **`--presence-penalty 0.0`** — Qwen's thinking-mode recommendation. The `1.5` used for the A3B is the *non-thinking* value and hurts here
-- **`-c 262144 --cache-type-k q4_0 --cache-type-v q4_0`** — the model's full native context. f16 KV would need ~17 GB and not fit; quantized KV costs ~28 KiB/token, so 262 K lands at 25.7 GB
-
-#### Why 262144 and not higher
-
-This is a **hybrid attention/SSM model**, not a pure transformer — the GGUF declares `full_attention_interval = 4` plus `ssm.*` keys, so only ~16 of its 65 layers keep a growing KV cache and the rest hold fixed-size SSM state. That is why context is far cheaper here than layer count suggests.
-
-Measured ceiling on the 5090 (32 GB), q4_0 KV, probing until load failure:
-
-| `-c`   | VRAM      | Notes                        |
-|--------|-----------|------------------------------|
-| 131072 | 22149 MiB |                              |
-| 262144 | 25733 MiB | native max, no rope scaling  |
-| 393216 | 29319 MiB | needs YaRN 1.5x              |
-| 458752 | 31111 MiB | needs YaRN 1.75x             |
-| 491520 | 32007 MiB | highest that loads — 98 % of the card |
-| 524288 | —         | fails to load                |
-
-Anything past 262 K needs `--rope-scaling yarn`, and llama.cpp's YaRN is **static** — the scale applies to every request regardless of actual length, so short prompts degrade too. Qwen advise against enabling it unless long contexts are genuinely the workload. Confirmed locally: at `--temp 0`, the 131072 and 262144 configs return byte-identical output while the YaRN config returns a consistently different one.
-
-Decode speed is flat across all of these — 94.0 / 92.4 / 94.1 tok/s at 131072 / 262144 / 458752 (three deterministic runs each, ~1 tok/s spread). Attention cost tracks tokens *in* the cache, not the allocation, so raising `-c` is free until you actually fill it. Benchmark at `--temp 0`: at temp 1.0 the draft acceptance rate swings per generation and swamps the signal.
-- Vision is compiled out via `--no-mmproj` (the model is natively multimodal). MTP does not support `-np > 1`, hence `--parallel 1`
-- The image's baked-in healthcheck curls `:8080`, but all three services serve on `:8001`, so `docker ps` reports **unhealthy** forever. `llama-qwen38` overrides it; `a3b` and `qwopus` still show the false red. Nothing restarts on it — `unless-stopped` only acts on exit
-
-Verify MTP is actually engaging after any flag change — the acceptance line only appears when the draft model loaded:
+Everything else on this box was moved to `127.0.0.1` + `tailscale serve` on
+2026-08-27 precisely to avoid binding a Tailscale IP. **ollama cannot use that
+pattern.** It validates the `Host` header against an allowlist — `localhost`,
+loopback literals, and the machine hostname — and Serve forwards
+`Host: t1.gentoo-bangus.ts.net:8443`, which is not on it. Every proxied request
+comes back **403 with an empty body**, while the identical request to
+`127.0.0.1:11434` returns 200. Verified 2026-08-27:
 
 ```bash
-docker logs llama-qwen38 2>&1 | grep -E "draft acceptance|tokens per second"
+curl -o /dev/null -w '%{http_code}\n' -H 'Host: t1' http://127.0.0.1:11434/v1/models          # 200
+curl -o /dev/null -w '%{http_code}\n' -H 'Host: t1.gentoo-bangus.ts.net:8443' http://127.0.0.1:11434/v1/models  # 403
 ```
 
-### ollama vs llama.cpp on the same model (2026-08-27)
+`OLLAMA_ORIGINS` does **not** govern this — it feeds gin's CORS middleware, and
+setting it to bare hostnames **panics the server at startup** (`bad origin:
+origins must contain '*' or include http://,https://,...`). There is no
+allowed-hosts knob in 0.32.15.
 
-ollama now ships Qwen3.8 with working MTP, so the original reason for running
-llama.cpp no longer holds. Benchmarked head to head — **ollama wins clearly**.
+So ollama takes the tailnet bind, and the boot race is handled by retry instead:
+`tailscaled` is `Type=notify` and signals readiness before `tailscale0` has an
+address, so `After=tailscaled.service` alone is not enough — the bind still
+fails. What makes it recover is clearing `RestartPreventExitStatus`. Before that
+was done, ollama had failed at **every boot in the journal** with
+`bind: cannot assign requested address` and `NRestarts=0`.
 
-Decode throughput, 10 runs per cell, `--temp 0`, 400 tokens, 1 discarded warm-up.
-Each engine's own decode accounting (prompt eval excluded), so the numbers are
-directly comparable: llama.cpp `timings.predicted_per_second`, ollama
-`eval_count / eval_duration`.
+#### Idle unloading
+
+The point of the whole exercise. `ollama ps` shows the eviction clock:
+
+```
+NAME                      SIZE     PROCESSOR    CONTEXT    UNTIL
+qwen3.8:27b-mtp-q4_K_M    17 GB    100% GPU     32768      4 minutes from now
+```
+
+VRAM goes from ~21.5 GB resident to ~1.3 GB idle. Set `OLLAMA_KEEP_ALIVE=-1` to
+pin a model, or `0` to unload immediately after each request.
+
+### Models
+
+Models live at `/var/lib/ollama/{blobs,manifests}`. To migrate a store built
+elsewhere (e.g. a user-space `~/srv/ollama`):
+
+```bash
+sudo cp -a ~/srv/ollama/blobs/.     /var/lib/ollama/blobs/
+sudo cp -a ~/srv/ollama/manifests/. /var/lib/ollama/manifests/
+sudo chown -R ollama:ollama /var/lib/ollama
+```
+
+| Tag | Notes |
+|---|---|
+| `qwen3.8:27b-mtp-q4_K_M` | current default. 27B dense, MTP, vision-capable |
+| `qwen3.6:35b` | A3B MoE — ~3x faster decode, less capable |
+| `qwen3.5:4b` | small/fast |
+
+`qwen3.8:27b`, `:latest`, `:27b-q4_K_M` and `:27b-mtp-q4_K_M` are all the **same
+digest** (`sha256:f5f1dd8920d4…`) — the `-mtp` tag is cosmetic, because for 3.8
+the MTP head lives inside the main GGUF rather than a separate repo.
+
+VRAM coexistence: if ComfyUI is holding VRAM and a model fails to load, free it
+with `curl -X POST http://localhost:8188/free -H 'Content-Type: application/json' -d '{"unload_models": true, "free_memory": true}'`.
+
+### Benchmark: why ollama replaced llama.cpp (2026-08-27)
+
+Decode throughput on **the same model**, 10 runs per cell, `--temp 0`, 400
+tokens, 1 discarded warm-up. Each engine's own decode accounting (prompt eval
+excluded), so the numbers are directly comparable: llama.cpp
+`timings.predicted_per_second`, ollama `eval_count / eval_duration`.
 
 | Config | structured (JSON) | prose |
 |---|---|---|
 | llama.cpp, **MTP off** — baseline | 73.11 ± 0.31 | 72.58 ± 0.08 |
-| llama.cpp + MTP, production (262144, q4_0 KV) | 113.58 ± 0.96 | 92.96 ± 0.30 |
+| llama.cpp + MTP, as deployed (262144, q4_0 KV) | 113.58 ± 0.96 | 92.96 ± 0.30 |
 | llama.cpp + MTP, ctx-matched (32768, f16 KV) | 118.19 ± 1.08 | 92.99 ± 0.37 |
 | **ollama + MTP** (32768, f16 KV) | **180.33 ± 1.67** | **119.43 ± 0.25** |
 
 ollama is **+53 % on structured output and +28 % on prose** against a
-context-matched llama.cpp, +59 % / +28 % against the deployed config.
+context-matched llama.cpp, +59 % / +28 % against the config that was deployed.
 
-**It is not our context config.** The ctx-matched row exists to kill that
+**Not a context-config artefact.** The ctx-matched row exists to kill that
 confound: dropping 262144 → 32768 and q4_0 → f16 KV moved structured by 4 % and
-prose not at all. Consistent with the finding above that decode cost tracks
-tokens in the cache, not the allocation.
+prose not at all. Decode cost tracks tokens in the cache, not the allocation.
 
 **It is the draft implementation.** Against the same no-MTP baseline, MTP is
 worth **1.62x / 1.28x** under llama.cpp but **2.47x / 1.65x** under ollama —
-same weights, same draft head, same GPU. llama.cpp's own acceptance rate is
-0.74 structured / 0.54 prose. That lines up with llama.cpp
+same weights, same draft head, same GPU. llama.cpp's own acceptance rate was
+0.74 structured / 0.54 prose. That matches llama.cpp
 [PR #27781](https://github.com/ggml-org/llama.cpp/pull/27781) (open as of
-2026-08-27), which reports that `draft-mtp` misdetects separate-KV MTP
-architectures — the qwen3_5 family included — as sharing the target's KV, so
-the draft head runs from stale state at pinned positions. Retest when it lands.
+2026-08-27), which reports `draft-mtp` misdetecting separate-KV MTP
+architectures — the qwen3_5 family included — as sharing the target's KV, so the
+draft head runs from stale state at pinned positions.
 
 Caveats, so this isn't over-read:
 
-- Different quant builds. Ours is unsloth `UD-Q4_K_XL` (17.6 GB); ollama ships
-  standard `Q4_K_M` (16.81 GB). ~4.5 % less weight bandwidth predicts a few
-  percent, nowhere near the gap — but the quants are not identical, and UD is
-  the higher-fidelity one
-- ollama's no-MTP baseline was **not** measured (no supported way to disable
-  drafting via the API), so the speedup ratios compare each engine against
-  llama.cpp's baseline, not their own
-- Throughput only. No quality comparison was made
+- Different quant builds. llama.cpp ran unsloth `UD-Q4_K_XL` (17.6 GB); ollama
+  ships standard `Q4_K_M` (16.81 GB). ~4.5 % less weight bandwidth predicts a
+  few percent, nowhere near the gap — but UD is the higher-fidelity quant, and
+  moving to ollama gives that up
+- ollama's own no-MTP baseline was **not** measured (no supported way to disable
+  drafting via the API), so both speedup ratios are against llama.cpp's baseline
+- Throughput only. **No quality comparison was made**
 
-Not switching on this alone — llama.cpp still gives the dynamic quant, the MTP
-tuning knobs, and 262 K context that ollama's VRAM heuristic won't pick. But if
-raw speed starts mattering, this is the number.
+### What was given up
 
-#### ollama setup used for the benchmark
+- **Context.** llama.cpp ran 262144 (the model's full native window) using
+  `--cache-type-k/v q4_0`. ollama defaults to f16 KV and its VRAM heuristic
+  picks **32768**. f16 KV at 262 K needs ~17 GB on top of a 17 GB model and does
+  not fit in 32 GB. `OLLAMA_CONTEXT_LENGTH` plus `OLLAMA_KV_CACHE_TYPE=q8_0`
+  and `OLLAMA_FLASH_ATTENTION=1` should recover most of it — **untested**
+- **The dynamic quant** (`UD-Q4_K_XL` → `Q4_K_M`), as above
+- **Tuning knobs** — `--spec-draft-n-max`, KV cache type, YaRN scaling
+- **HTTPS**, since Serve can't front it. No real loss: Tailscale is already
+  WireGuard, so the transport is encrypted and the peer authenticated by
+  public key
 
-The packaged `ollama.service` is **broken and unused** — see *ollama* above. This
-ran user-space instead, no sudo and no interference with the system unit:
+Retest llama.cpp if PR #27781 lands — that is the one event that would change
+this decision.
 
-```bash
-mkdir -p ~/srv/ollama
-OLLAMA_MODELS=~/srv/ollama OLLAMA_HOST=127.0.0.1:11434 ollama serve &
-OLLAMA_HOST=127.0.0.1:11434 ollama pull qwen3.8:27b-mtp-q4_K_M
-```
+### Cleanup left over from the migration
 
-`qwen3.8:27b`, `:latest`, `:27b-q4_K_M` and `:27b-mtp-q4_K_M` are all the **same
-digest** (`sha256:f5f1dd8920d4…`) — the `-mtp` tag is cosmetic, because for 3.8
-the MTP head lives inside the main GGUF. 17 GB sits in `~/srv/ollama`; delete it
-if the benchmark isn't being repeated.
+Not deleted automatically — check before reclaiming:
 
-Both engines bind 8001/11434 respectively but neither fits in VRAM alongside the
-other — stop `llama-qwen38` before running ollama, and restart it after.
+| Path | Size | What |
+|---|---|---|
+| `~/srv/llama-server/` | 56 GB | llama.cpp GGUF cache. Nothing references it once the compose profiles are gone. Re-downloadable |
+| `~/srv/ollama/` | 17 GB | user-space store built for the benchmark. Delete **after** copying it into `/var/lib/ollama` (above), not before |
+
+`/var/lib/ollama` was 48 GB before the migration and holds `qwen3.5:4b`,
+`qwen3.6:35b` and a `huihui_ai` abliterated 3.6.
+
 
 ## ComfyUI
 
@@ -1132,7 +1134,7 @@ Deliberately not implemented. The board is a B850I AORUS PRO with an ITE Super I
 
 ### Adding sol later
 
-The broker is the reusable part. Point a copy of the publisher at t1 over the tailnet — bind mosquitto to the tailnet address as the `llama-*` services already do, rather than exposing it to the LAN — and give sol its own broker user. Worth adding ZFS pool health, scrub status and per-drive temps there, and keeping the slow SMART interval since sol's disks actually spin.
+The broker is the reusable part. Point a copy of the publisher at t1 over the tailnet — bind mosquitto to the tailnet address as ollama already does, rather than exposing it to the LAN — and give sol its own broker user. Worth adding ZFS pool health, scrub status and per-drive temps there, and keeping the slow SMART interval since sol's disks actually spin.
 
 ## Eight Sleep (Pod 5)
 
