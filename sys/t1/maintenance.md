@@ -246,7 +246,33 @@ service is reachable from the tailnet with no ufw rule at all.** `8123` (Home
 Assistant) has no `allow` rule, and still answers over the tailnet.
 
 So **ufw here governs LAN and WAN exposure only.** Tightening a ufw rule does not
-reduce what the tailnet can reach. Device membership gates that.
+reduce what the tailnet can reach. Device membership gates that. One exception,
+below.
+
+### Tailscale Services (VIPs) DO need a ufw rule
+
+`ts-input` accepts by **destination**: traffic for this node's `100.73.138.96`. A
+Tailscale Service has its own virtual IP, so packets addressed to it match nothing
+in `ts-input`, fall through to ufw's default-deny INPUT, and are **dropped
+silently**. The symptom is a TCP connect that hangs to timeout — no refusal, no
+TLS error, and nothing logged.
+
+```bash
+sudo ufw allow in on tailscale0 to any port 443 proto tcp comment 'tailscale service VIPs'
+```
+
+Scoped to `tailscale0`, so it adds no LAN or WAN exposure, and it covers every
+service VIP instead of needing a rule each.
+
+Diagnosed 2026-08-27, and the reason it took a while is worth recording: **every
+other layer reported healthy.** The control plane had approved the host (netmap
+`CapMap` carried a `service-host` grant listing all four VIPs), `tailscale serve
+status` showed the right handlers on `:443`, and the peer's `tailscale service
+list` resolved every name. The drop happens before tailscaled sees the packet, so
+nothing upstream of ufw can observe it. Check `/etc/ufw/user.rules` — it is
+world-readable, and no `443` or `tailscale0` entry means this is the fault.
+
+**The host cannot test its own service VIP** reliably — use a second node.
 
 ### Docker published ports over Tailscale (ufw-docker)
 
@@ -320,6 +346,49 @@ The HTTPS is incidental. Tailscale is WireGuard, so the transport is already
 encrypted and the peer authenticated by public key. TLS on top matters only for
 browser secure-context features (PWA install, service workers), which the iOS
 Jellyfin app does not use.
+
+#### Tailscale Services, for URLs with no port
+
+Serve puts each extra backend on its own port. A **Service** instead gives each
+one its own MagicDNS name and virtual IP, all on 443 —
+`https://jellyfin.gentoo-bangus.ts.net/`. Set up 2026-08-27. Four things that are
+easy to get wrong, in the order they bite:
+
+- **The host needs a tag-based identity.** Converted with
+  `sudo tailscale up --advertise-tags=tag:server --advertise-exit-node --operator=deity`;
+  `up` refuses unless every non-default flag is restated. Tagging costs Taildrop
+  and Tailscale SSH to user-owned nodes. A tagged node also leaves
+  `autogroup:member`, so any `nodeAttrs` granting it something (`funnel` here)
+  must name `tag:server` explicitly or it silently loses it.
+- **The Service must exist before a host advertises it.** Advertise first and the
+  CLI reports "approval from an admin is required" indefinitely, with nothing in
+  the console to approve. Create it in the admin console, or by API:
+
+```bash
+curl -u "$TS_API_KEY:" -X PUT -H 'Content-Type: application/json' \
+  -d '{"name":"svc:jellyfin","ports":["443"],"comment":"Jellyfin on t1"}' \
+  https://api.tailscale.com/api/v2/tailnet/-/vip-services/svc:jellyfin
+```
+
+- **Host approval is not exposed in the REST API** — `/hosts` and `/approve` both
+  404. Click it in the console, or let the policy file do it. Each Service also
+  needs a `grants` entry; the legacy `acls` allow-all does **not** cover `svc:`
+  destinations.
+
+```json
+"autoApprovers": { "services": { "svc:jellyfin": ["tag:server"] } },
+```
+
+- **`tailscale serve advertise` registers the host without the port config.** The
+  console then says "Advertising the service, but some required ports are
+  missing". Re-run the full line instead — it does both:
+
+```bash
+tailscale serve --service=svc:jellyfin --bg --https=443 127.0.0.1:8096
+```
+
+Node-level Serve entries and Service entries coexist; the old
+`t1.gentoo-bangus.ts.net:<port>` URLs keep working alongside the new names.
 
 ## TPM-Backed SSH Keys
 
