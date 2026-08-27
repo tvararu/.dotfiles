@@ -1017,6 +1017,55 @@ compounds as the context fills. The benchmark generated 400 tokens from short
 prompts, so it never filled the cache and cannot detect this. llama.cpp ran
 `q4_0` here for months, so the risk is not new, but it is unquantified.
 
+#### What the 262144 window actually costs
+
+Measured 2026-08-27 at depth 3, real Python source as filler, a unique nonce per
+request so prefix matching fails and the whole prompt is reprocessed. Medians,
+5 repeats to 64k and 3 above.
+
+| prompt tokens | time to first token | prefill tok/s | decode tok/s |
+|---|---|---|---|
+| 1,059 | 0.44 s | 2751 | 145.6 |
+| 8,725 | 3.00 s | 3006 | 134.4 |
+| 32,462 | 12.03 s | 2755 | 130.3 |
+| 64,512 | 29.18 s | 2250 | 108.8 |
+| 128,897 | 83.50 s | 1562 | 86.4 |
+| 205,741 | 178.62 s | 1156 | 60.0 |
+
+Prefill and decode both fall to about 42% of their 1k rate by 200k, almost in
+lockstep. Time to first token is strongly superlinear: 1.6x the tokens from 128k
+to 200k costs 2.1x the wait.
+
+**The window is real but the top half of it is batch work.** 32k is comfortably
+interactive, 64k is tolerable, 128k means an 84-second wait before the first
+token and 200k means three minutes. `zed/settings.json` therefore caps
+`max_tokens` at 65536 rather than advertising 262144.
+
+#### Long prompts can abort the server
+
+At 64k, one request in roughly ten kills `llama-server` outright:
+
+```
+ggml-cuda.cu:106: CUDA error
+CUDA error: the launch timed out and was terminated
+  in function ggml_backend_cuda_synchronize
+llama-server terminated  error="signal: aborted (core dumped)"
+```
+
+Backtrace frame 14 is `server_context_impl::update_slots()`. This is CUDA error
+702, the driver watchdog, which is armed because this card also drives a
+display. **Every in-flight request dies with the process**, surfacing as an
+HTTP 500, so this is an availability limit and not only a latency one.
+
+It is intermittent rather than a ceiling — 128k and 200k have each run clean
+three times since. The journal immediately before the abort is full of
+`erased invalidated context checkpoint`, and ollama 0.33.1's release note
+describes exactly that machinery recording "restore points that fail to cover
+what they claim" on recurrent-layer models. Qwen3.8 is one:
+`full_attention_interval = 4` puts 48 of its 64 layers on gated-DeltaNet.
+Suggestive, not proven — a watchdog timeout is also explainable by recurrent
+kernels simply running long. Re-test after upgrading.
+
 #### Idle unloading
 
 `ollama ps` shows the eviction clock:
@@ -1042,9 +1091,86 @@ sudo chown -R ollama:ollama /var/lib/ollama
 
 | Tag | Notes |
 |---|---|
-| `qwen3.8:27b-mtp-q4_K_M` | default. 27B dense, MTP, vision-capable |
+| `qwen3.8:27b-mtp-q4_K_M-d3` | **default since 2026-08-27.** Draft depth 3 |
+| `qwen3.8:27b-mtp-q4_K_M` | upstream tag, draft depth 4 |
 | `qwen3.6:35b` | A3B MoE — ~3x faster decode, less capable |
 | `qwen3.5:4b` | small/fast |
+
+`qwen3.6:35b` and `qwen3.5:4b` are listed in `zed/settings.json` but are **not
+installed** on t1. Selecting either in Zed fails.
+
+#### The `-d3` tag
+
+Built locally, weights shared with the parent tag so it costs no disk:
+
+```bash
+printf '%s\n' 'FROM qwen3.8:27b-mtp-q4_K_M' 'PARAMETER draft_num_predict 3' > /tmp/Modelfile.d3
+ollama create qwen3.8:27b-mtp-q4_K_M-d3 -f /tmp/Modelfile.d3
+```
+
+Depth 3 rather than the upstream 4. Measured 2026-08-27, `think: false`, greedy,
+5 repeats, spread under 1% within a cell:
+
+| task | context | depth 3 | depth 4 | depth 4 advantage |
+|---|---|---|---|---|
+| structured | empty | 182.85 | 193.59 | +5.9% |
+| structured | 32k | 157.90 | 167.96 | +6.4% |
+| prose | empty | 112.84 | 100.86 | **-10.6%** |
+| prose | 32k | 106.50 | 97.37 | **-8.6%** |
+
+Task type decides this, not context depth — the split is stable across both.
+Break-even on time per token is **69.9% structured at 32k**, 77.6% at an empty
+cache, so depth 3 wins for any mix below roughly 70% structured.
+
+It is a 6-9% effect either way and the break-even sits near plausible workload
+values, so this is worth taking because it is free and reversible, not because
+it is decisive. To revert, point clients back at `qwen3.8:27b-mtp-q4_K_M`.
+
+Verify the parameter reaches the engine, not just the manifest:
+
+```bash
+journalctl -u ollama | grep 'starting llama-server' | tail -1 | grep -o -- '--spec-draft-n-max [0-9]*'
+```
+
+#### Draft depth changes the output, and that is not a bug
+
+Speculative decoding is supposed to be output-identical to plain greedy decoding.
+Here it is not. Measured 2026-08-27 on 20 fixed greedy prompts, 600 tokens each:
+
+| comparison | prompts diverging |
+|---|---|
+| depth 0 vs itself, depth 4 vs itself | **0/20** |
+| depth 0 vs depth 4 | 18/20 |
+| depth 0 vs depth 3 | 15/20 |
+| depth 3 vs depth 4 | 16/20 |
+
+Controls are clean and reproduced token-for-token across three runs, so the
+engine is deterministic at fixed depth and depth is genuinely the cause.
+
+**It is floating-point reduction order, not llama.cpp #25618.** Verifying N
+drafted tokens in one pass changes the batch shape, which changes reduction
+order, which flips logits that were already tied. Confirmed by replaying each
+common prefix through an unspeculated decode on `llama-server` directly:
+
+```bash
+PORT=$(journalctl -u ollama | grep 'starting llama-server' | tail -1 | grep -o -- '--port [0-9]*' | awk '{print $2}')
+curl -s "http://127.0.0.1:$PORT/completion" -d '{"prompt":[<token ids>],"n_predict":1,"n_probs":10,"temperature":0,"speculative.n_max":0,"cache_prompt":false}'
+```
+
+At all 49 divergence points both candidate tokens sat at oracle rank 0 or 1,
+separated by a median 0.06 nats, and depth 4 matched the oracle argmax *more*
+often than depth 3 (11/16 against 5/16). A broken accept path would rank the
+speculated arm's token far down; it never did once. Corroborating: 1.83% of
+positions are near-ties under 0.10 nats, so a 600-token generation passes ~11
+coin-toss positions.
+
+Consequence: depth is **not** quality-neutral by construction, so any quality
+baseline must be run at the depth that will actually ship.
+
+**ollama's `logprobs` cannot be used to investigate this.** It emits entries
+only for tokens that pass through the normal sampler, so a speculated arm
+returns 1-2 entries for 600 tokens while depth 0 returns all 600. Cross-arm
+comparison in logprob space is silently misaligned. Use `llama-server` directly.
 
 `qwen3.8:27b`, `:latest`, `:27b-q4_K_M` and `:27b-mtp-q4_K_M` share the same
 **weights** digest (`sha256:f5f1dd8920d4…`), because for 3.8 the MTP head lives
@@ -1146,6 +1272,48 @@ Limits of the test:
 - ollama's own no-MTP baseline was not measured. `draft_num_predict: 0` does
   disable drafting, so this is measurable and simply was not done
 - Throughput only. No quality comparison was made
+
+### Tried and rejected: num_batch
+
+Measured 2026-08-27. `num_batch` sets **both** `-b` and `-ub`, not just the
+logical batch, so a real prefill gain was plausible. There is none.
+
+The scheduler's own choice depends on context size — `-b 1024 -ub 1024` at ctx
+32768, `-b 512 -ub 512` at 262144 — so the test that matters is at 262144, where
+raising to 1024 is a genuine doubling. Run as default → 1024 → default so drift
+is measured rather than assumed:
+
+| cell | -b | -ub | prefill at 24k | VRAM |
+|---|---|---|---|---|
+| default-A | 512 | 512 | 2971 tok/s | 29838 MiB |
+| nb1024 | 1024 | 1024 | 2962 tok/s | 30500 MiB |
+| default-B | 512 | 512 | 2884 tok/s | 29838 MiB |
+
+The two identical default cells differ by 2.9% and the treatment lands inside
+that bracket. **Do not set it**: no gain, 662 MiB of VRAM, and setting it
+explicitly disables ollama's OOM step-down, whose failure mode is a silent
+partial offload rather than an error.
+
+### Benchmarking this box: thermal drift is ~3%
+
+Sequential A/B cells drift about 3% across a run as the card heats, which is
+larger than most effects worth chasing here. The num_batch test at ctx 32768
+would have been written up as "explicit num_batch is 3.4% slower" — comparing
+two cells that had *identical* spawn flags.
+
+Any comparison with an expected effect under ~5% needs a bracketed or
+interleaved order. Also worth pinning down before trusting a number:
+
+- `prompt_eval_count` counts cached **plus** new tokens while
+  `prompt_eval_duration` times only the new ones, so their ratio reads absurdly
+  high on a cache hit. Above ~5000 tok/s means a cache hit; cold prefill peaks
+  near 3000.
+- A unique nonce at the **front** of the prompt forces full reprocessing.
+- `think` changes the task profile. With thinking on, both structured and prose
+  prompts emit prose-like reasoning first, which compresses the difference
+  between them. Numbers taken with and without it are not comparable.
+- Check `offloaded 66/66 layers` in the journal. A partial offload serves at a
+  fraction of the rate with no error.
 
 ### What was given up
 
