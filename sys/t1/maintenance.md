@@ -1068,13 +1068,9 @@ Reclaimed 2026-08-27:
 | `~/srv/llama-server/` | 56 GB | llama.cpp GGUF cache. Re-downloadable |
 
 The llama.cpp container ran as root, so the GGUFs it wrote into the
-`deity`-owned bind mount are `root:root`. A plain `rm -rf` deletes ~22 GB, then
-fails with `Permission denied` on the five large blobs and leaves the tree half
-gone. Finish with:
-
-```bash
-sudo rm -rf /home/deity/srv/llama-server
-```
+`deity`-owned bind mount were `root:root`. A plain `rm -rf` deleted ~22 GB, then
+failed with `Permission denied` on the five large blobs and left the tree half
+gone. It took `sudo rm -rf /home/deity/srv/llama-server` to finish.
 
 Check for this anywhere a container writes into a bind mount as root:
 `find <dir> -type f -printf '%u\n' | sort | uniq -c`.
