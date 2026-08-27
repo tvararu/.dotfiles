@@ -249,30 +249,42 @@ So **ufw here governs LAN and WAN exposure only.** Tightening a ufw rule does no
 reduce what the tailnet can reach. Device membership gates that. One exception,
 below.
 
-### Tailscale Services (VIPs) DO need a ufw rule
+### Service VIPs: declare ports as `tcp:443`, not `443`
 
-`ts-input` accepts by **destination**: traffic for this node's `100.73.138.96`. A
-Tailscale Service has its own virtual IP, so packets addressed to it match nothing
-in `ts-input`, fall through to ufw's default-deny INPUT, and are **dropped
-silently**. The symptom is a TCP connect that hangs to timeout — no refusal, no
-TLS error, and nothing logged.
+A Tailscale Service definition's `ports` **must carry the protocol prefix**. Created
+with `["443"]`, the control plane never validates the host as actually serving it,
+so it never publishes the service VIPs into that host's `AllowedIPs`. Peers then
+have no route to the VIP, every SYN dies on the client, and the connection hangs to
+timeout with no refusal and nothing logged anywhere.
 
 ```bash
-sudo ufw allow in on tailscale0 to any port 443 proto tcp comment 'tailscale service VIPs'
+curl -u "$TS_API_KEY:" -X PUT -H 'Content-Type: application/json' \
+  -d '{"name":"svc:x","addrs":["<v4>","<v6>"],"ports":["tcp:443"],"comment":"..."}' \
+  https://api.tailscale.com/api/v2/tailnet/-/vip-services/svc:x
 ```
 
-Scoped to `tailscale0`, so it adds no LAN or WAN exposure, and it covers every
-service VIP instead of needing a rule each.
+`addrs` must be present on update (both families) or it 400s on that before it ever
+looks at `ports` — which makes a wrong `ports` value easy to misread as rejected.
 
-Diagnosed 2026-08-27, and the reason it took a while is worth recording: **every
-other layer reported healthy.** The control plane had approved the host (netmap
-`CapMap` carried a `service-host` grant listing all four VIPs), `tailscale serve
-status` showed the right handlers on `:443`, and the peer's `tailscale service
-list` resolved every name. The drop happens before tailscaled sees the packet, so
-nothing upstream of ufw can observe it. Check `/etc/ufw/user.rules` — it is
-world-readable, and no `443` or `tailscale0` entry means this is the fault.
+**Diagnose from a second node, never the host.** The host short-circuits its own
+service VIP in-process, so it returns a healthy 200 while every peer times out —
+a false positive that wasted most of an evening here. On a peer:
 
-**The host cannot test its own service VIP** reliably — use a second node.
+```bash
+tailscale ping <VIP>                 # "no matching peer" = VIP not published
+tailscale debug netmap | grep -A2 't1\.'   # AllowedIPs should list the VIP pairs
+```
+
+Fixed 2026-08-27. The tell is `AllowedIPs` on the host peer: with the bad format it
+holds only the node's own addresses, and gaining the VIP pairs is the moment it
+starts working.
+
+**On ufw.** A `ufw allow in on tailscale0 to any port 443 proto tcp` rule was added
+while chasing this, and is still in place. It is probably **not** required: Tailscale
+intercepts inbound TCP to a *served* VIP port inside netstack, before kernel
+netfilter sees it. Traffic to a VIP port that is *not* served does fall through to
+the host. Removing the rule is untested — verify from a peer before concluding
+either way.
 
 ### Docker published ports over Tailscale (ufw-docker)
 
@@ -366,9 +378,12 @@ easy to get wrong, in the order they bite:
 
 ```bash
 curl -u "$TS_API_KEY:" -X PUT -H 'Content-Type: application/json' \
-  -d '{"name":"svc:jellyfin","ports":["443"],"comment":"Jellyfin on t1"}' \
+  -d '{"name":"svc:jellyfin","ports":["tcp:443"],"comment":"Jellyfin on t1"}' \
   https://api.tailscale.com/api/v2/tailnet/-/vip-services/svc:jellyfin
 ```
+
+`tcp:443`, **not** `443` — a bare port silently stops the service ever working.
+See *Service VIPs* under the ufw section.
 
 - **Host approval is not exposed in the REST API** — `/hosts` and `/approve` both
   404. Click it in the console, or let the policy file do it. Each Service also
