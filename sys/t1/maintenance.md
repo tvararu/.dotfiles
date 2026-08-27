@@ -1094,11 +1094,6 @@ sudo chown -R ollama:ollama /var/lib/ollama
 |---|---|
 | `qwen3.8:27b-mtp-q4_K_M-d3` | **default since 2026-08-27.** Draft depth 3 |
 | `qwen3.8:27b-mtp-q4_K_M` | upstream tag, draft depth 4 |
-| `qwen3.6:35b` | A3B MoE — ~3x faster decode, less capable |
-| `qwen3.5:4b` | small/fast |
-
-`qwen3.6:35b` and `qwen3.5:4b` are **not installed** on t1. Some client configs
-still list them; selecting one fails.
 
 #### The `-d3` tag
 
@@ -1348,8 +1343,8 @@ Check for this anywhere a container writes into a bind mount as root:
 A stale exited `llama-qwopus` container still held a mount reference to the
 cache. Use `docker ps -a`. Stopped containers keep their mounts.
 
-`/var/lib/ollama` holds `qwen3.8:27b-mtp-q4_K_M`, `qwen3.6:35b`, `qwen3.5:4b`
-and a `huihui_ai` abliterated 3.6.
+`/var/lib/ollama` holds `qwen3.8:27b-mtp-q4_K_M`, `qwen3.8:27b-mtp-q4_K_M-d3`
+and `qwen3.8:27b-q8_0`, sharing 44 GB of blobs. Verified 2026-08-27.
 
 
 ## ComfyUI
