@@ -36,8 +36,8 @@
     },
     "default_model": {
       "enable_thinking": false,
-      "provider": "llama.cpp",
-      "model": "qwen3.6-mtp",
+      "provider": "ollama",
+      "model": "qwen3.8:27b-mtp-q4_K_M",
     },
     "default_profile": "ask",
     "default_width": 756,
@@ -113,46 +113,19 @@
     "SCSS": { "tab_size": 2 },
   },
   "language_models": {
-    "openai_compatible": {
-      "llama.cpp": {
-        "api_url": "https://t1.gentoo-bangus.ts.net:8443/v1",
-        "available_models": [
-          {
-            "name": "qwen3.6-mtp",
-            "max_tokens": 200000,
-            "max_output_tokens": 32000,
-            "max_completion_tokens": 262144,
-            "capabilities": {
-              "tools": true,
-              "images": false,
-              "parallel_tool_calls": false,
-              "prompt_cache_key": false,
-              "chat_completions": true,
-              "interleaved_reasoning": false,
-            },
-          },
-          // profile qwen38 — matches the server's -c 262144, the model's
-          // full native context (no rope scaling)
-          {
-            "name": "qwen3.8-mtp",
-            "max_tokens": 262144,
-            "max_output_tokens": 32000,
-            "max_completion_tokens": 262144,
-            "capabilities": {
-              "tools": true,
-              "images": false,
-              "parallel_tool_calls": false,
-              "prompt_cache_key": false,
-              "chat_completions": true,
-              "interleaved_reasoning": false,
-            },
-          },
-        ],
-      },
-    },
+    // t1 runs ollama natively on the tailnet; models unload after 5m idle.
+    // Context is ollama's VRAM-based default of 32768, not llama.cpp's 262144.
     "ollama": {
+      "api_url": "http://t1:11434",
       "available_models": [
-        { "name": "gpt-oss", "max_tokens": 131072, "supports_tools": true },
+        {
+          "name": "qwen3.8:27b-mtp-q4_K_M",
+          "max_tokens": 32768,
+          "supports_tools": true,
+          "supports_thinking": true,
+        },
+        { "name": "qwen3.6:35b", "max_tokens": 32768, "supports_tools": true },
+        { "name": "qwen3.5:4b", "max_tokens": 32768, "supports_tools": true },
       ],
     },
   },
