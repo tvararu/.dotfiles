@@ -5,7 +5,7 @@
 # Storage is `dir` on the NVMe rather than the ZFS pool: the pool is raidz1 on
 # spinning disks, which is the wrong medium for compile workloads, and a second
 # zpool (loop-backed) would add another ARC consumer to a 6.9 GiB host. Instances
-# here are disposable — sys/luna/cloud-init.yml is the durable record, so losing
+# here are disposable — the guest's cloud-init is the durable record, so losing
 # snapshots costs nothing.
 #
 # `/` is only 18 GB, so storage must live under /home (201 GB).
