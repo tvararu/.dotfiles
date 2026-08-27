@@ -1319,7 +1319,10 @@ Declared inline in `user_script.bash` — idempotent git-clone + `pip install -r
   raised `ImportError` on every start and loaded none of its nodes. It is dropped
   from `user_script.bash` and the clone renamed to `ComfyUI-LTXVideo.disabled`;
   ComfyUI skips any `custom_nodes` directory with that suffix. Undo both to
-  re-enable once upstream catches up with kornia.
+  re-enable once upstream catches up with kornia. Nothing is lost meanwhile:
+  LTX-Video is native to ComfyUI now (`comfy_extras/nodes_lt.py`,
+  `nodes_lt_audio.py`, `nodes_lt_upsampler.py`), and `/object_info` still lists
+  26 LTXV nodes with the pack disabled.
 - `user_script.bash` patches ComfyUI-VAE-Utils to PR #22 ([spacepxl/ComfyUI-VAE-Utils#22](https://github.com/spacepxl/ComfyUI-VAE-Utils/pull/22)) — restores `CustomVAE.decode()` after ComfyUI #11405/#11406 bypassed `decode_tiled_3d` and broke Qwen 2x decode (dark/burned output). Drop the patch block once upstream merges.
 
 ## Home Assistant (Qingping air monitor)
