@@ -1035,6 +1035,10 @@ request so prefix matching fails and the whole prompt is reprocessed. Medians,
 | 128,897 | 83.50 s | 1562 | 86.4 |
 | 205,741 | 178.62 s | 1156 | 60.0 |
 
+**Measured at the old 500 W cap.** The cap is now 575 W, worth +6% decode and
++8% prefill, so these figures are that much pessimistic. See "Power cap
+500 → 575 W" below.
+
 Prefill and decode both fall to about 42% of their 1k rate by 200k, almost in
 lockstep. Time to first token is strongly superlinear: 1.6x the tokens from 128k
 to 200k costs 2.1x the wait.
@@ -1389,6 +1393,47 @@ The two identical default cells differ by 2.9% and the treatment lands inside
 that bracket. **Do not set it**: no gain, 662 MiB of VRAM, and setting it
 explicitly disables ollama's OOM step-down, whose failure mode is a silent
 partial offload rather than an error.
+
+### Power cap 500 → 575 W: +6-8%, the largest single win
+
+**575 W is both the card's maximum and its stock default.** The 500 W cap was a
+deliberate detune from a
+[thermal exercise](https://gist.github.com/tvararu/aef4e2da6580ff965bd122bcbd4b8ff0)
+that measured only temperature and watts, never throughput. On LLM work it cost
+6-8%. Restoring the default recovers it, and there is no headroom beyond.
+
+Measured 2026-08-27, 8 rounds, cells **alternating** rather than bracketed —
+changing the cap needs no model reload, so the two arms sit seconds apart under
+near-identical thermal state, and the order flips every round:
+
+| metric | 500 W | 575 W | gain | rounds 575 won |
+|---|---|---|---|---|
+| decode, structured | 179.87 | 190.54 | **+5.9%** | 8/8 |
+| decode, prose | 111.82 | 119.08 | **+6.5%** | 8/8 |
+| prefill, 24k cold | 2915 | 3153 | **+8.2%** | 8/8 |
+
+Per-round deltas, which are drift-free by construction: structured +5.5% median
+(sd 0.92), prose +6.3% (sd 0.80), prefill +8.0% (sd 0.42). Thermals stayed at
+71-79 °C with clocks 2280-2655 MHz, so nothing throttled.
+
+Prefill gains most, which fits: it is the most compute-bound of the three.
+
+```bash
+lact cli -g 1 power-limit get
+lact cli -g 1 power-limit set 575
+```
+
+The `lact` CLI persists past LACT's own 5 s re-apply timer, so it is usable for
+A/B work without editing `/etc/lact/config.yaml`. The config file still sets the
+value at boot — change it there to make it stick.
+
+**`nvidia-smi -pl` does not work here.** LACT re-applies `power_cap` every 5 s
+and silently reverts it, so any benchmark after it measures the old value.
+
+**Every throughput figure recorded above this section was measured at 500 W** —
+the long-context curve, the depth-3 comparison and the crucible baseline
+included. Ratios between arms hold, since both arms of each comparison shared a
+cap, but absolute numbers are ~6-8% low against the current configuration.
 
 ### Benchmarking this box: thermal drift is ~3%
 
