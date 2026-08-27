@@ -768,9 +768,10 @@ The only local inference stack on t1 since 2026-08-27. Native systemd service:
 direct CUDA on the RTX 5090, journald logs, no container. Replaced the llama.cpp
 compose profiles (`qwen38`, `a3b`, `qwopus`), removed the same day.
 
-Two reasons. It unloads idle models, returning ~20 GB of VRAM to ComfyUI and
-games. The llama.cpp container held its allocation permanently. It is also faster
-on the same model — see the benchmark below.
+Two reasons. It unloads idle models, returning **~29-30 GB** of VRAM at 262144
+with q8_0 KV. The llama.cpp container held its allocation permanently. It also
+benchmarked faster on the same model, though see the caveat on that comparison
+below.
 
 ```bash
 yay -S --needed ollama-cuda
@@ -860,8 +861,12 @@ from free VRAM at load time, documented in its help as `4k/32k/256k based on
 VRAM`. With `OLLAMA_CONTEXT_LENGTH` unset it chose **32768**, against a trained
 window of 262144 (`qwen35.context_length` in `ollama show`).
 
-f16 KV is why. This model has `key_length` 256, so its cache is expensive.
-Measured on t1, f16 costs ~70 KiB/token:
+f16 KV is why. Measured on t1, f16 costs ~70 KiB/token. The reason is
+architectural: `qwen35.full_attention_interval = 4`, so **only 16 of 64 layers
+carry a KV cache** and the other 48 are gated-DeltaNet with a fixed 748 MiB
+recurrent state. 16 x 2 x 4 heads x 256 dim x 2 B = 64 KiB, plus 4 KiB for the
+MTP draft cache. A genuinely dense 27B with these head dimensions would cost
+256 KiB/token, so long context is affordable here only because of the hybrid:
 
 | Context | f16 KV | Total VRAM |
 |---|---|---|
@@ -944,9 +949,22 @@ sudo chown -R ollama:ollama /var/lib/ollama
 | `qwen3.6:35b` | A3B MoE — ~3x faster decode, less capable |
 | `qwen3.5:4b` | small/fast |
 
-`qwen3.8:27b`, `:latest`, `:27b-q4_K_M` and `:27b-mtp-q4_K_M` are the same digest
-(`sha256:f5f1dd8920d4…`). The `-mtp` tag is cosmetic: for 3.8 the MTP head lives
+`qwen3.8:27b`, `:latest`, `:27b-q4_K_M` and `:27b-mtp-q4_K_M` share the same
+**weights** digest (`sha256:f5f1dd8920d4…`), because for 3.8 the MTP head lives
 inside the main GGUF rather than a separate repo.
+
+**The `-mtp` tag is not cosmetic.** The params layer differs, and only the `-mtp`
+tag carries `draft_num_predict`:
+
+```
+qwen3.8:27b-mtp-q4_K_M  ->  draft_num_predict 4
+qwen3.8:27b-q8_0        ->  (absent)
+```
+
+`routes.go` zeroes `DraftNumPredict` unless a Modelfile or request names it, so
+the other tags run with **speculation silently off**. That costs about 2.5x on
+structured output, with no error and nothing in the logs to notice. Always pull
+the `-mtp` tag, or set the parameter yourself.
 
 If ComfyUI is holding VRAM and a model fails to load, free it:
 
@@ -1001,10 +1019,16 @@ Not a context artefact. The ctx-matched row exists to rule that out. Dropping
 262144 → 32768 and q4_0 → f16 KV moved structured by 4 % and prose not at all.
 Decode cost tracks tokens in the cache, not the allocation.
 
-It is the draft implementation. Against the same no-MTP baseline, MTP is worth
-1.62x / 1.28x under llama.cpp and 2.47x / 1.65x under ollama. Same weights, same
-draft head, same GPU. llama.cpp's acceptance rate was 0.74 structured, 0.54
-prose.
+**This comparison was not controlled, and the conclusion below is retracted.**
+ollama does not have its own inference engine for GGUF models. It spawns
+`/usr/lib/ollama/llama-server` — the upstream binary, llama.cpp b10488. The two
+runs therefore differed in draft depth (3 vs 4), model file (`UD-Q4_K_XL` vs
+`Q4_K_M`), `--no-mmproj` vs a loaded 931 MB projector, and CUDA 12.8 container vs
+CUDA 13 Arch build. A multi-variable difference was attributed to one cause.
+
+What the acceptance data does support: MTP is worth 1.62x / 1.28x in the
+llama.cpp run and 2.47x / 1.65x in the ollama run, and llama.cpp's acceptance was
+0.74 structured / 0.54 prose.
 
 That matches llama.cpp
 [PR #27781](https://github.com/ggml-org/llama.cpp/pull/27781), open as of
@@ -1018,14 +1042,18 @@ Limits of the test:
   ships `Q4_K_M` (16.81 GB). ~4.5 % less weight bandwidth predicts a few percent,
   not the measured gap. But UD is the higher-fidelity quant, and the switch loses
   it
-- ollama's own no-MTP baseline was not measured. The API has no supported way to
-  disable drafting. Both ratios are against llama.cpp's baseline
+- ollama's own no-MTP baseline was not measured. `draft_num_predict: 0` does
+  disable drafting, so this is measurable and simply was not done
 - Throughput only. No quality comparison was made
 
 ### What was given up
 
 - **The dynamic quant**, `UD-Q4_K_XL` → `Q4_K_M`
-- **Tuning knobs** — `--spec-draft-n-max`, KV cache type, YaRN scaling
+- **Tuning knobs** — not actually given up. `draft_num_predict` maps to
+  `--spec-draft-n-max`, `OLLAMA_KV_CACHE_TYPE` to `-ctk`/`-ctv`, and ollama passes
+  the child `cmd.Env = os.Environ()`, so any `LLAMA_ARG_*` for a flag ollama does
+  **not** set reaches llama-server. CLI beats env, so `-b`/`-ub`, `-ctk`/`-ctv`
+  and `--spec-type` are the ones genuinely out of reach
 - **HTTPS**, because Serve cannot proxy it. Tailscale is WireGuard, so the
   transport is encrypted and the peer authenticated regardless
 
