@@ -958,17 +958,36 @@ Caveats, so this isn't over-read:
 Retest llama.cpp if PR #27781 lands — that is the one event that would change
 this decision.
 
-### Cleanup left over from the migration
+### Cleanup after the migration
 
-Not deleted automatically — check before reclaiming:
+Reclaimed 2026-08-27:
 
-| Path | Size | What |
+| Path | Size | Notes |
 |---|---|---|
-| `~/srv/llama-server/` | 56 GB | llama.cpp GGUF cache. Nothing references it once the compose profiles are gone. Re-downloadable |
-| `~/srv/ollama/` | 17 GB | user-space store built for the benchmark. Delete **after** copying it into `/var/lib/ollama` (above), not before |
+| `~/srv/ollama/` | 17 GB | user-space store built for the benchmark; verified blob-for-blob against `/var/lib/ollama` first |
+| `ghcr.io/ggml-org/llama.cpp:server-cuda` | 4.3 GB | `docker rmi`, unused once the profiles were gone |
+| `~/srv/llama-server/` | 56 GB | llama.cpp GGUF cache — Qwen3.8, Qwen3.6-A3B, Qwopus. Re-downloadable |
 
-`/var/lib/ollama` was 48 GB before the migration and holds `qwen3.5:4b`,
-`qwen3.6:35b` and a `huihui_ai` abliterated 3.6.
+**A bind-mount left root-owned files behind.** The llama.cpp container ran as
+root, so the GGUFs it wrote into `~/srv/llama-server` are `root:root` even
+though the directory is `deity`'s. A plain `rm -rf` deletes ~22 GB and then
+fails with `Permission denied` on the five large blobs, leaving 34 GB behind and
+the tree half-gone. Finish with:
+
+```bash
+sudo rm -rf /home/deity/srv/llama-server
+```
+
+Worth checking for elsewhere — any container writing into a bind mount as root
+leaves the same trap. `find <dir> -type f -printf '%u\n' | sort | uniq -c` tells
+you before you start.
+
+Also removed: a stale exited `llama-qwopus` container still holding a mount
+reference to the cache. `docker ps -a`, not `docker ps` — stopped containers
+keep their mounts and are easy to miss.
+
+`/var/lib/ollama` holds `qwen3.8:27b-mtp-q4_K_M`, `qwen3.6:35b`, `qwen3.5:4b`
+and a `huihui_ai` abliterated 3.6.
 
 
 ## ComfyUI
