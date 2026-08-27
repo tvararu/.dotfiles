@@ -37,7 +37,7 @@
     "default_model": {
       "enable_thinking": false,
       "provider": "ollama",
-      "model": "qwen3.8:27b-mtp-q4_K_M",
+      "model": "qwen3.8:27b-mtp-q4_K_M-d3",
     },
     "default_profile": "ask",
     "default_width": 756,
@@ -114,13 +114,17 @@
   },
   "language_models": {
     // t1 runs ollama natively on the tailnet; models unload after 5m idle.
-    // Context is ollama's VRAM-based default of 32768, not llama.cpp's 262144.
+    // The server serves 262144, but max_tokens is deliberately 65536: measured
+    // time to first token is 12s at 32k, 29s at 64k, 84s at 128k and 179s at
+    // 200k, so the top half of the window is batch work rather than editing.
+    // The -d3 tag is the same weights with draft_num_predict 3 instead of 4:
+    // 6% slower on structured output, 9% faster on prose.
     "ollama": {
       "api_url": "http://t1:11434",
       "available_models": [
         {
-          "name": "qwen3.8:27b-mtp-q4_K_M",
-          "max_tokens": 32768,
+          "name": "qwen3.8:27b-mtp-q4_K_M-d3",
+          "max_tokens": 65536,
           "supports_tools": true,
           "supports_thinking": true,
         },
