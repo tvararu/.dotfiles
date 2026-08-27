@@ -709,6 +709,98 @@ sudo ufw allow 47984:48010/udp
 - **AV1 is available** on this setup (`av1_nvenc`). The AMD iGPU had no AV1
   encoder at all, so this is new since the move to the 5090.
 
+### Idle VRAM reclaim
+
+Sunshine creates a CUDA context during its **startup** encoder probe and holds it
+for the life of the process, connected or not. Measured on 2026-08-27:
+
+| State | Sunshine VRAM |
+| --- | --- |
+| Idle | 513 MiB |
+| Streaming | 592 MiB |
+
+The stream itself costs 79 MiB. The other 513 MiB is idle overhead, which matters
+because `llama-server` routinely holds ~29 GB of the 5090's 32 GB and leaves
+about 2 GB free. The +79 MiB is released correctly on disconnect, so there is no
+leak across sessions — [Sunshine#1060](https://github.com/LizardByte/Sunshine/issues/1060)
+does not apply at this version. Nothing in the config releases the idle context.
+Stopping the process is the only way to get it back.
+
+A oneshot plus timer does that: `sunshine-idle-stop.{service,timer}`, driven by
+`sunshine-idle-stop.sh`.
+
+**The stream probe is `ss -lnup | grep '"sunshine"'`.** Sunshine binds UDP
+47998-48000 (control, audio, video) when a session starts and closes them
+immediately on disconnect; it holds no UDP socket while idle. Verified in both
+directions against a live stream. The TCP ports 47984/47989/47990/48010 stay
+bound the whole time and are useless as a probe.
+
+The script clamps measured idle time to the unit's own uptime. Without that, a
+stamp file left over from a previous Sunshine process would stop a freshly
+started one on the next tick.
+
+These are **user** units, not system units, because Sunshine itself is one. They
+install to `~/.config/systemd/user/`, no `sudo`:
+
+```bash
+install -m644 sys/t1/sunshine-idle-stop.service sys/t1/sunshine-idle-stop.timer \
+  ~/.config/systemd/user/
+systemctl --user daemon-reload
+systemctl --user reenable sunshine-idle-stop.timer
+systemctl --user start sunshine-idle-stop.timer
+systemctl --user list-timers sunshine-idle-stop.timer
+```
+
+The `/home` hazard that forces system units into `/etc/systemd/system/` does not
+apply here: the user manager starts after login, long after `/home` is mounted.
+Copies rather than symlinks anyway, to match the rest of this repo.
+
+Sunshine stops between 60 and 65 minutes after the last disconnect (`IDLE_SECS`
+in the service, 5-minute tick in the timer). It still autostarts at login through
+`WantedBy=graphical-session.target`, then stops itself an hour later if unused.
+`systemctl --user disable app-dev.lizardbyte.app.Sunshine.service` for a cold
+default instead. Start it again before streaming with the `start-sunshine` fish
+function, which runs from any machine:
+
+```bash
+start-sunshine
+```
+
+It pipes one `sh` snippet over `ssh t1` rather than making several ssh calls, so
+the readiness wait costs one round trip. It is idempotent — repeat calls report
+`Sunshine is already running` and exit 0 — and it waits for port 47989 to open
+before returning, so Moonlight finds the host on its first poll rather than
+showing it offline. Cold start measures about 6 s, 5 s of which is the
+`ExecStartPre=/bin/sleep 5` in the packaged unit. On t1 it skips the ssh hop.
+
+`systemctl --user` over ssh depends on `XDG_RUNTIME_DIR`, which `pam_systemd`
+sets on login (it is in sshd's stack via `system-remote-login` → `system-login`)
+and `loginctl enable-linger` keeps `user@1000.service` alive without a session.
+The function sets the variable itself anyway, so it does not depend on the PAM
+stack staying as it is.
+
+### Why not socket activation
+
+Starting Sunshine on the first Moonlight poll was considered and rejected.
+Sunshine exports no socket-activation symbols:
+
+```bash
+nm -D /usr/bin/sunshine | grep sd_listen   # no output
+```
+
+So it cannot accept file descriptors from systemd, and `systemd-socket-proxyd`
+— the usual workaround — proxies TCP only, while Sunshine needs UDP for video,
+audio, and control. `bind_address` does not rescue it: binding to localhost would
+break the UDP path too.
+
+What would work is a trigger socket on 47989 that releases the port before
+Sunshine starts (`ExecStartPre=systemctl --user stop sunshine-trigger.socket`,
+re-armed by `ExecStopPost=`). The triggering connection is dropped, so Moonlight
+shows the host offline for one poll and finds it ~10 s later on a retry, and mDNS
+discovery is dead while Sunshine is down. Not worth it for 513 MiB. Note that
+Sunshine re-probes all three encoders at every connect anyway, so a cold start
+adds process startup only, not probe time.
+
 ### DPMS
 
 `hypridle.conf` currently has no `dpms off` listener, so nothing here bites. If
