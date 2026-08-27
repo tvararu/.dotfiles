@@ -1038,8 +1038,9 @@ to 200k costs 2.1x the wait.
 
 **The window is real but the top half of it is batch work.** 32k is comfortably
 interactive, 64k is tolerable, 128k means an 84-second wait before the first
-token and 200k means three minutes. `zed/settings.json` therefore caps
-`max_tokens` at 65536 rather than advertising 262144.
+token and 200k means three minutes. Clients are therefore better configured with
+a context cap around 65536 than with the 262144 the server advertises — the
+remainder is usable, but not at a latency anyone waits through interactively.
 
 #### Long prompts can abort the server
 
@@ -1096,8 +1097,8 @@ sudo chown -R ollama:ollama /var/lib/ollama
 | `qwen3.6:35b` | A3B MoE — ~3x faster decode, less capable |
 | `qwen3.5:4b` | small/fast |
 
-`qwen3.6:35b` and `qwen3.5:4b` are listed in `zed/settings.json` but are **not
-installed** on t1. Selecting either in Zed fails.
+`qwen3.6:35b` and `qwen3.5:4b` are **not installed** on t1. Some client configs
+still list them; selecting one fails.
 
 #### The `-d3` tag
 
