@@ -1,0 +1,50 @@
+[Unit]
+Description=ComfyUI container (started on demand)
+Requires=docker.service
+After=docker.service
+
+# The whole point of the arrangement. When comfyui-proxy.service exits on its
+# idle timer nothing requires this unit any more, so systemd stops it and the
+# VRAM comes back. Without this the container would stay up forever.
+StopWhenUnneeded=yes
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+User=deity
+Group=deity
+# systemd initialises supplementary groups from the user database, but naming it
+# here keeps the docker socket dependency visible in `systemctl cat`.
+SupplementaryGroups=docker
+
+# Loopback only: the container no longer publishes to the LAN, comfyui-proxy.socket
+# does. See sys/t1/docker-compose.yml.
+Environment=BACKEND_PORT=8189
+
+ExecStart=/home/deity/.dotfiles/sys/t1/comfyui-start.sh
+ExecStop=/home/deity/.dotfiles/sys/t1/comfyui-stop.sh
+
+# ExecStop deliberately waits for an in-flight render, so the default 90s would
+# SIGKILL it mid-drain and lose the job. Must stay above DRAIN_TIMEOUT in the
+# script. A manual `systemctl stop comfyui` inherits the same wait.
+TimeoutStopSec=31min
+TimeoutStartSec=4min
+
+NoNewPrivileges=yes
+ProtectSystem=strict
+# The scripts live in the repo under /home, so read-only rather than yes.
+ProtectHome=read-only
+# ProtectSystem=strict remounts the whole hierarchy read-only, and connecting to
+# a unix socket needs write permission on it, so without this every docker call
+# fails with EACCES.
+ReadWritePaths=/run/docker.sock
+PrivateTmp=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+RestrictNamespaces=yes
+RestrictRealtime=yes
+LockPersonality=yes
+SystemCallFilter=@system-service
+SystemCallErrorNumber=EPERM

@@ -2,12 +2,18 @@
 name: t1
 
 services:
+  # Started on demand by comfyui-proxy.socket, not by docker. ComfyUI holds
+  # ~498 MiB of VRAM for its CUDA context with no model loaded, which is worth
+  # reclaiming on a box where llama-server takes 29 of the 5090's 32 GB.
   comfyui:
     container_name: comfyui
     image: mmartial/comfyui-nvidia-docker:ubuntu24_cuda13.1-latest
-    restart: unless-stopped
+    # Not unless-stopped: docker would start it at boot and hold the VRAM before
+    # anyone asks for it, and would fight the idle stop by restarting it.
+    restart: "no"
+    # Loopback only. systemd owns the LAN-facing 8188 and proxies to this.
     ports:
-      - "8188:8188"
+      - "127.0.0.1:8189:8188"
     volumes:
       - ~/srv/comfyui:/comfy/mnt
       - ~/models:/host_models

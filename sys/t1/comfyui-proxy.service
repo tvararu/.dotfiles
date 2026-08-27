@@ -1,0 +1,35 @@
+[Unit]
+Description=ComfyUI socket-activation proxy
+# Pulls the container up, and keeps it up for as long as this proxy runs. The
+# release half is StopWhenUnneeded= over in comfyui.service.
+Requires=comfyui.service
+After=comfyui.service
+
+[Service]
+# --exit-idle-time is what starts the clock on reclaiming the VRAM: the proxy
+# exits after this long with no connection at all, comfyui.service then has
+# nothing requiring it, and the container stops.
+#
+# An open ComfyUI tab holds a websocket for progress updates, so the timer only
+# begins once the last tab is closed. That is the intended reading of "idle" —
+# stopping under an open tab would drop the websocket, and the frontend's
+# automatic reconnect would immediately trigger the socket again.
+ExecStart=/usr/lib/systemd/systemd-socket-proxyd --exit-idle-time=30min 127.0.0.1:8189
+
+# A pure byte relay: no filesystem access of any kind, and websockets pass
+# through untouched because it never interprets the stream.
+DynamicUser=yes
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+RestrictNamespaces=yes
+RestrictRealtime=yes
+LockPersonality=yes
+SystemCallFilter=@system-service
+SystemCallErrorNumber=EPERM
