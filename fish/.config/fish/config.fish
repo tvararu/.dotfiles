@@ -19,6 +19,10 @@ mise activate fish | source
 # Orbstack (macOS only)
 test (uname) = Darwin; and source ~/.orbstack/shell/init2.fish 2>/dev/null
 
+# ollama binds the tailnet IP on t1, but the CLI defaults to 127.0.0.1:11434 —
+# without this every `ollama` command says "could not connect to ollama server"
+test (hostname) = t1; and set -x OLLAMA_HOST t1:11434
+
 # Abbreviations for day to day commands
 abbr --add -- l 'ls'
 abbr --add -- led 'ledger -f current.ledger --price-db prices.db --exchange £ --pedantic'
