@@ -772,6 +772,14 @@ which of the two is physically attached. Mode selection comes from the
 
 ## Ollama (native)
 
+> **Status 2026-08-27: this service is down and unused.** It has failed at every
+> boot in the journal (Aug 16, 24, 26) with `listen tcp 100.73.138.96:11434:
+> bind: cannot assign requested address` — the same tailscale0 race described in
+> *Docker: start after Tailscale*. Left broken deliberately; nothing depends on
+> it. A **user-space** ollama was used for the 2026-08-27 benchmark instead (see
+> *ollama vs llama.cpp*), which does not touch this unit.
+
+
 Runs natively as a systemd service rather than in docker — direct CUDA access on the RTX 5090, simpler ops, journald logs.
 
 ```bash
@@ -804,11 +812,13 @@ sudo systemctl daemon-reload
 sudo systemctl restart ollama
 ```
 
-Reachable from other tailnet devices at `http://t1:11434` (MagicDNS) or `http://100.73.138.96:11434`. LAN clients get connection refused — the kernel rejects at bind level. `After=tailscaled.service` orders ollama after tailscale so `100.73.138.96` exists at bind time; the base unit's `Restart=on-failure` provides retry safety.
+Reachable from other tailnet devices at `http://t1:11434` (MagicDNS) or `http://100.73.138.96:11434`. LAN clients get connection refused — the kernel rejects at bind level. `After=tailscaled.service` orders ollama after tailscaled, but **that is not enough and this does not work** — tailscaled is `Type=notify` and signals readiness before `tailscale0` has an address, so the bind fails anyway.
+
+The base unit's `Restart=on-failure` provides **no** retry safety here, contrary to what this section used to claim: Arch's `ollama.service` sets `RestartPreventExitStatus=1`, and ollama exits 1 on bind failure — precisely the status that suppresses restart. `NRestarts=0` across every failed boot. The fix, if this is ever wanted back, is the same as llama-server's: bind `127.0.0.1` and front it with `tailscale serve`.
 
 ## llama-server (Qwen MTP)
 
-Runs `ghcr.io/ggml-org/llama.cpp:server-cuda` via docker compose alongside ollama. Used instead of ollama because ollama doesn't support the MTP draft head yet and can't load these GGUFs cleanly (separate `mmproj` files). MTP speculative decoding gets ~300 tok/s on structured output vs ~100 tok/s without — 65 % draft acceptance on HTML generation in testing.
+Runs `ghcr.io/ggml-org/llama.cpp:server-cuda` via docker compose. Originally chosen over ollama because ollama couldn't drive the MTP draft head and couldn't load these GGUFs cleanly (separate `mmproj` files). **That rationale expired** — ollama 0.32.15 does drive MTP, and benchmarks faster on the same model (see *ollama vs llama.cpp*, 2026-08-27). MTP speculative decoding gets ~300 tok/s on structured output vs ~100 tok/s without — 65 % draft acceptance on HTML generation in testing.
 
 Three compose profiles, one model at a time — all three bind port 8001 and none of them fit in VRAM together:
 
@@ -875,6 +885,74 @@ Verify MTP is actually engaging after any flag change — the acceptance line on
 ```bash
 docker logs llama-qwen38 2>&1 | grep -E "draft acceptance|tokens per second"
 ```
+
+### ollama vs llama.cpp on the same model (2026-08-27)
+
+ollama now ships Qwen3.8 with working MTP, so the original reason for running
+llama.cpp no longer holds. Benchmarked head to head — **ollama wins clearly**.
+
+Decode throughput, 10 runs per cell, `--temp 0`, 400 tokens, 1 discarded warm-up.
+Each engine's own decode accounting (prompt eval excluded), so the numbers are
+directly comparable: llama.cpp `timings.predicted_per_second`, ollama
+`eval_count / eval_duration`.
+
+| Config | structured (JSON) | prose |
+|---|---|---|
+| llama.cpp, **MTP off** — baseline | 73.11 ± 0.31 | 72.58 ± 0.08 |
+| llama.cpp + MTP, production (262144, q4_0 KV) | 113.58 ± 0.96 | 92.96 ± 0.30 |
+| llama.cpp + MTP, ctx-matched (32768, f16 KV) | 118.19 ± 1.08 | 92.99 ± 0.37 |
+| **ollama + MTP** (32768, f16 KV) | **180.33 ± 1.67** | **119.43 ± 0.25** |
+
+ollama is **+53 % on structured output and +28 % on prose** against a
+context-matched llama.cpp, +59 % / +28 % against the deployed config.
+
+**It is not our context config.** The ctx-matched row exists to kill that
+confound: dropping 262144 → 32768 and q4_0 → f16 KV moved structured by 4 % and
+prose not at all. Consistent with the finding above that decode cost tracks
+tokens in the cache, not the allocation.
+
+**It is the draft implementation.** Against the same no-MTP baseline, MTP is
+worth **1.62x / 1.28x** under llama.cpp but **2.47x / 1.65x** under ollama —
+same weights, same draft head, same GPU. llama.cpp's own acceptance rate is
+0.74 structured / 0.54 prose. That lines up with llama.cpp
+[PR #27781](https://github.com/ggml-org/llama.cpp/pull/27781) (open as of
+2026-08-27), which reports that `draft-mtp` misdetects separate-KV MTP
+architectures — the qwen3_5 family included — as sharing the target's KV, so
+the draft head runs from stale state at pinned positions. Retest when it lands.
+
+Caveats, so this isn't over-read:
+
+- Different quant builds. Ours is unsloth `UD-Q4_K_XL` (17.6 GB); ollama ships
+  standard `Q4_K_M` (16.81 GB). ~4.5 % less weight bandwidth predicts a few
+  percent, nowhere near the gap — but the quants are not identical, and UD is
+  the higher-fidelity one
+- ollama's no-MTP baseline was **not** measured (no supported way to disable
+  drafting via the API), so the speedup ratios compare each engine against
+  llama.cpp's baseline, not their own
+- Throughput only. No quality comparison was made
+
+Not switching on this alone — llama.cpp still gives the dynamic quant, the MTP
+tuning knobs, and 262 K context that ollama's VRAM heuristic won't pick. But if
+raw speed starts mattering, this is the number.
+
+#### ollama setup used for the benchmark
+
+The packaged `ollama.service` is **broken and unused** — see *ollama* above. This
+ran user-space instead, no sudo and no interference with the system unit:
+
+```bash
+mkdir -p ~/srv/ollama
+OLLAMA_MODELS=~/srv/ollama OLLAMA_HOST=127.0.0.1:11434 ollama serve &
+OLLAMA_HOST=127.0.0.1:11434 ollama pull qwen3.8:27b-mtp-q4_K_M
+```
+
+`qwen3.8:27b`, `:latest`, `:27b-q4_K_M` and `:27b-mtp-q4_K_M` are all the **same
+digest** (`sha256:f5f1dd8920d4…`) — the `-mtp` tag is cosmetic, because for 3.8
+the MTP head lives inside the main GGUF. 17 GB sits in `~/srv/ollama`; delete it
+if the benchmark isn't being repeated.
+
+Both engines bind 8001/11434 respectively but neither fits in VRAM alongside the
+other — stop `llama-qwen38` before running ollama, and restart it after.
 
 ## ComfyUI
 
