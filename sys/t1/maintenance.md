@@ -340,8 +340,7 @@ alongside `tailscale serve` below.
 
 Everything else is `network_mode: host`. Jellyfin is the one that still works
 over the LAN, which is what the RFC1918 allowance covers. The three `ufw route
-allow` rules above are currently inert — no AzerothCore containers are running
-— as is the `27036` Steam rule.
+allow` rules above are currently inert — no AzerothCore containers are running.
 
 #### Tailscale Serve, which needs no firewall rule
 
@@ -675,6 +674,22 @@ ssh openclaw
 Streams the desktop to a Mac (or anything else running Moonlight). The machine is
 headless for this purpose: an HDMI dummy plug holds an output alive, Hyprland
 renders to it, and Sunshine captures and encodes that output.
+
+### Firewall
+
+Sunshine listens on `47984:48010`, tcp and udp; Steam Remote Play adds `27036`.
+Both are scoped to the LAN:
+
+```bash
+sudo ufw allow from 192.168.8.0/24 to any port 47984:48010 proto tcp comment 'sunshine from lan'
+sudo ufw allow from 192.168.8.0/24 to any port 47984:48010 proto udp comment 'sunshine from lan'
+sudo ufw allow from 192.168.8.0/24 to any port 27036 comment 'steam from lan'
+```
+
+Scoping costs nothing over Tailscale — `ts-input` accepts tailnet traffic ahead of
+ufw, so Moonlight over the tailnet works regardless of what ufw says. It only
+governs the LAN path. Worth doing because **`47990` is Sunshine's web admin UI**
+and sits inside that range.
 
 **The display lives on the RTX 5090's `HDMI-A-1`.** The AMD iGPU's `HDMI-A-2` is
 unused. This reverses an earlier layout and the reversal matters, because of one
