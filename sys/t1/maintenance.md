@@ -1580,6 +1580,47 @@ the long-context curve, the depth-3 comparison and the crucible baseline
 included. Ratios between arms hold, since both arms of each comparison shared a
 cap, but absolute numbers are ~6-8% low against the current configuration.
 
+### Sustained full load: 5 min CPU+GPU
+
+Method copied from the
+[thermal exercise](https://gist.github.com/tvararu/aef4e2da6580ff965bd122bcbd4b8ff0)
+so the numbers compare: `stress-ng --cpu 16 --timeout 5m` and `gpu_burn 300`
+together. Measured 2026-08-28 at the 575 W cap, sampled every 5 s. Both loads
+completed — `GPU 0: OK` with 0 errors, 16/16 stressors passed, nothing crashed.
+
+| | start | minute 5 | limit |
+|---|---|---|---|
+| GPU temp | 57 °C | **90.0 °C**, flat from t=225 | boost target, ~90 °C observed |
+| GPU power | 575 W, at cap | **552-572 W**, below cap | 575 W |
+| GPU SM clock | 2272 MHz | **1912 MHz** | — |
+| CPU `Tctl` | 71 °C | **94.1 °C** peak | ~95 °C |
+| CPU clock | 5230 MHz | 5222 MHz, no loss | — |
+| NVMe 990 EVO Plus | 59.8 °C | 73.8 °C | 80.8 °C |
+
+**The GPU is thermally bounded here, and the throttle flags do not say so.**
+Lifetime counters read `SW Thermal Slowdown: 0 us` and `HW Thermal Slowdown:
+0 us`; `SW Power Cap` was the only reason ever active. What happened instead is
+the boost algorithm holding a temperature target — `temperature.gpu` pinned at
+exactly 90.0 for the last 80 s while the clock fell monotonically, and from
+t=235 the card stopped reaching its own power cap at all. A card limited only by
+power stabilises its clock and lets temperature settle; this one did the reverse.
+Per-minute mean SM clock: 2147, 2053, 2014, 1987, 1954.
+
+**The CPU had less margin than the GPU.** It held 5222-5230 MHz for all 300 s
+with no frequency loss at all, but `Tctl` was still climbing ~4 °C/min at the end
+and reached 94.1 against a ~95 °C limit. The GPU had reached equilibrium; the CPU
+had not. A longer run clips it. Package power was 108 W.
+
+Against the gist's stock row, which was measured on an open bench with no case —
+CPU 92 °C, GPU 75 °C — the CPU matches and **the GPU is 15 °C hotter**. That
+difference is the enclosure.
+
+**This is the worst case, not the normal one.** Simultaneous full CPU and full
+GPU does not occur in real use here. It is also not the same load as inference:
+`gpu_burn` is dense FP32 GEMM while decode is memory-bound, so the 78 °C seen
+during decode at the same 575 W is a different thermal profile rather than a
+milder version of this one. Sustained decode has not been measured this way.
+
 ### Benchmarking this box: thermal drift is ~3%
 
 Sequential A/B cells drift about 3% across a run as the card heats, which is
@@ -1840,7 +1881,7 @@ No alerting is configured, deliberately — this is a history-first setup, revie
 
 ## Host metrics (MQTT → Home Assistant)
 
-t1 lives in a cupboard, so its own temperatures are recorded into Home Assistant alongside everything else. A Python daemon on the host publishes to a local Mosquitto broker using MQTT discovery; HA picks the sensors up as a single `t1` device. Recording only — no alerts and no automated mitigation.
+t1 used to run inside a closed cupboard, so its own temperatures are recorded into Home Assistant alongside everything else. It now sits in open air on top of that cupboard, which is worth 6-14 °C at idle — see *Idle baseline*. The recording stays. A Python daemon on the host publishes to a local Mosquitto broker using MQTT discovery; HA picks the sensors up as a single `t1` device. Recording only — no alerts and no automated mitigation.
 
 The publisher runs on the **host, not in a container**, because the two most important sources are unreachable from inside one: the NVIDIA GPU is absent from hwmon entirely and only `nvidia-smi` can see it, and SMART needs the raw block devices.
 
@@ -1898,25 +1939,27 @@ Fan RPM is **not available**. No driver on this board exposes `fan*_input`; the 
 
 ### Idle baseline
 
-Recorded 2026-08-24 at genuine idle (load 0.01, GPU 13W/180MHz), for comparison against later readings:
+Two recordings. The first is from 2026-08-24 with the box inside the closed cupboard; the second from 2026-08-28, after it moved into open air on top of it.
 
-| Sensor | Idle | Throttles at |
-| --- | --- | --- |
-| NVMe 990 EVO Plus composite | 71.8°C | 80.8°C |
-| NVMe 9100 PRO composite | 72.8°C | 83.8°C |
-| CPU `Tctl` | 61.9°C | ~95°C |
-| Board sensor 2 | 76°C | — |
-| Onboard NIC | 70°C | 120°C |
-| RTX 5090 | 56°C | ~88°C |
+| Sensor | In cupboard | In open air | Throttles at |
+| --- | --- | --- | --- |
+| NVMe 990 EVO Plus composite | 71.8°C | 62.9°C | 80.8°C |
+| NVMe 9100 PRO composite | 72.8°C | 65.8°C | 83.8°C |
+| CPU `Tctl` | 61.9°C | 56.1°C | ~95°C |
+| Board sensor 2 | 76°C | 68°C | — |
+| Onboard NIC | 70°C | 61°C | 120°C |
+| RTX 5090 | 56°C | 42°C | ~88°C |
 
-An NVMe with airflow idles at 35–50°C, so these are roughly 20°C high and about 9°C from throttling before any work starts. The machine is thermally constrained at rest, not merely at risk of it.
+The cupboard column was taken at genuine idle (load 0.01, GPU 13W/180MHz). The open-air column was taken at load 0.32 with the GPU genuinely idle at 17W/180MHz, so its CPU and board figures are slightly pessimistic and the rest are comparable.
+
+**The move fixed the resting problem.** An NVMe with airflow idles at 35–50°C. In the cupboard both drives sat roughly 20°C above that and about 9°C from throttling before any work started. In open air the 990 EVO Plus idles 18°C clear of its limit. The machine is no longer thermally constrained at rest — but see *Sustained full load* for what it still does under a dense compute load.
 
 ### Notes
 
 - **Chip names, not `hwmonN` paths.** hwmon numbering is not stable across reboots, so the script keys off libsensors chip names. NVMe drives are identified by model for the same reason — `nvme0`/`nvme1` enumeration order is not guaranteed and would swap the two drives' history.
 - **`acpitz` reads ~17°C and is fiction** — a fixed ACPI zone, excluded. `gigabyte_wmi` `temp6` reads −55°C (unconnected header) and is filtered by a sanity range.
 - **Board sensors are unlabelled.** `temp1`–`temp5` are published as "Board sensor N"; identify which is which by watching load response before renaming.
-- **AMD exposes no throttle flag** without an out-of-tree module, so CPU frequency is published alongside temperature as the proxy. The GPU has real flags (`clocks_event_reasons.*_thermal_slowdown`), which are the most direct evidence of heat constraint on the machine.
+- **AMD exposes no throttle flag** without an out-of-tree module, so CPU frequency is published alongside temperature as the proxy. The GPU has real flags (`clocks_event_reasons.*_thermal_slowdown`), but **they only catch the emergency slowdown** — a 5-minute full load took 11% off the sustained clock with both thermal counters still reading `0 us`. Clock against temperature is the signal on both parts; the flags are a backstop.
 - **Arch ships paho-mqtt 1.6.1**, which predates the `CallbackAPIVersion` argument; the client construction accepts either API so a package bump does not break it.
 - **`python-paho-mqtt` from the repos, not pip** — PEP 668 blocks `pip install` on Arch.
 - **The service runs as root** because smartctl needs the block devices, so `PrivateDevices` is deliberately absent from the unit. `ProtectHome` is `read-only` rather than `yes` because the script itself lives in the repo under `/home`.
