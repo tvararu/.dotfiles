@@ -367,7 +367,10 @@ alongside `tailscale serve` below.
 
 Everything else is `network_mode: host`. Jellyfin is the one that still works
 over the LAN, which is what the RFC1918 allowance covers. The three `ufw route
-allow` rules above are currently inert — no AzerothCore containers are running.
+allow` rules above have no effect while the AzerothCore containers are down.
+**Keep them.** The server is not retired, so those rules are configuration waiting
+for it rather than leftovers. An audit that finds no running container is not
+evidence that a rule should be removed.
 
 #### Tailscale Serve, which needs no firewall rule
 
