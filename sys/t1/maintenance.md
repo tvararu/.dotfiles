@@ -172,6 +172,33 @@ wall ethernet. Wired primary, wireless fallback.
 - **Wireless**: managed by iwd, not NetworkManager. wlan0 stays associated with
   `AutoConnect`, so it picks up the default route if the cable drops
 
+**`enp7s0` is downshifted to 100 Mbit by a bad cable.** The NIC is 2.5GbE and
+the service is 200 Mbit, but the PHY negotiates 100. The kernel says so plainly
+at link-up, and it is the only place this appears — nothing else reports a
+fault:
+
+```
+r8169 ... Downshift occurred from negotiated speed 1Gbps to actual speed
+100Mbps, check cabling!
+r8169 ... enp7s0: Link is Up - 100Mbps/Full (downshifted)
+```
+
+```bash
+cat /sys/class/net/enp7s0/speed          # 100 while the fault is present
+journalctl -k | grep -i downshift
+```
+
+This caps every download on the box, containers and VMs included, at ~11.9 MB/s
+of **wire** bytes. That qualifier matters: a `docker pull` writes uncompressed
+layers, so dividing a disk-usage delta by wall clock reports several times the
+true link rate and looks like the cap is not real. Measure with the interface
+counter instead — `/sys/class/net/enp7s0/statistics/rx_bytes` before and after —
+which is exact and costs nothing.
+
+wlan0 negotiates 1200 Mbit and would be faster, but route metric 600 against
+100 means it never wins. Raising its priority is not worth it; replace the
+cable.
+
 ### Router administration
 
 GL.iNet firmware 4.x sits on OpenWrt 23.05, so `uci` and `fw4` work directly and
