@@ -286,6 +286,27 @@ netfilter sees it. Traffic to a VIP port that is *not* served does fall through 
 the host. Removing the rule is untested — verify from a peer before concluding
 either way.
 
+### Containers resolve DNS through the host
+
+`/etc/systemd/resolved.conf.d/20-docker-dns.conf` puts a systemd-resolved stub
+listener on the docker0 bridge:
+
+```ini
+[Resolve]
+DNSStubListenerExtra=172.17.0.1
+```
+
+Containers then use `172.17.0.1:53`, which is why ufw carries
+`allow proto udp to 172.17.0.1 port 53 from 172.16.0.0/12` — that range covers
+both `docker0` (172.17) and the compose network (172.20). **This file is a system
+drop-in, not stowed from here**; it is recorded because nothing else does.
+
+ufw also carried the same allow from `192.168.0.0/16`, which let any LAN host use
+this box as a resolver. Audited 2026-08-28 and no consumer found — no libvirt
+networks, no VM images, no container subnet on `192.168.x`. Only the `172.16.0.0/12`
+rule is needed. If it turns out something did want it, the symptom is specific:
+containers resolve fine and something on the LAN stops resolving.
+
 ### Docker published ports over Tailscale (ufw-docker)
 
 The ufw-docker ruleset (in `/etc/ufw/after.rules`) only allows RFC1918 LAN
