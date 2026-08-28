@@ -279,12 +279,12 @@ Fixed 2026-08-27. The tell is `AllowedIPs` on the host peer: with the bad format
 holds only the node's own addresses, and gaining the VIP pairs is the moment it
 starts working.
 
-**On ufw.** A `ufw allow in on tailscale0 to any port 443 proto tcp` rule was added
-while chasing this, and is still in place. It is probably **not** required: Tailscale
-intercepts inbound TCP to a *served* VIP port inside netstack, before kernel
-netfilter sees it. Traffic to a VIP port that is *not* served does fall through to
-the host. Removing the rule is untested — verify from a peer before concluding
-either way.
+**ufw is not involved.** A `ufw allow in on tailscale0 to any port 443 proto tcp`
+rule was added while chasing this and then removed; all four services kept working,
+verified from a second node. Tailscale intercepts inbound TCP to a *served* VIP port
+inside netstack, before kernel netfilter sees it, so **no ufw rule is needed for a
+service VIP**. Traffic to a VIP port that is *not* served does fall through to the
+host — the reverse of a firewall problem.
 
 ### Containers resolve DNS through the host
 
