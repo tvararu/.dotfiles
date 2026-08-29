@@ -1347,7 +1347,9 @@ Install:
 ```bash
 sudo install -m 644 ~/.dotfiles/sys/t1/ollama-preempt-comfyui.service /etc/systemd/system/
 sudo systemctl daemon-reload
-sudo systemctl reenable --now ollama-preempt-comfyui.service
+sudo systemctl reenable ollama-preempt-comfyui.service
+# reenable --now is a try-restart, a no-op on a stopped unit. Start it explicitly.
+sudo systemctl start ollama-preempt-comfyui.service
 ```
 
 Verify with `journalctl -u ollama-preempt-comfyui -f` while triggering a model
