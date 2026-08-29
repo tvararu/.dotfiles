@@ -1284,18 +1284,32 @@ for most of a working day. **That is the intended ordering, not a problem to
 fix.** Long-running LLM sessions matter more here than ComfyUI, and losing the
 prompt cache costs a full cold reprocess — minutes at 262144.
 
-The consequence is that ComfyUI on `:8188` will often fail to load a checkpoint.
-It surfaces as an out-of-memory or a load failure that reads as a ComfyUI fault,
-so **check `ollama ps` first**. To hand the card over deliberately:
+Starting ComfyUI now takes the card back automatically, as of 2026-08-29.
+`comfyui.service` runs `comfyui-evict-ollama.sh` as an `ExecStartPre`, which
+stops every model `ollama ps` reports before the container starts. Priority is
+unchanged — ollama still wins by default and holds the card all day. ComfyUI is
+simply allowed to ask for it.
+
+**This reverses the earlier note here, which said not to automate it.** The old
+objection was that a background render could silently destroy an in-flight
+session's cache. Socket activation makes that mostly moot: ComfyUI only starts
+when something connects to `:8188`, which is normally a person opening the tab.
+
+The residual risk is real but narrower. Any connection to `:8188` now evicts,
+including a browser tab on a phone or another machine reconnecting on its own.
+If the prompt cache disappears for no reason you can account for, check
+`journalctl -u comfyui` for an eviction line before suspecting ollama.
+
+To hand the card over by hand, without starting ComfyUI:
 
 ```bash
-curl -s http://t1:11434/api/generate \
-  -d '{"model":"qwen3.8:27b-mtp-q4_K_M-d3","keep_alive":0}'
+ollama stop qwen3.8:27b-mtp-q4_K_M-d3
 ```
 
-Do not automate that from `comfyui-start.sh`. An automatic eviction would let a
-background render silently destroy an in-flight session's cache; the manual step
-is the point.
+The eviction never fails the unit. `ExecStartPre=-` ignores its exit status, and
+the script exits 0 even when the daemon is unreachable. A ComfyUI that starts on
+a contended card renders slowly; a ComfyUI that refuses to start is a page that
+never loads, with the reason buried in the journal.
 
 ### Models
 
@@ -1737,8 +1751,10 @@ matters when llama-server routinely holds 29 GB of the 5090's 32 GB.
 
 **If ComfyUI fails to load a checkpoint, suspect ollama before ComfyUI.** The
 LLM has priority on this card and its keep-alive is 2h, so it will usually be
-holding ~30 GB. Check `ollama ps`, then unload it deliberately — see "The LLM
-has priority on this card" under Ollama.
+holding ~30 GB. Since 2026-08-29 `comfyui.service` evicts it on start, so this
+should be self-correcting — if it is not, the eviction failed. Read
+`journalctl -u comfyui -b` for the `ExecStartPre` output and check `ollama ps`.
+See "The LLM has priority on this card" under Ollama.
 
 Unlike Sunshine, this one really does resume on request. ComfyUI is plain HTTP
 over TCP, so `systemd-socket-proxyd` applies, where Sunshine's UDP ruled it out.
@@ -1753,6 +1769,7 @@ Three units, in `sys/t1/`:
 | `comfyui-proxy.socket` | owns 8188, starts the proxy on first connection |
 | `comfyui-proxy.service` | `systemd-socket-proxyd` to `127.0.0.1:8189`, `--exit-idle-time=30min` |
 | `comfyui.service` | `docker start`/`stop` with a readiness wait and a queue drain |
+| `comfyui-evict-ollama.sh` | `ExecStartPre` on the above; unloads ollama's models first |
 
 The release path is `--exit-idle-time` plus `StopWhenUnneeded=yes`: the proxy
 exits after 30 idle minutes, nothing then requires `comfyui.service`, systemd

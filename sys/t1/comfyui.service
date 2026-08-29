@@ -21,6 +21,13 @@ SupplementaryGroups=docker
 # does. See sys/t1/docker-compose.yml.
 Environment=BACKEND_PORT=8189
 
+# ollama holds ~29 GB of the 5090's 32 GB with a 2h keep-alive and no awareness
+# of other GPU processes, so without this ComfyUI starts into ~2.7 GB free and
+# OOMs on the first checkpoint load. The `-` prefix is deliberate: a failed
+# eviction must still let ComfyUI start, because a slow render is a better
+# outcome than a page that never loads.
+ExecStartPre=-/home/deity/.dotfiles/sys/t1/comfyui-evict-ollama.sh
+
 ExecStart=/home/deity/.dotfiles/sys/t1/comfyui-start.sh
 ExecStop=/home/deity/.dotfiles/sys/t1/comfyui-stop.sh
 
@@ -28,7 +35,9 @@ ExecStop=/home/deity/.dotfiles/sys/t1/comfyui-stop.sh
 # SIGKILL it mid-drain and lose the job. Must stay above DRAIN_TIMEOUT in the
 # script. A manual `systemctl stop comfyui` inherits the same wait.
 TimeoutStopSec=31min
-TimeoutStartSec=4min
+# Covers ExecStartPre and ExecStart together: up to 30s of eviction wait plus
+# the start script's own 180s ceiling.
+TimeoutStartSec=5min
 
 NoNewPrivileges=yes
 ProtectSystem=strict
