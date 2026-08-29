@@ -1,0 +1,39 @@
+[Unit]
+Description=Free ComfyUI's VRAM when ollama loads a model
+Documentation=file:///home/deity/.dotfiles/sys/t1/maintenance.md
+# Only a journal reader, so it does not need ollama up to start - and it must
+# survive an ollama restart, which is why this is After= and not Requires=.
+After=ollama.service
+
+[Service]
+Type=simple
+User=deity
+Group=deity
+# journalctl -u ollama needs this to read the system journal.
+SupplementaryGroups=systemd-journal
+
+ExecStart=/home/deity/.dotfiles/sys/t1/ollama-preempt-comfyui.sh
+
+# journalctl -f ends if journald restarts, and the script exits with it. Without
+# a restart the watch would be silently gone for the rest of the boot.
+Restart=always
+RestartSec=5s
+
+NoNewPrivileges=yes
+ProtectSystem=strict
+# The script lives in the repo under /home, so read-only rather than yes.
+ProtectHome=read-only
+PrivateTmp=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+# Loopback HTTP to ComfyUI, and AF_UNIX for journald and the systemd bus.
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+RestrictNamespaces=yes
+RestrictRealtime=yes
+LockPersonality=yes
+SystemCallFilter=@system-service
+SystemCallErrorNumber=EPERM
+
+[Install]
+WantedBy=multi-user.target

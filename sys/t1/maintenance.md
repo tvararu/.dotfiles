@@ -1311,6 +1311,49 @@ the script exits 0 even when the daemon is unreachable. A ComfyUI that starts on
 a contended card renders slowly; a ComfyUI that refuses to start is a page that
 never loads, with the reason buried in the journal.
 
+#### The other direction: ollama preempts ComfyUI
+
+`ollama-preempt-comfyui.service` watches the journal and calls ComfyUI's
+`POST /free` when ollama loads a model. Added 2026-08-29.
+
+`Conflicts=` cannot express this. `ollama.service` is always active, and what
+"spins up" is a `llama-server` runner inside the running daemon, which systemd
+cannot see. The journal can:
+
+```
+10:39:25  starting llama-server
+10:39:27  offloaded 66/66 layers to GPU     <- 2s later
+```
+
+Two seconds is the whole budget. `journalctl -f` delivers a line through a pipe
+in about 450 ms, measured, which leaves enough margin. It is still a race: a
+request arriving at exactly the wrong moment can still see a partial offload.
+The race-free version needs a proxy in front of ollama, which was judged not
+worth a new failure point ahead of the service used all day.
+
+**It frees rather than stops.** `POST /free` unloads checkpoints and returns
+almost all the VRAM instantly, leaving the container and any open tab alive.
+`systemctl stop comfyui` was rejected: `comfyui-stop.sh` waits up to 30 min to
+drain the render queue, and killing a running render costs far more than a model
+reload. The ~498 MiB CUDA context stays behind, which is noise against 32 GB.
+
+**The script must target 8189, never 8188.** 8188 is `comfyui-proxy.socket`, so
+connecting to it starts ComfyUI, which evicts ollama, which is the event that
+triggered the watch. That is an infinite loop between the two services. A
+`systemctl is-active comfyui.service` guard is the second line of defence.
+
+Install:
+
+```bash
+sudo install -m 644 ~/.dotfiles/sys/t1/ollama-preempt-comfyui.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl reenable --now ollama-preempt-comfyui.service
+```
+
+Verify with `journalctl -u ollama-preempt-comfyui -f` while triggering a model
+load. `systemctl is-enabled` is not evidence that the watch is running: the unit
+must be `active (running)` with a live `journalctl` child.
+
 ### Models
 
 Models live at `/var/lib/ollama/{blobs,manifests}`. To migrate a store built
