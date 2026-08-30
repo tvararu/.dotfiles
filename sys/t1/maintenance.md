@@ -917,6 +917,24 @@ No `prep-cmd` resolution switching. It existed to flip between 1080p for a TV an
 To stream at a different resolution than the host renders, prefer Moonlight's own
 scaling over a `prep-cmd`; recent Sunshine handles scaled outputs natively.
 
+Two fields in that file are load-bearing on Sunshine 2026.516. The top-level
+`env` object must exist: without it startup logs `Error: No such node (env)`,
+the GameStream app list is empty and Moonlight shows no apps, while
+`/api/apps` still returns the file and looks healthy. Each app needs a `uuid`
+(any v4); the app ID Moonlight launches is derived from it, and without one
+launches fail with `Couldn't find app with ID`.
+
+Pairing needs no browser. With the web credentials, submit the PIN Moonlight
+shows:
+
+```bash
+curl -sk -u 'deity:<password>' -X POST https://localhost:47990/api/pin \
+  -H 'Content-Type: application/json' -d '{"pin":"1234","name":"huginn"}'
+```
+
+Restarting Sunshine invalidates a pending PIN. Reset lost web credentials with
+`sunshine --creds deity '<password>'` then restart the unit.
+
 ### Monitor config
 
 A catch-all rule, so the mode survives the plug moving ports:
