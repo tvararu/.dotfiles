@@ -7,7 +7,8 @@ if test (uname) = Darwin
     set -x SSH_AUTH_SOCK ~/Library/Containers/com.maxgoedjen.Secretive.SecretAgent/Data/socket.ssh
 else
     # ssh-tpm-agent (Linux)
-    set -x SSH_AUTH_SOCK $XDG_RUNTIME_DIR/ssh-tpm-agent.sock
+    test -S $XDG_RUNTIME_DIR/ssh-tpm-agent.sock
+        and set -x SSH_AUTH_SOCK $XDG_RUNTIME_DIR/ssh-tpm-agent.sock
 end
 
 # z
