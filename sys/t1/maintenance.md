@@ -199,6 +199,50 @@ wlan0 negotiates 1200 Mbit and would be faster, but route metric 600 against
 100 means it never wins. Raising its priority is not worth it; replace the
 cable.
 
+### TX checksum offload is off on enp7s0
+
+Staged for the Quattro upgrade, not for a fault that exists today. 3.8.5 gets a
+DHCP lease normally.
+
+Omarchy issue [#7804] reports that after upgrading to Quattro, RTL8125D NICs
+never get a lease. The chip's checksum engine writes a wrong UDP checksum on the
+DHCP DISCOVER broadcast — `0.0.0.0` to `255.255.255.255`, sent before the
+interface has an address — so the server discards the packet and no OFFER comes
+back. Carrier stays up throughout, so it presents as a broken network stack
+rather than one bad field.
+
+`sys/t1/enp7s0-txcsum-off.service` disables the offload and computes checksums in
+software. It is installed and enabled now so the fix is on disk before the
+upgrade: applying it afterwards needs the network it repairs, and Quattro drops
+iwd for NetworkManager without converting `/var/lib/iwd`, so both paths can fail
+in the same reboot.
+
+`ethtool -K` is runtime-only and resets on every link-down and reboot, hence the
+unit. It is pulled by the device rather than a target:
+
+```
+BindsTo=sys-subsystem-net-devices-enp7s0.device
+WantedBy=sys-subsystem-net-devices-enp7s0.device
+```
+
+`systemctl reenable` warns that the device unit does not exist. Ignore it — the
+device is known by its `SYSTEMD_ALIAS`, and `systemctl show -p Wants
+sys-subsystem-net-devices-enp7s0.device` confirms the service is pulled.
+
+```bash
+sudo ethtool -k enp7s0 | grep -E 'tx-checksumming|tcp-segmentation'
+# tx-checksumming: off
+# tcp-segmentation-offload: off
+```
+
+TSO goes off with it — segmentation offload depends on checksum offload. The
+narrower `tx-checksum-ipv4 off` would keep TSO, but `tx-checksum-ip-generic` is
+`[fixed]` on this driver and the cascade is driver-dependent, so the whole group
+is the predictable choice. At these link speeds the software checksum cost is
+not measurable.
+
+[#7804]: https://github.com/basecamp/omarchy/issues/7804
+
 ### Router administration
 
 GL.iNet firmware 4.x sits on OpenWrt 23.05, so `uci` and `fw4` work directly and

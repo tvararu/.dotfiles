@@ -1,0 +1,22 @@
+[Unit]
+Description=Disable TX checksum offload on enp7s0 (RTL8125D)
+Documentation=https://github.com/basecamp/omarchy/issues/7804
+# The RTL8125D checksum engine writes a wrong UDP checksum on the DHCP
+# DISCOVER broadcast (0.0.0.0 -> 255.255.255.255), so the server drops it
+# and no lease ever arrives. Carrier stays up, which makes it read as a
+# broken network stack. Staged before the Quattro upgrade because the fix
+# needs to be on disk before the network it repairs goes away.
+BindsTo=sys-subsystem-net-devices-enp7s0.device
+After=sys-subsystem-net-devices-enp7s0.device
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+# The whole group, as the issue reports it. TSO and scatter-gather go with
+# it; at 1 Gbit the software checksum cost is not measurable here. A narrower
+# 'tx-checksum-ipv4 off' would keep TSO, but DHCP is the only packet that
+# matters and cascade behaviour is driver-dependent.
+ExecStart=/usr/bin/ethtool -K enp7s0 tx off
+
+[Install]
+WantedBy=sys-subsystem-net-devices-enp7s0.device
