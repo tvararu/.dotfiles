@@ -182,7 +182,8 @@ from past dkms builds were deleted.
 
 Removed together with its only VM on 2026-08-30 (`incus lxcfs` plus
 the qemu/edk2/dnsmasq tail, 242 packages). `incusbr0` and the `local`
-storage pool were deleted first — `incus storage delete` refuses while
+storage pool were deleted first, and the eleven `incusbr0` ufw rules
+afterwards — `ufw status numbered`, delete from the highest number down — `incus storage delete` refuses while
 the default profile still references them: `incus profile device
 remove default root` and `… eth0` first.
 
