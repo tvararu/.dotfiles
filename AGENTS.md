@@ -43,7 +43,12 @@ stow fish git nvim tmux
 
 ## Platform notes
 
-- Always use `yay` instead of `pacman` on Arch/Omarchy
+- Packages on Omarchy: `omarchy pkg add <pkgs>` (repo) and `omarchy pkg aur add
+  <pkgs>` (AUR) — thin wrappers over `pacman -S --needed` and `yay -S --needed`
+  that verify the install; `omarchy pkg drop` to remove. Full upgrades are
+  `omarchy update` only — it runs migrations and `--overwrite` for the omarchy
+  package, which a raw `yay -Syu` / `pacman -Syu` skips. On sol (plain Arch)
+  `yay` is fine
 - `sys/t1/maintenance.md` contains Omarchy-specific system setup (keyboard, DDC
   brightness, boot)
 - `sys/sol/maintenance.md` contains setup and maintenance log for `sol`, the

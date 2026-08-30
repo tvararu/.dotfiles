@@ -53,6 +53,12 @@ What the upgrade did not do, and what was fixed by hand afterwards:
 
 The replaced 3.8.5 files are in `~/.config/backup-3.8.5/`.
 
+Package commands: the `yay -S` lines further down this file are the historical
+install log and still work, but the Quattro idiom is `omarchy pkg add` /
+`omarchy pkg aur add` / `omarchy pkg drop`, and system upgrades go through
+`omarchy update` (it applies migrations and the `--overwrite` the omarchy
+package needs; a raw `yay -Syu` skips both).
+
 ## Keyboard: Apple GB ISO Layout, Fast Repeat Rate
 
 ```lua
