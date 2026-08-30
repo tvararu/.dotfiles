@@ -12,7 +12,8 @@ Each top-level directory is a stow package containing dotfiles in their target
 path structure, except `sys/`, which holds per-machine system docs and service
 definitions (not stowable; a catch-all `.stow-local-ignore` guards it).
 
-Machines: `huginn` (this MacBook), `t1` (Omarchy desktop), `sol` (NAS).
+Machines: `huginn` (MacBook Pro, macOS), `t1` (Omarchy desktop), `ymir`
+(MacBook Air, Omarchy), `sol` (NAS).
 
 ## Systemd units
 
@@ -70,13 +71,19 @@ stow fish git nvim tmux
 
 ## Omarchy system administration
 
+- Quattro (4.x): Omarchy is the `omarchy` pacman package at `/usr/share/omarchy`
+  (read-only, read it freely). Hyprland config is Lua in `~/.config/hypr/`; the
+  bar, launcher, notifications, idle and lock are the Quickshell shell configured
+  in `~/.config/omarchy/shell.json`. Use the `omarchy` skill for user config
+- Package updates leave `.pacnew` files for Omarchy-owned `/etc` files; merge
+  them, and re-insert `clevis` into `omarchy_hooks.conf` every time
 - `limine-mkinitcpio` not `mkinitcpio -P` (Limine bootloader with UKI)
 - `omarchy-snapshot restore` for btrfs rollbacks
 - Hooks config: `/etc/mkinitcpio.conf.d/omarchy_hooks.conf` (drop-in overrides main config)
 - Kernel cmdline: `/etc/default/limine` (not GRUB)
 - Never add `ip=` kernel parameters — breaks Plymouth password prompt
-- LUKS unlock goes through Clevis (hook: `clevis` before `encrypt`) — changing
-  hook order or regenerating without it will lock the machine out at boot
+- LUKS unlock goes through Clevis (hook: `clevis` before `encrypt`) — regenerating
+  without it means a passphrase prompt at every boot (slot 0 still unlocks)
 - For boot/initramfs changes: research Omarchy repo + community discussions first, never guess
 
 ## Commits
