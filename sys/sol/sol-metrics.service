@@ -1,11 +1,11 @@
 [Unit]
-Description=Publish t1 host health metrics to MQTT
-After=network-online.target docker.service
+Description=Publish sol host health metrics to MQTT
+After=network-online.target tailscaled.service
 Wants=network-online.target
 
 [Service]
 Type=simple
-EnvironmentFile=/etc/t1-metrics.env
+EnvironmentFile=/etc/sol-metrics.env
 ExecStart=/usr/bin/python3 /home/deity/.dotfiles/sys/host-metrics.py
 Restart=always
 RestartSec=10

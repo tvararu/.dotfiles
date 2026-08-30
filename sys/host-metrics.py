@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Publish t1 host health metrics to MQTT for Home Assistant.
+"""Publish host health metrics to MQTT for Home Assistant (t1 and sol).
 
 Runs on the host rather than in a container so that nvidia-smi and smartctl are
 directly available: the NVIDIA GPU is not represented in hwmon at all, and SMART
@@ -13,6 +13,7 @@ is not stable across reboots and would silently swap sensor identities.
 
 import json
 import os
+import shutil
 import re
 import signal
 import subprocess
@@ -199,6 +200,93 @@ def read_smart(drives):
     return out
 
 
+def sata_drives():
+    """Map /dev/disk/by-id ata-* disks (whole devices, not partitions)."""
+    out = {}
+    base = "/dev/disk/by-id"
+    try:
+        names = sorted(os.listdir(base))
+    except OSError:
+        return out
+    for name in names:
+        if not name.startswith("ata-") or "-part" in name:
+            continue
+        model = name[4:]
+        out[name] = {
+            "slug": slug(model),
+            "label": model.replace("_", " "),
+            "dev": f"{base}/{name}",
+        }
+    return out
+
+
+def read_smart_sata(drives):
+    """SMART for spinning disks. -n standby returns without waking a sleeping
+    drive; its readings simply stay at their last published value."""
+    out = {}
+    for info in drives.values():
+        raw = run(["smartctl", "-j", "-n", "standby", "-a", info["dev"]],
+                  timeout=30)
+        if not raw:
+            continue
+        try:
+            data = json.loads(raw)
+        except json.JSONDecodeError:
+            continue
+        s = info["slug"]
+        temp_c = data.get("temperature", {}).get("current")
+        if temp_c is not None:
+            out[f"sata_{s}_temp"] = temp_c
+        poh = data.get("power_on_time", {}).get("hours")
+        if poh is not None:
+            out[f"sata_{s}_power_on_hours"] = poh
+        attrs = {a.get("id"): a for a in
+                 data.get("ata_smart_attributes", {}).get("table", [])}
+        for attr_id, key in ((5, "reallocated"), (187, "uncorrectable"),
+                             (197, "pending"), (198, "offline_uncorrectable")):
+            a = attrs.get(attr_id)
+            if a is not None:
+                out[f"sata_{s}_{key}"] = a.get("raw", {}).get("value")
+        passed = data.get("smart_status", {}).get("passed")
+        if passed is not None:
+            out[f"sata_{s}_failing"] = "OFF" if passed else "ON"
+    return out
+
+
+def zfs_pools():
+    if not shutil.which("zpool"):
+        return []
+    raw = run(["zpool", "list", "-H", "-o", "name"])
+    return raw.split() if raw else []
+
+
+def read_zfs(pools):
+    out = {}
+    for pool in pools:
+        raw = run(["zpool", "list", "-H", "-o", "capacity,health", pool])
+        if raw:
+            try:
+                cap, health = raw.split()
+                out[f"zfs_{pool}_capacity"] = int(cap.rstrip("%"))
+                out[f"zfs_{pool}_health"] = "OFF" if health == "ONLINE" else "ON"
+            except ValueError:
+                pass
+        raw = run(["zpool", "status", pool], timeout=30)
+        if raw:
+            m = re.search(r"scrub repaired .* with (\d+) errors on (.+)$",
+                          raw, re.M)
+            if m:
+                out[f"zfs_{pool}_scrub_errors"] = int(m.group(1))
+                try:
+                    end = time.mktime(time.strptime(m.group(2).strip(),
+                                                    "%a %b %d %H:%M:%S %Y"))
+                    out[f"zfs_{pool}_scrub_age"] = round(
+                        (time.time() - end) / 86400.0, 1)
+                except ValueError:
+                    pass
+    return out
+
+
 class CpuUtil:
     """Percentage busy since the previous sample, from /proc/stat."""
 
@@ -346,6 +434,14 @@ def binary(key, name, device_class="problem"):
     }
 
 
+def dmi(field):
+    try:
+        with open(f"/sys/class/dmi/id/{field}") as f:
+            return f.read().strip()
+    except OSError:
+        return "unknown"
+
+
 def kernel_version():
     try:
         with open("/proc/sys/kernel/osrelease") as f:
@@ -354,7 +450,7 @@ def kernel_version():
         return "unknown"
 
 
-def build_discovery(drives, present):
+def build_discovery(drives, sata, pools, present):
     cmps = {}
 
     def add(key, cmp):
@@ -412,15 +508,46 @@ def build_discovery(drives, present):
         add(f"nvme_{s}_warning",
             binary(f"nvme_{s}_warning", f"{label} SMART warning"))
 
+    for info in sata.values():
+        s, label = info["slug"], info["label"]
+        add(f"sata_{s}_temp",
+            sensor(f"sata_{s}_temp", f"{label} temperature", "°C",
+                   "temperature"))
+        add(f"sata_{s}_power_on_hours",
+            sensor(f"sata_{s}_power_on_hours", f"{label} power-on hours", "h",
+                   icon="mdi:clock-outline", category="diagnostic"))
+        for key, word in (("reallocated", "reallocated"),
+                          ("uncorrectable", "uncorrectable"),
+                          ("pending", "pending"),
+                          ("offline_uncorrectable", "offline uncorrectable")):
+            add(f"sata_{s}_{key}",
+                sensor(f"sata_{s}_{key}", f"{label} {word} sectors",
+                       icon="mdi:harddisk-remove", category="diagnostic"))
+        add(f"sata_{s}_failing", binary(f"sata_{s}_failing",
+                                        f"{label} SMART failing"))
+
+    for pool in pools:
+        add(f"zfs_{pool}_health", binary(f"zfs_{pool}_health",
+                                         f"ZFS {pool} degraded"))
+        add(f"zfs_{pool}_capacity",
+            sensor(f"zfs_{pool}_capacity", f"ZFS {pool} capacity", "%",
+                   icon="mdi:database"))
+        add(f"zfs_{pool}_scrub_age",
+            sensor(f"zfs_{pool}_scrub_age", f"ZFS {pool} scrub age", "d",
+                   icon="mdi:broom"))
+        add(f"zfs_{pool}_scrub_errors",
+            sensor(f"zfs_{pool}_scrub_errors", f"ZFS {pool} scrub errors",
+                   icon="mdi:alert-circle-outline", category="diagnostic"))
+
     return {
         "dev": {
             "ids": [NODE],
             "name": NODE,
-            "mf": "Gigabyte",
-            "mdl": "B850I AORUS PRO",
+            "mf": dmi("board_vendor"),
+            "mdl": dmi("board_name"),
             "sw": kernel_version(),
         },
-        "o": {"name": "t1-metrics"},
+        "o": {"name": "host-metrics"},
         "state_topic": STATE_TOPIC,
         "availability_topic": AVAIL_TOPIC,
         "payload_available": "online",
@@ -436,10 +563,20 @@ def main():
         return 1
 
     drives = nvme_drives()
+    sata = sata_drives()
+    pools = zfs_pools()
     log(f"NVMe drives: {[d['label'] for d in drives.values()]}")
+    log(f"SATA drives: {[d['label'] for d in sata.values()]}")
+    log(f"ZFS pools: {pools}")
+
+    def read_slow():
+        out = read_smart(drives)
+        out.update(read_smart_sata(sata))
+        out.update(read_zfs(pools))
+        return out
 
     cpu_util = CpuUtil()
-    smart = read_smart(drives)
+    smart = read_slow()
     reading = collect(drives, cpu_util)
     reading.update(smart)
 
@@ -466,7 +603,7 @@ def main():
         cl.publish(AVAIL_TOPIC, "online", retain=True)
         # Republish discovery on every reconnect: a broker restart without
         # persistence would otherwise leave HA with no entities.
-        payload = build_discovery(drives, set(reading))
+        payload = build_discovery(drives, sata, pools, set(reading))
         cl.publish(DISCOVERY_TOPIC, json.dumps(payload), retain=True)
         published["discovery"] = True
         log(f"discovery published: {len(payload['cmps'])} entities")
@@ -487,7 +624,7 @@ def main():
     while running["go"]:
         now = time.monotonic()
         if now - last_smart >= SMART_INTERVAL:
-            smart = read_smart(drives)
+            smart = read_slow()
             last_smart = now
         payload = collect(drives, cpu_util)
         payload.update(smart)
