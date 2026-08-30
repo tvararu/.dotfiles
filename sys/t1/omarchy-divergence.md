@@ -1,5 +1,11 @@
 # Omarchy divergence audit — t1
 
+**Historical.** This audit is against 3.8.5, the git-checkout Omarchy. t1 moved
+to Quattro (4.0.1, packaged) on 2026-08-30; see the Quattro section in
+`maintenance.md`. The reasoning about deliberate removals still holds; the package
+counts and `.conf` file names do not.
+
+
 Audited **2026-08-26** against **Omarchy 3.8.5** (`f4378f0d`), compared with a
 throwaway vanilla install of the same commit in an Incus VM.
 

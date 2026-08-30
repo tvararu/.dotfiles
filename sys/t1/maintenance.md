@@ -21,26 +21,56 @@ yay -S fish git-delta lsd mosh tmux
   which silently breaks the auth of anything that reads them. `name: t1` in
   the file pins the project name regardless of where it is invoked.
 
-## Keyboard: Apple GB ISO Layout
+## Omarchy Quattro (4.0.1)
 
-```
-# ~/.config/hypt/input.conf
-kb_layout = gb
-kb_variant = mac
+Upgraded 2026-08-30 from 3.8.5 with `omarchy-upgrade-to-quattro`. Omarchy is
+now the `omarchy` pacman package under `/usr/share/omarchy`;
+`~/.local/share/omarchy` is a symlink to it and is no longer a git checkout.
+`omarchy update` is a plain package update. Hyprland config is Lua
+(`~/.config/hypr/*.lua`), and the bar, notifications, launcher, OSD, idle and
+lock are one Quickshell process configured by `~/.config/omarchy/shell.json`.
+waybar, walker, mako, swayosd, hypridle, hyprlock and iwd are gone.
+
+What the upgrade did not do, and what was fixed by hand afterwards:
+
+- The `.conf` → `.lua` migration wrote template files and dropped every
+  setting in `input.conf` and `monitors.conf`. The display came up at
+  2880x1800@2 with a US keymap. Restored in `input.lua` and `monitors.lua`.
+- `/etc/mkinitcpio.conf.d/omarchy_hooks.conf` was left as the 3.8.5 file with
+  a `.pacnew` beside it, so `clevis` survived by accident. Merged: the packaged
+  file with `clevis` inserted before `encrypt`. Expect the same `.pacnew` after
+  every omarchy update that ships this file.
+- `/etc/sddm.conf.d/10-wayland.conf` still pointed SDDM's compositor at
+  `/usr/share/sddm/hyprland.conf`; the packaged file uses `hyprland.lua`.
+  Took the `.pacnew`.
+- `/etc/systemd/network/*.network` were dead once NetworkManager took over.
+  Removed; the metric-100 default route survives because NetworkManager uses
+  the same per-type metrics those files copied.
+- A fish universal `OMARCHY_PATH` still exported the old path, which makes
+  every `omarchy-*` tool report version `dev`. Erased with `set -e -U`.
+- `sunshine-idle-stop.{service,timer}` had vanished from
+  `/etc/systemd/system/`. Reinstalled from `sys/t1/`.
+
+The replaced 3.8.5 files are in `~/.config/backup-3.8.5/`.
+
+## Keyboard: Apple GB ISO Layout, Fast Repeat Rate
+
+```lua
+-- ~/.config/hypr/input.lua
+hl.config({
+  input = {
+    kb_layout = "gb",
+    kb_variant = "mac",
+    kb_options = "compose:caps",
+    repeat_rate = 100,
+    repeat_delay = 150,
+    numlock_by_default = true,
+    touchpad = { scroll_factor = 0.4 },
+  },
+})
 ```
 
-```bash
-hyprctl reload
-fcitx5 -r -d
-```
-
-## Keyboard: Fast Repeat Rate
-
-```
-# ~/.config/hypr/input.conf
-repeat_rate = 100
-repeat_delay = 150
-```
+Hyprland reloads on save. `hyprctl configerrors` must print nothing.
 
 ## Keyboard: Fn Keys as Media Keys
 
@@ -52,7 +82,7 @@ options hid_apple fnmode=1
 ```
 
 ```bash
-sudo mkinitcpio -P  # regenerate initramfs
+sudo limine-mkinitcpio  # regenerate the UKI
 echo 1 | sudo tee /sys/module/hid_apple/parameters/fnmode  # apply now
 ```
 
@@ -124,12 +154,17 @@ sudo pacman -S --needed clevis tpm2-tools tpm2-tss
 yay -S mkinitcpio-clevis-hook
 ```
 
-`clevis` must come before `encrypt`:
+`clevis` must come before `encrypt` in the `HOOKS=` line of the packaged
+drop-in. Since Quattro the file also carries logic that drops `kms` on
+NVIDIA-only machines, so edit the line in place rather than replacing the file:
 
 ```
 # /etc/mkinitcpio.conf.d/omarchy_hooks.conf
 HOOKS=(base udev plymouth keyboard autodetect microcode modconf kms keymap consolefont block clevis encrypt filesystems fsck btrfs-overlayfs)
 ```
+
+The `omarchy` package owns this file, so an update that changes it leaves an
+`omarchy_hooks.conf.pacnew`. Merge it and re-insert `clevis` every time.
 
 ```bash
 sudo limine-mkinitcpio
@@ -166,11 +201,10 @@ wall ethernet. Wired primary, wireless fallback.
 - **Router LAN**: `192.168.8.0/24`, gateway `192.168.8.1` — picked to avoid
   colliding with docker (`172.17`/`172.19`/`172.20.0.0/16`) and incus
   (`10.123.55.0/24`)
-- **Wired**: `enp7s0` holds the default route.
-  `/etc/systemd/network/20-ethernet.network` sets `DHCP=yes` and `RouteMetric=100`
-  against wlan0's `600`, so plugging in takes over with no configuration
-- **Wireless**: managed by iwd, not NetworkManager. wlan0 stays associated with
-  `AutoConnect`, so it picks up the default route if the cable drops
+- Both interfaces are managed by NetworkManager (since Quattro; 3.8.5 used
+  systemd-networkd and iwd). `enp7s0` holds the default route at metric 100
+  against wlan0's 600, so plugging in takes over with no configuration and Wi-Fi
+  picks up the route if the cable drops.
 
 **`enp7s0` is downshifted to 100 Mbit by a bad cable.** The NIC is 2.5GbE and
 the service is 200 Mbit, but the PHY negotiates 100. The kernel says so plainly
@@ -213,9 +247,9 @@ rather than one bad field.
 
 `sys/t1/enp7s0-txcsum-off.service` disables the offload and computes checksums in
 software. It is installed and enabled now so the fix is on disk before the
-upgrade: applying it afterwards needs the network it repairs, and Quattro drops
-iwd for NetworkManager without converting `/var/lib/iwd`, so both paths can fail
-in the same reboot.
+upgrade, because applying it afterwards would need the network it repairs. It
+turned out not to be needed here: 4.0.1 got a lease normally. It stays because it
+is cheap.
 
 `ethtool -K` is runtime-only and resets on every link-down and reboot, hence the
 unit. It is pulled by the device rather than a target:
@@ -568,12 +602,15 @@ keybind = ctrl+shift+down=scroll_page_lines:1
 
 ## Idle/Lock Timings
 
+Idle handling lives in the Omarchy shell, not hypridle:
+
+```json
+// ~/.config/omarchy/shell.json
+"idle": { "screensaver": 150, "lock": 300 }
 ```
-# ~/.config/hypr/hypridle.conf
-timeout = 3600  # 60min - screensaver
-timeout = 3600  # 60min - lock screen
-timeout = 3600  # 60min - screen off
-```
+
+Seconds since idle began. `omarchy toggle idle` disables it entirely; the
+`suspend-off` toggle in `~/.local/state/omarchy/toggles/` is set on this box.
 
 ## Removed Packages
 
@@ -610,11 +647,12 @@ yay -Rns $(yay -Qdtq)
 **These removals have consequences that were never followed up.** Five keybindings,
 both screen-recording entry points and three Share menu entries still call binaries
 removed here, and fail silently. See [omarchy-divergence.md](omarchy-divergence.md)
-for the full audit against a vanilla Omarchy 3.8.5 VM, with an action checklist.
+for the audit against a vanilla Omarchy 3.8.5 VM, with an action checklist. It
+predates Quattro; the package numbers no longer apply.
 
 Note that Omarchy has since added `omarchy-remove-preinstalls`, which does most of
-this list *and* swaps `bindings.conf` for `plain-bindings.conf` so the keybindings
-go with the apps. Don't run it on this box — it would also strip the web apps and
+this list *and* disables the preinstalled-app bindings so the keybindings go with
+the apps (`omarchy_preinstalled_bindings = false` in `hyprland.lua`). Don't run it on this box — it would also strip the web apps and
 TUI wrappers that are wanted here.
 
 ## QEMU VM (OpenClaw)
@@ -857,7 +895,7 @@ audio_sink = sink-sunshine-stereo
 
 No `prep-cmd` resolution switching. It existed to flip between 1080p for a TV and
 1920x1200 for remote desktop; the TV is gone, the output is a dummy plug, and
-`monitors.conf` now fixes a single mode. The old `sunshine-res` helper hardcoded
+`monitors.lua` now fixes a single mode. The old `sunshine-res` helper hardcoded
 `HDMI-A-2` and had been silently doing nothing since the cable moved.
 
 ```json
@@ -883,15 +921,15 @@ scaling over a `prep-cmd`; recent Sunshine handles scaled outputs natively.
 
 A catch-all rule, so the mode survives the plug moving ports:
 
-```
-# ~/.config/hypr/monitors.conf
-env = GDK_SCALE,1.5
-monitor = ,1920x1200@60,auto,1.5
+```lua
+-- ~/.config/hypr/monitors.lua
+hl.env("GDK_SCALE", "1.5")
+hl.monitor({ output = "", mode = "1920x1200@60", position = "auto", scale = 1.5 })
 ```
 
 Scale 1.5 means 1920x1200 physical but only **1280x800 logical** — a small
 desktop. Fine for glasses or a portable panel, cramped for remote work. Drop to
-`,1920x1200@60,auto,1` for more usable space.
+`scale = 1` for more usable space.
 
 ### Firewall
 
@@ -1001,7 +1039,7 @@ adds process startup only, not probe time.
 
 ### DPMS
 
-`hypridle.conf` currently has no `dpms off` listener, so nothing here bites. If
+The shell's idle handling has no `dpms off` step, so nothing here bites. If
 one is ever added, exclude the streaming output: if DPMS blanks it Sunshine sees a
 0x0 resolution and fails.
 
@@ -1050,7 +1088,7 @@ drm.edid_firmware=HDMI-A-1:edid/uperfect-sdr.bin
 The connector therefore comes up regardless of HPD, and reports the UPERFECT EDID
 rather than the plug's own — so `hyprctl monitors` shows UPERFECT modes no matter
 which of the two is physically attached. Mode selection comes from the
-`monitors.conf` catch-all above.
+`monitors.lua` catch-all above.
 
 ## Ollama (native)
 
@@ -1187,7 +1225,7 @@ lower.
 
 `q8_0` leaves 1615 MiB spare. Nothing on this box competes for it: t1 runs
 headless, and the ~1 GB in use is Sunshine (513 MiB, only while streaming), the
-metrics publisher (498 MiB) and walker (51 MiB).
+metrics publisher (498 MiB) and the Omarchy shell.
 
 The one failure to know about. ollama measures free VRAM at load and splits
 layers between GPU and CPU to fit. With the context pinned it cannot shrink the
@@ -2327,9 +2365,9 @@ ACTION=="add", SUBSYSTEM=="pci", DRIVERS=="amdgpu", ATTR{power_dpm_force_perform
 
 If dropouts persist, lower the refresh rate to 60Hz (pixel clock drops to ~340 MHz):
 
-```
-# ~/.config/hypr/monitors.conf
-monitor = HDMI-A-2,2880x1800@60,0x0,2
+```lua
+-- ~/.config/hypr/monitors.lua
+hl.monitor({ output = "HDMI-A-2", mode = "2880x1800@60", position = "0x0", scale = 2 })
 ```
 
 ## UPERFECT EDID HDR Strip (NVIDIA HDMI-A-1)
