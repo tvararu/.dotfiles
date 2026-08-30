@@ -70,7 +70,6 @@ stow fish git nvim tmux
 
 ## Omarchy system administration
 
-- Omarchy source is at `~/code/omarchy` — check it before any system-level changes
 - `limine-mkinitcpio` not `mkinitcpio -P` (Limine bootloader with UKI)
 - `omarchy-snapshot restore` for btrfs rollbacks
 - Hooks config: `/etc/mkinitcpio.conf.d/omarchy_hooks.conf` (drop-in overrides main config)
