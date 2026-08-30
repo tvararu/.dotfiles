@@ -152,7 +152,18 @@ boot. networkd is disabled and `/etc/systemd/network` moved to
 `network.archinstall-disabled`. Wifi stays on autoconnect as a second
 path in. The router pins the wired MAC to a fixed address, so the LAN
 address survives lease churn. `resolved` sits behind Tailscale's
-`100.100.100.100`; `/etc/resolv.conf` is written by tailscaled.
+`100.100.100.100`.
+
+`/etc/resolv.conf` must stay a **symlink to
+`../run/systemd/resolve/stub-resolv.conf`** (mode `stub`), as on the
+Omarchy boxes. As a plain file it becomes a three-way fight —
+NetworkManager rewrites it when a link activates, tailscaled detects
+the "trample", rewrites it back and *restarts resolved* each time —
+and five rounds of that at boot trip resolved's start limit
+(`start-limit-hit`, tailscale.com/s/dns-fight). With the symlink,
+NM and tailscaled both detect resolved and configure it over the bus;
+nothing writes the file. Fixed 2026-08-30 after the first post-upgrade
+reboot surfaced it.
 
 ### Boot
 
