@@ -211,3 +211,26 @@ remove default root` and `… eth0` first.
   This is how remote agent sessions get root without a TTY
 - No `hostname` binary here (no `inetutils`); fish config uses
   `$hostname`
+
+## Metrics to Home Assistant
+
+Since 2026-08-30 sol publishes host health to the mosquitto broker on
+t1 (`tcp://100.73.138.96:1883`, tailnet-only via Serve) with MQTT
+discovery, exactly like t1. Full plumbing notes: `sys/t1/maintenance.md`
+under *Host metrics*.
+
+- **Publisher**: `sys/host-metrics.py`, run by `sol-metrics.service`
+  (copied into `/etc/systemd/system/`, never symlinked)
+- **Credentials**: `/etc/sol-metrics.env`, mode 0600 — broker host,
+  `sol` user, password
+- **Packages**: `lm_sensors smartmontools python-paho-mqtt`; no
+  `sensors-detect` needed, the chips are already in hwmon
+- **Cadence**: sensors every 30 s; SMART and ZFS every 10 minutes.
+  SATA SMART runs `smartctl -n standby` so it never wakes a sleeping
+  drive
+- **What sol adds over t1**: per-disk temperature and the four
+  spinning-rust failure attributes for the three IronWolfs and the WD
+  Red, plus `zfs_pool_health` / `capacity` / `scrub_age` /
+  `scrub_errors`
+- Three HA automations notify the phone: pool not ONLINE, scrub older
+  than 40 days, any disk over 50 °C for 10 minutes
