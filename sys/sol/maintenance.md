@@ -122,3 +122,80 @@ tailscale funnel --https=443 off  # off
   realtime. Picking an explicit quality (e.g. 1080p / 4 Mbps) makes Jellyfin
   actually transcode down, and VAAPI does that at ~2.5–3.5× realtime: comfortable
   for *one* stream, not two.
+
+## 2026-08-30: alignment pass
+
+Audited against the Omarchy boxes and brought level. What changed and
+why, newest state first.
+
+### Update procedure
+
+```bash
+yay -Syu                 # zfs-dkms rebuilds against the new kernel: ~10 min
+dkms status              # must show zfs/<ver>, <new kernel>: installed BEFORE rebooting
+yay -Rns $(pacman -Qdtq) # orphans
+sudo reboot              # only now; no zpool scrub / ufw reload between upgrade and reboot
+```
+
+A reboot with `dkms status` still on the old kernel comes up without
+ZFS. `pacman-cleanup-hook` prunes the cache to the last two versions
+automatically. `mkinitcpio.conf.pacnew` (stock `systemd`/`microcode`/
+`kms` hooks) was reviewed and dropped — the `udev` hook set in place
+works and `amd-ucode.img` is loaded as its own initrd.
+
+### Network
+
+NetworkManager only. `systemd-networkd` was also enabled (archinstall
+templates), so both managed `enp4s0` and `wlp3s0` at once — two DHCP
+clients per link and `systemd-resolved` tripping its start limit at
+boot. networkd is disabled and `/etc/systemd/network` moved to
+`network.archinstall-disabled`. Wifi stays on autoconnect as a second
+path in. The router pins the wired MAC to a fixed address, so the LAN
+address survives lease churn. `resolved` sits behind Tailscale's
+`100.100.100.100`; `/etc/resolv.conf` is written by tailscaled.
+
+### Boot
+
+systemd-boot, single entry, `linux-lts` only. `/boot` is mounted
+`fmask=0077,dmask=0077` — the previous `0022` made `bootctl` log
+"security hole" twice per boot. vfat ignores `mount -o remount` for
+masks; umount/mount to apply.
+
+### Docker
+
+`data-root` is `/home/deity/docker` (`/etc/docker/daemon.json`)
+because `/` is 18 GB. It looks like cruft in `$HOME` and is not.
+`sys/sol/docker-compose.yml` is the tracked base; anything not for the
+public repo goes in an untracked `~/docker-compose.override.yml`, the
+same arrangement as t1.
+
+### Units
+
+Hand-made units that survive: none in `/etc/systemd/system` beyond
+what packages ship. Removed: `manele.service` (a yt-dlp collector that
+had been failing on a missing binary since the docker wrapper replaced
+the package), `backup.*` (target script's directory gone), and a spent
+one-shot user timer. Six orphaned `/usr/lib/modules/<old-kernel>` dirs
+from past dkms builds were deleted.
+
+### Incus
+
+Removed together with its only VM on 2026-08-30 (`incus lxcfs` plus
+the qemu/edk2/dnsmasq tail, 242 packages). `incusbr0` and the `local`
+storage pool were deleted first — `incus storage delete` refuses while
+the default profile still references them: `incus profile device
+remove default root` and `… eth0` first.
+
+### Tooling
+
+- `stow claude` links `~/.claude/CLAUDE.md` and `skills/`
+- Claude Code, codex and gh come from mise (`mise/.config/mise/config.toml`),
+  the native installer's `~/.local/bin/claude` and
+  `~/.local/share/claude` are gone
+- `sys/sol/sudo-passwordless` (installed to `~/.local/bin`) is a port
+  of `omarchy-sudo-passwordless`: `sudo-passwordless 60` opens a
+  60-minute NOPASSWD window via `/etc/sudoers.d/99-nopasswd-$USER` and
+  a transient timer removes it. Run with no argument to close early.
+  This is how remote agent sessions get root without a TTY
+- No `hostname` binary here (no `inetutils`); fish config uses
+  `$hostname`
