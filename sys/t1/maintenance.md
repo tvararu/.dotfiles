@@ -2437,3 +2437,49 @@ od -An -tx1 -v /sys/class/drm/card1-HDMI-A-1/edid | awk 'NR==12 {print "byte 177
 ```
 
 The blob must be in initramfs (not just rootfs) because nvidia-drm probes connectors during early KMS, before the rootfs firmware tree is mounted. Confirm with `sudo lsinitcpio /boot/EFI/Linux/omarchy_linux.efi | grep edid`.
+
+## Wired PCVR (Quest 2 → WiVRn + xrizer)
+
+Wired VR streaming to a Quest 2 over USB 3.0. SteamVR is never launched — its
+Qt UI does not start on Hyprland (SteamVR-for-Linux #637) and xrizer replaces
+it entirely.
+
+Packages (2026-08-31): `wivrn-server` + `wivrn-dashboard` 26.6.2 and `xrizer`
+0.5 from AUR (`omarchy pkg aur add`), `android-tools` from the repo. No
+monado-vulkan-layers (only needed for NVIDIA driver < 565; this box runs 610+).
+No new systemd units, udev rules, ufw rules, or avahi changes — the USB path
+tunnels over adb loopback, which ufw does not filter. The dashboard's firewall
+warning about port 9757 applies to Wi-Fi streaming only.
+
+The headset originally ran Horizon OS v35 (frozen by Oculess). The stock WiVRn
+client cannot work there: v35 has no OpenXR runtime library and no
+`runtime_broker` content provider, so the Khronos loader fails with
+`XR_ERROR_RUNTIME_UNAVAILABLE` — apps of that era carried Meta's runtime inside
+their own APK. Resolved by factory reset (fully reverts Oculess, by design) and
+updating to current firmware (Android 14, `horizonos.openxr.runtimebroker`
+present). No downgrade path exists; the reset requires redoing Meta account,
+developer verification, and dev mode via the Horizon phone app.
+
+Connection procedure:
+
+```bash
+wivrn-dashboard   # keep open: the server only runs while it is
+```
+
+Then **Connect by USB** in the dashboard. It runs `adb reverse tcp:9757
+tcp:9757` and deep-links the client (`wivrn+tcp://127.0.0.1:9757`). Gotchas:
+
+- The wizard's "No APK is available for this version" is cosmetic — the AUR
+  build finds no matching GitHub APK asset. Sideload the version-matched client
+  instead (`adb install`); client and server versions must match exactly
+- The wizard's "no headset / not in developer mode" banner goes stale if the
+  adb authorisation happened after the page loaded — navigate Back and forward
+  to re-poll
+- Headset Wi-Fi must be off or the stream silently reroutes over the network
+
+Runtime registration is automatic: `~/.config/openxr/1/active_runtime.json` →
+WiVRn, `~/.config/openvr/openvrpaths.vrpath` → `/opt/xrizer`. Steam titles need
+launch option `PRESSURE_VESSEL_IMPORT_OPENXR_1_RUNTIMES=1 %command%`.
+
+The lobby has no desktop mirror; it lists detected Steam VR titles and streams
+whatever OpenXR app is running. Desktop-in-VR would be WayVR (not installed).
