@@ -2483,3 +2483,46 @@ launch option `PRESSURE_VESSEL_IMPORT_OPENXR_1_RUNTIMES=1 %command%`.
 
 The lobby has no desktop mirror; it lists detected Steam VR titles and streams
 whatever OpenXR app is running. Desktop-in-VR would be WayVR (not installed).
+
+### Running without the dashboard
+
+The dashboard spawns `wivrn-server` and kills it on exit, so closing the window
+drops the headset. The packaged **user** unit runs the same binary headless:
+
+```bash
+start-wivrn   # systemctl --user start wivrn, waits for port 9757
+stop-wivrn
+```
+
+Both fish functions work from any machine (they ssh to t1 when not on it) and
+are idempotent. The unit is deliberately **not** enabled at boot, and there is
+no idle-stop timer — unlike Sunshine, a WiVRn session ends when you take the
+headset off, so there is no disconnected client silently holding an encoder
+context. Stop it by hand.
+
+The dashboard is then only needed for settings and pairing.
+
+### Wi-Fi streaming
+
+Pairing over Wi-Fi needs one firewall rule (mDNS on 5353 is already open for
+the HomeKit bridge, and avahi is already running):
+
+```bash
+sudo ufw allow from 192.168.8.0/24 to any port 9757 comment 'WiVRn from lan'
+```
+
+Then enable the pairing toggle in the dashboard, open the client, pick `t1`
+from its list and enter the PIN. Pairing persists. Confirm which path is in use
+with `ss -tnp state established | grep 9757` — a LAN address on both ends means
+Wi-Fi, loopback means the USB tunnel.
+
+### WayVR (desktop in VR)
+
+`wayvr` (AUR) attaches to a running WiVRn session as an OpenXR overlay: Wayland
+screens as floating panels, a wrist watch, a virtual keyboard, and its own
+embedded compositor for launching 2D apps into VR. Double-tap **B** or **Y** to
+show or hide the panels, including on top of a running game. Run `wayvr` from a
+terminal once the headset is connected; `wayvrctl` scripts it.
+
+Panels are flat by nature — a VR game launched from a WayVR panel still renders
+immersively through xrizer, it just starts from a click inside the headset.
