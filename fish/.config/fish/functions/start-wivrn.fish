@@ -15,6 +15,17 @@ function start-wivrn --description "Start the WiVRn server on t1 for a headset s
             exit 0
         fi
 
+        # A dashboard-spawned server is not the unit, so is-active misses it.
+        # Starting a second one is worse than doing nothing: each server
+        # unlinks /run/user/1000/wivrn/comp_ipc as "stale" on startup and again
+        # on exit, so the survivor listens on a socket with no path left. The
+        # headset still connects over the network, but every local OpenXR app
+        # dies with XR_ERROR_RUNTIME_UNAVAILABLE.
+        if pgrep -x wivrn-server >/dev/null; then
+            echo "wivrn-server is already running outside the unit (dashboard?)" >&2
+            exit 1
+        fi
+
         systemctl --user start wivrn || exit 1
 
         # systemctl returns before the listener is up; wait for 9757 so the

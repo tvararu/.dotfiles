@@ -2502,6 +2502,20 @@ context. Stop it by hand.
 
 The dashboard is then only needed for settings and pairing.
 
+**Never run both at once.** Each `wivrn-server` unlinks
+`/run/user/1000/wivrn/comp_ipc` as stale on startup and again on exit, so a
+second instance leaves the survivor listening on a socket with no path. The
+headset still connects (that is a network port) but every local OpenXR client
+dies instantly with `XR_ERROR_RUNTIME_UNAVAILABLE` — WayVR and games simply
+never appear. `start-wivrn` refuses to start when it finds a `wivrn-server`
+outside the unit; if it happens anyway, stop everything and start one:
+
+```bash
+systemctl --user stop wivrn; pkill -x wivrn-server
+systemctl --user start wivrn
+ls /run/user/1000/wivrn/comp_ipc   # must exist
+```
+
 ### Wi-Fi streaming
 
 Pairing over Wi-Fi needs one firewall rule (mDNS on 5353 is already open for
