@@ -2585,3 +2585,43 @@ ydotool type 'text'
 
 Pairs with `omarchy capture screenshot fullscreen save` for look-then-click
 automation. `hyprctl clients` gives window geometry for coordinate math.
+
+## SSH password authentication
+
+Omarchy 4.0.2 migration `1788124236` writes
+`/etc/ssh/sshd_config.d/10-omarchy-hardening.conf` with
+`PasswordAuthentication no`. On a machine with no authorised key it disables
+sshd outright instead; t1 had two keys, so it only hardened the config.
+
+Password logins are wanted here, so they are restored by
+`/etc/ssh/sshd_config.d/05-local-password-auth.conf`:
+
+```
+PasswordAuthentication yes
+KbdInteractiveAuthentication yes
+```
+
+**Override, do not delete the Omarchy file.** `sshd` takes the *first* value it
+sees for a keyword and reads drop-ins in lexical order, so a file sorting
+before `10-` wins. Deleting the hardening file instead would work until the
+next update recreated it, silently turning password auth off again with no
+signal.
+
+Verify the effective config, not the files:
+
+```bash
+sudo sshd -T | grep -iE '^(passwordauthentication|permitrootlogin)'
+```
+
+Password auth is only safe because sshd is not reachable from the internet, and
+that is enforced on the box rather than assumed of the router — ufw allows 22
+from the LAN and the tailnet only:
+
+```
+22/tcp  ALLOW  192.168.8.0/24    # SSH from LAN
+22/tcp  ALLOW  100.64.0.0/10     # SSH from tailnet
+```
+
+The former `22/tcp ALLOW Anywhere` rules (v4 and v6) are gone. No IPv6 rule
+replaced them: Tailscale arrives over the IPv4 CGNAT range and the LAN is IPv4,
+so nothing in use needs it. `PermitRootLogin` stays `no`.
