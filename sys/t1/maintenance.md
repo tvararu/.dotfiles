@@ -2481,24 +2481,29 @@ Runtime registration is automatic: `~/.config/openxr/1/active_runtime.json` →
 WiVRn, `~/.config/openvr/openvrpaths.vrpath` → `/opt/xrizer`. Steam titles need
 launch option `PRESSURE_VESSEL_IMPORT_OPENXR_1_RUNTIMES=1 %command%`.
 
-The lobby has no desktop mirror; it lists detected Steam VR titles and streams
-whatever OpenXR app is running. Desktop-in-VR would be WayVR (not installed).
+The lobby has no desktop mirror; it lists tagged VR titles (see *Lobby app
+list* below) and streams whatever OpenXR app is running. Desktop-in-VR is
+WayVR — installed, see its section below.
 
 ### Running without the dashboard
 
 The dashboard spawns `wivrn-server` and kills it on exit, so closing the window
-drops the headset. The packaged **user** unit runs the same binary headless:
+drops the headset. The packaged **user** unit runs the same binary headless and
+is enabled, so it starts with the graphical session:
 
 ```bash
-start-wivrn   # systemctl --user start wivrn, waits for port 9757
-stop-wivrn
+systemctl --user status wivrn
 ```
 
-Both fish functions work from any machine (they ssh to t1 when not on it) and
-are idempotent. The unit is deliberately **not** enabled at boot, and there is
-no idle-stop timer — unlike Sunshine, a WiVRn session ends when you take the
-headset off, so there is no disconnected client silently holding an encoder
-context. Stop it by hand.
+An idle server costs nothing: with no headset connected it holds **0 MiB of
+GPU memory** (measured 2026-08-31 — total used was identical before and after
+starting it). The compositor, swapchains and NVENC context are only allocated
+for a live session and freed on disconnect, so leaving it enabled does not
+compete with ollama.
+
+There is no idle-stop timer — unlike Sunshine, a WiVRn session ends when you
+take the headset off, so no disconnected client silently holds an encoder
+context.
 
 The dashboard is then only needed for settings and pairing.
 
@@ -2507,14 +2512,23 @@ The dashboard is then only needed for settings and pairing.
 second instance leaves the survivor listening on a socket with no path. The
 headset still connects (that is a network port) but every local OpenXR client
 dies instantly with `XR_ERROR_RUNTIME_UNAVAILABLE` — WayVR and games simply
-never appear. `start-wivrn` refuses to start when it finds a `wivrn-server`
-outside the unit; if it happens anyway, stop everything and start one:
+never appear. If it happens, stop everything and start one:
 
 ```bash
 systemctl --user stop wivrn; pkill -x wivrn-server
 systemctl --user start wivrn
 ls /run/user/1000/wivrn/comp_ipc   # must exist
 ```
+
+### Lobby app list
+
+`wivrn-server` scans the XDG `applications` directories at startup and lists
+`.desktop` entries whose `Categories` contain `X-WiVRn-VR` (verified in the
+binary). That tag is what puts a title in the in-headset lobby; Steam VR games
+appear because Steam writes such entries. WayVR's own launcher is separate and
+lists desktop entries generally, with no tag needed.
+
+Restart the unit after adding an entry — the scan only runs at startup.
 
 ### Wi-Fi streaming
 
