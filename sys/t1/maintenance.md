@@ -2540,3 +2540,34 @@ terminal once the headset is connected; `wayvrctl` scripts it.
 
 Panels are flat by nature — a VR game launched from a WayVR panel still renders
 immersively through xrizer, it just starts from a click inside the headset.
+
+## Input injection (ydotool)
+
+Synthetic mouse/keyboard events for scripted UI automation (screenshot →
+click loops). `wtype` covers Wayland keyboard input only; ydotool creates a
+virtual device via `/dev/uinput`, so it can press mouse buttons and works in
+any app.
+
+Setup (2026-08-31):
+
+```bash
+omarchy pkg add ydotool          # ships user unit + udev rule
+sudo usermod -aG input deity     # /dev/uinput is root:input 0660
+systemctl --user enable --now ydotool.service
+```
+
+The group change only applies at next login; to use it immediately in the
+current session: `sudo setfacl -m u:deity:rw /dev/uinput` (ACL is lost on
+reboot, by which point the group membership has taken over).
+
+Usage — the client needs the daemon's socket path:
+
+```bash
+export YDOTOOL_SOCKET=/run/user/1000/.ydotool_socket
+ydotool mousemove -a -x 500 -y 300   # absolute move
+ydotool click 0xC0                   # left click (0x40 down | 0x80 up)
+ydotool type 'text'
+```
+
+Pairs with `omarchy capture screenshot fullscreen save` for look-then-click
+automation. `hyprctl clients` gives window geometry for coordinate math.
