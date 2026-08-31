@@ -2625,3 +2625,27 @@ from the LAN and the tailnet only:
 The former `22/tcp ALLOW Anywhere` rules (v4 and v6) are gone. No IPv6 rule
 replaced them: Tailscale arrives over the IPv4 CGNAT range and the LAN is IPv4,
 so nothing in use needs it. `PermitRootLogin` stays `no`.
+
+## Docker at boot
+
+Omarchy enables only `docker.socket`, not `docker.service`
+(`install/config/enable-services.sh`). Socket activation means dockerd does not
+start at boot — it waits for a root docker command to touch
+`/var/run/docker.sock`. On a machine that runs always-on containers (Jellyfin,
+Home Assistant, mosquitto and the rest), every reboot therefore left
+the whole compose stack down until someone ran docker by hand. The 2026-08-31
+09:57 reboot exposed this: all seven containers were off the air for 12 hours,
+surfacing as a 502 from the `svc:jellyfin` Tailscale service (which proxies
+`jellyfin.gentoo-bangus.ts.net` → t1 `127.0.0.1:8096`).
+
+Fixed 2026-08-31:
+
+```bash
+sudo systemctl enable --now docker
+```
+
+`docker.socket` stays enabled alongside; that is harmless. The containers
+return on their own via `restart: unless-stopped`. A user-level `docker ps`
+cannot trigger socket activation — it is refused at the socket permission
+check — so "docker works when I try it" was never evidence the stack would
+survive a reboot.
