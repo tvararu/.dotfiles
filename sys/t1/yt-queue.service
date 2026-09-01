@@ -44,6 +44,14 @@ ExecStart=/home/deity/.local/bin/yt-dlp \
 # that downloaded videos successfully.
 ExecStartPost=-/home/deity/.dotfiles/sys/t1/yt-posters.sh
 
+# Jellyfin does not notice new channel directories on its own, and a
+# container restart does not scan either, so a download that lands in a
+# new folder stays invisible until something asks for a scan. The token
+# is an API key held in the EnvironmentFile alongside the playlist URL;
+# neither belongs in this repo, which is public. Leading '-' so a
+# Jellyfin that is down never fails a sync that downloaded fine.
+ExecStartPost=-/usr/bin/curl -sS -m 30 -X POST -H "Authorization: MediaBrowser Token=${JELLYFIN_TOKEN}" http://localhost:8096/Library/Refresh
+
 # Reads config and plugins from ~, writes only to /mnt/aux — hence ProtectHome
 # read-only rather than the writable exception t1-metrics.service needs.
 NoNewPrivileges=yes
