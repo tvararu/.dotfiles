@@ -1,0 +1,35 @@
+[Unit]
+Description=Publish LG C1 telemetry to MQTT
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+EnvironmentFile=/etc/tv-metrics.env
+# /home/deity is 0700, so the script is installed, not read from the repo.
+ExecStart=/usr/bin/python3 /usr/local/lib/tv-metrics/tv-metrics.py
+Restart=always
+RestartSec=10
+
+DynamicUser=yes
+LoadCredential=id_ed25519:/etc/tv-metrics/id_ed25519
+LoadCredential=known_hosts:/etc/tv-metrics/known_hosts
+RuntimeDirectory=tv-metrics
+
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+RestrictNamespaces=yes
+RestrictRealtime=yes
+LockPersonality=yes
+SystemCallFilter=@system-service
+SystemCallErrorNumber=EPERM
+
+[Install]
+WantedBy=multi-user.target

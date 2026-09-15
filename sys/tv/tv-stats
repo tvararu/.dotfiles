@@ -1,0 +1,47 @@
+#!/bin/sh
+# Read-only telemetry for tv-metrics.py on t1. Installed on the LG C1 as
+# /home/root/tv-stats and bound to t1's key with command= in authorized_keys.
+#
+# luna-send prints nothing when its stdout is the ssh channel itself, so every
+# call is captured through $(...) with stdin detached.
+
+mode=${SSH_ORIGINAL_COMMAND:-$1}
+case "$mode" in
+  fast|full) ;;
+  *) echo "usage: tv-stats fast|full" >&2; exit 2 ;;
+esac
+
+luna() {
+  r=$(luna-send -n 1 -w 2000 "luna://$1" "$2" </dev/null 2>/dev/null | tr -d '\n')
+  case "$r" in
+    \{*) printf '%s' "$r" ;;
+    *) printf 'null' ;;
+  esac
+}
+
+# /proc/lg/pm/ts_enable segfaults the reader; never add it here.
+str() {
+  [ -r "$1" ] || { printf 'null'; return; }
+  printf '"%s"' "$(head -c 2000 "$1" | awk '{gsub(/\\/,"\\\\"); gsub(/"/,"\\\""); gsub(/\t/," "); printf "%s\\n", $0}')"
+}
+
+printf '{"mode":"%s"' "$mode"
+printf ',"uptime":%s' "$(str /proc/uptime)"
+printf ',"loadavg":%s' "$(str /proc/loadavg)"
+printf ',"meminfo":"%s"' "$(grep -E '^(MemTotal|MemAvailable):' /proc/meminfo | tr -s ' ' | tr '\n' ';')"
+printf ',"soc_temp":%s' "$(str /proc/lg/pm/temperature)"
+printf ',"cpu_load":%s' "$(str /proc/lg/pm/current_load)"
+printf ',"pnwash_state":%s' "$(str /mnt/lg/cmn_data/pnwash/state)"
+printf ',"power":%s' "$(luna com.webos.service.tvpower/power/getPowerState '{}')"
+printf ',"app":%s' "$(luna com.webos.applicationManager/getForegroundAppInfo '{}')"
+printf ',"picture":%s' "$(luna com.webos.service.settings/getSystemSettings '{"category":"picture","keys":["pictureMode","backlight"]}')"
+
+if [ "$mode" = full ]; then
+  printf ',"panel":%s' "$(luna com.webos.service.panelcontroller/getPanelUsageTime '{"subscribe":false}')"
+  printf ',"refresher":%s' "$(luna com.webos.service.oledepl/getPixelRefresherInfoList '{}')"
+  printf ',"props":%s' "$(luna com.webos.service.tv.systemproperty/getSystemProperties '{"keys":["firmwareVersion","modelName","sdkVersion"]}')"
+  printf ',"remote":%s' "$(str /mnt/lg/cmn_data/mrcu/mrcu1.info)"
+  printf ',"acr":%s' "$(pidof acr2 >/dev/null && echo true || echo false)"
+fi
+
+printf '}\n'
