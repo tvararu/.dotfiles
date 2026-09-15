@@ -303,6 +303,42 @@ fw4 reload               # after uci commit firewall
   where it matters
 - Per-client internet blocking is documented under Home Assistant below
 
+### Samba videos share
+
+Read-only `videos` at `/mnt/aux/videos`, user `shared`, no guest. `smb.conf`
+binds loopback, `enp7s0`, and `tailscale0` only — not `0.0.0.0`, so docker and
+incus bridges never see it.
+
+smbd snapshots interface addresses at start. `NetworkManager-wait-online` is
+masked, so `network-online.target` does not wait for DHCP or `tailscale0`.
+After the 2026-09-05 reboot, smbd was `active` but listening on `127.0.0.1:445`
+only. LAN clients got connection refused. `ss -tln | grep :445` is the check;
+`is-active` is not.
+
+`smb-wait-ifaces.sh` fails the start until both interfaces have IPv4, and the
+drop-in sets `Restart=on-failure` so the boot race retries. Same class of
+fix as ollama's bind-address restart, except smbd *succeeds* on loopback, so
+it has to be failed on purpose.
+
+```bash
+sudo sh /home/deity/.dotfiles/sys/t1/install-smb.sh
+```
+
+That copies `smb.conf` and the drop-in into `/etc` (do not symlink — `/home`
+is unreadable when systemd loads units) and restarts smbd. The wait script
+stays in the repo; it is read at service start.
+
+ufw already allows `445/tcp` from `192.168.8.0/24`. The tailnet needs no ufw
+rule: `ts-input` accepts host-bound traffic on `tailscale0` (see *Tailscale
+accepts inbound before ufw sees it*). Port 139 is not required; clients speak
+SMB2 on 445.
+
+```
+//huginn or LAN:     \\192.168.8.192\videos
+//tailnet:           \\100.73.138.96\videos
+                     \\t1.gentoo-bangus.ts.net\videos
+```
+
 ## Tailscale
 
 ```bash
