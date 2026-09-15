@@ -34,7 +34,6 @@ INTERVAL = int(os.environ.get("INTERVAL", "30"))
 FULL_EVERY = int(os.environ.get("FULL_EVERY", "10"))
 
 CRED = os.environ.get("CREDENTIALS_DIRECTORY", "/etc/tv-metrics")
-RUNTIME = os.environ.get("RUNTIME_DIRECTORY", "/tmp")
 
 STATE_TOPIC = f"{NODE}/metrics/state"
 AVAIL_TOPIC = f"{NODE}/metrics/availability"
@@ -52,6 +51,8 @@ def log(msg):
     print(msg, file=sys.stderr, flush=True)
 
 
+# One connection per poll, deliberately not multiplexed: a held-open master
+# with keepalives could stop the TV dropping off the network in standby.
 def ssh(mode):
     cmd = [
         "ssh", "-T",
@@ -61,11 +62,6 @@ def ssh(mode):
         "-o", "StrictHostKeyChecking=yes",
         "-o", "BatchMode=yes",
         "-o", "ConnectTimeout=5",
-        "-o", "ServerAliveInterval=5",
-        "-o", "ServerAliveCountMax=2",
-        "-o", "ControlMaster=auto",
-        "-o", f"ControlPath={RUNTIME}/cm-%C",
-        "-o", "ControlPersist=120",
         f"root@{TV_HOST}", mode,
     ]
     try:

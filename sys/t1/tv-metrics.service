@@ -14,7 +14,6 @@ RestartSec=10
 DynamicUser=yes
 LoadCredential=id_ed25519:/etc/tv-metrics/id_ed25519
 LoadCredential=known_hosts:/etc/tv-metrics/known_hosts
-RuntimeDirectory=tv-metrics
 
 NoNewPrivileges=yes
 ProtectSystem=strict
