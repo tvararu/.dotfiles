@@ -97,10 +97,41 @@ def luna(data, key):
     return v if isinstance(v, dict) and v.get("returnValue") else {}
 
 
+def cpu_times(text):
+    """(busy, idle, every counter used) from /proc/stat's aggregate cpu line."""
+    parts = str(text or "").split()
+    if len(parts) < 9 or parts[0] != "cpu":
+        return None
+    try:
+        user, nice, system, idle, iowait, irq, softirq, steal = map(int, parts[1:9])
+    except ValueError:
+        return None
+    counters = (user, nice, system, idle, iowait, irq, softirq, steal)
+    return user + nice + system + irq + softirq + steal, idle + iowait, counters
+
+
 class Reader:
     def __init__(self):
         self.booted_at = None
         self.slow = {}
+        self.stat = None
+
+    def reset(self):
+        # After a gap the next delta would be an average over the whole gap.
+        self.stat = None
+
+    def cpu_utilisation(self, text):
+        # Not /proc/lg/pm/current_load: that is the power manager's per-sample
+        # frequency hint and swings 0/100 from one second to the next.
+        cur, prev = cpu_times(text), self.stat
+        self.stat = cur
+        if cur is None or prev is None:
+            return None
+        # LG hot-plugs cores, so counters can go backwards between polls.
+        if any(c < p for c, p in zip(cur[2], prev[2])):
+            return None
+        dbusy, dtotal = cur[0] - prev[0], (cur[0] + cur[1]) - (prev[0] + prev[1])
+        return round(100 * dbusy / dtotal) if dtotal > 0 else None
 
     def fast(self, d):
         out = {}
@@ -124,7 +155,7 @@ class Reader:
         temp = num(d.get("soc_temp"), int)
         if temp and not (uptime is not None and uptime < 90):
             out["soc_temp"] = temp
-        out["cpu_load"] = num(d.get("cpu_load"), int)
+        out["cpu_load"] = self.cpu_utilisation(d.get("stat"))
 
         wash = d.get("pnwash_state")
         out["panel_wash_state"] = wash.strip() if isinstance(wash, str) else None
@@ -212,7 +243,7 @@ def build_discovery(slow):
         "dynamic_range": sensor("dynamic_range", "Dynamic range", icon="mdi:hdr"),
         "oled_light": sensor("oled_light", "OLED light", "%", icon="mdi:brightness-6"),
         "soc_temp": sensor("soc_temp", "SoC temperature", "°C", "temperature", "measurement"),
-        "cpu_load": sensor("cpu_load", "CPU load", "%", icon="mdi:cpu-32-bit"),
+        "cpu_load": sensor("cpu_load", "CPU utilisation", "%", icon="mdi:cpu-32-bit"),
         "mem_used": sensor("mem_used", "Memory used", "%", icon="mdi:memory"),
         "booted_at": sensor("booted_at", "Booted at", device_class="timestamp",
                             category="diagnostic"),
@@ -305,6 +336,7 @@ def main():
                 log("tv unreachable")
             availability["value"] = "offline"
             client.publish(AVAIL_TOPIC, "offline", retain=True)
+            reader.reset()
             last_ok = False
         else:
             payload = {"root_problem": "ON" if status == "problem" else "OFF"}
