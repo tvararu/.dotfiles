@@ -202,14 +202,16 @@ class Reader:
 
 
 def sensor(key, name, unit=None, device_class=None, state_class=None, icon=None,
-           category=None):
+           category=None, null_unknown=False):
+    # HA keeps the last state on an empty render; only "None" makes it unknown.
+    fallback = "{% else %}None" if null_unknown else ""
     cmp = {
         "p": "sensor",
         "unique_id": f"{NODE}_{key}",
         "name": name,
         "value_template": (
             "{%% if value_json.%s is defined and value_json.%s is not none %%}"
-            "{{ value_json.%s }}{%% endif %%}" % (key, key, key)
+            "{{ value_json.%s }}%s{%% endif %%}" % (key, key, key, fallback)
         ),
     }
     for k, v in (("unit_of_measurement", unit), ("device_class", device_class),
@@ -243,7 +245,8 @@ def build_discovery(slow):
         "dynamic_range": sensor("dynamic_range", "Dynamic range", icon="mdi:hdr"),
         "oled_light": sensor("oled_light", "OLED light", "%", icon="mdi:brightness-6"),
         "soc_temp": sensor("soc_temp", "SoC temperature", "°C", "temperature", "measurement"),
-        "cpu_load": sensor("cpu_load", "CPU utilisation", "%", icon="mdi:cpu-32-bit"),
+        "cpu_load": sensor("cpu_load", "CPU utilisation", "%", icon="mdi:cpu-32-bit",
+                          null_unknown=True),
         "mem_used": sensor("mem_used", "Memory used", "%", icon="mdi:memory"),
         "booted_at": sensor("booted_at", "Booted at", device_class="timestamp",
                             category="diagnostic"),
