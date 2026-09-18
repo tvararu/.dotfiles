@@ -128,7 +128,90 @@ ddcci-backlight
 ACTION=="add", SUBSYSTEM=="i2c", ATTR{name}=="NVIDIA i2c adapter 3 at 1:00.0", RUN+="/bin/sh -c 'echo ddcci 0x37 > /sys/bus/i2c/devices/i2c-3/new_device'"
 ```
 
+## LG C1 at 4K120
+
+The TV sits on `HDMI-A-2` (the RTX 5090; `HDMI-A-1` is the AMD iGPU). Mode is
+pinned in `~/.config/hypr/monitors.lua`, matched by **EDID description** rather
+than connector, because a 4K dummy plug and the UCOLOR screen use that same
+port and must keep falling through to the generic rule:
+
+```lua
+hl.monitor({ output = "desc:LG Electronics LG TV SSCR2 0x01010101", mode = "3840x2160@119.88", scale = omarchy_monitor_scale, bitdepth = 10 })
+```
+
+**Leave `scale` on `omarchy_monitor_scale`.** `omarchy-hyprland-monitor-scaling`
+(what the shell's scale pills call) only ever persists that one variable, then
+rewrites `monitors.lua` — which trips Hyprland's auto-reload. A literal scale in
+a monitor rule is more specific than the catch-all, so it wins that reload and
+the panel silently snaps back on every click. `~/.local/state/omarchy/monitor-scaling.log`
+shows this as `current=` never changing across clicks.
+
+Note there is no 3840x2160@**120**; the mode is `@119.88`. Two TV-side settings
+gate this, both per-HDMI-input, and neither is visible from the host:
+
+- **HDMI Deep Colour** (*Settings → General → Devices → HDMI Settings*) must be
+  on for that input, or the TV's EDID omits 4K120 entirely and `hyprctl monitors
+  all` caps 3840x2160 at 59.94Hz. After changing it, **replug the cable** — the
+  GPU caches EDID and will not re-read it otherwise.
+- **Aspect Ratio → Just Scan** (*Settings → Picture → Aspect Ratio Settings*),
+  or the TV overscans and crops the desktop edges.
+
+Scale is per-machine and shared: `omarchy_monitor_scale` is one value for all
+outputs, and the shell computes it from whichever monitor is focused. A scale
+picked at 3840x2160 also lands on the UCOLOR/dummy plug at 1920x1200.
+
+### 10-bit, HDR and VRR
+
+`bitdepth = 10` gives `currentFormat: XBGR2101010` (it reads `XRGB8888`
+without it). It is independent of `cm` — 10-bit applies at any colour preset.
+
+**No `cm` override.** The default is `srgb`, which displays sRGB desktop content
+with no gamut conversion. Do **not** set `cm = "hdr"`: it pins the output into
+the PQ transfer function permanently, so every SDR surface is re-encoded against
+an 80-nit reference white on a panel that does 750+, and the whole desktop looks
+washed out. `render:cm_auto_hdr` defaults to `1`, which switches the output into
+real HDR for fullscreen HDR content on its own — the desktop pays nothing.
+Expect a black flash at each switch while the TV re-handshakes.
+
+Chromium 141+ carries `WaylandWpColorManagerV1` on by default, so no browser
+flag is needed; it does need a full restart, not a reload, to notice a
+colour-mode change.
+
+**VRR must be global. A `vrr` key on the monitor rule is silently ignored** —
+`hyprctl configerrors` stays clean and the value is simply dropped. Use:
+
+```lua
+hl.config({ misc = { vrr = 2 } })
+```
+
+`2` is fullscreen-only and is the correct value for an OLED; `1` (always on)
+flickers on the desktop, because panel brightness tracks refresh rate and every
+small repaint changes it. At `2`, `hyprctl monitors` reports `vrr: false` on the
+desktop — expected, not a failure; it flips true under fullscreen.
+
+**Test whether a key is the default before writing it**, and read the effect
+back from `hyprctl monitors -j` rather than trusting a clean `configerrors`.
+`position = "auto"` turned out to be redundant and was dropped; `cm = "auto"`
+was not (omitting it falls back to `srgb`, not `wide`), despite the wiki
+labelling `auto` "recommended".
+
+Bandwidth is not a constraint here, and the obvious calculation is wrong.
+4K120 10-bit 4:4:4 is ~33.4 Gbps against the 40 Gbps FRL link's ~35.6 Gbps
+usable payload (16b/18b coding) — roughly 6% headroom, so **10-bit and 4:4:4
+coexist at 120Hz**. Only 12-bit 4:4:4 (~40 Gbps) exceeds the link; the C1
+advertises no DSC. Do not derive this from the mode's pixel clock
+(1186.81 MHz): FRL packetises and does not carry blanking as pixel data, so
+that overestimates by ~7% and wrongly suggests 10-bit 4:4:4 does not fit.
+
+10-bit does **not** break screen capture here — `grim` captured `XBGR2101010`
+to a normal 8-bit PNG without complaint.
+
 ## Viture Luma Pro Mirror (1920x1200)
+
+> **Stale on Quattro.** `hyprctl keyword` is rejected by the Lua parser
+> (`keyword can't work with non-legacy parsers. Use eval.`). The runtime
+> equivalent is `hyprctl eval 'hl.monitor({ output = "...", ... })'`.
+> The commands below are the 3.8.5 form and have not been re-tested.
 
 Set the UPERFECT to `1920x1200` first, then mirror the Viture output to it.
 
@@ -979,6 +1062,10 @@ Restarting Sunshine invalidates a pending PIN. Reset lost web credentials with
 
 ### Monitor config
 
+> Historical. The live config is in *LG C1 at 4K120* above; the scale literals
+> here no longer match, and scale is now carried by `omarchy_monitor_scale`,
+> which the shell's scale panel rewrites.
+
 A catch-all rule, so the mode survives the plug moving ports:
 
 ```lua
@@ -987,9 +1074,9 @@ hl.env("GDK_SCALE", "1.5")
 hl.monitor({ output = "", mode = "1920x1200@60", position = "auto", scale = 1.5 })
 ```
 
-Scale 1.5 means 1920x1200 physical but only **1280x800 logical** — a small
-desktop. Fine for glasses or a portable panel, cramped for remote work. Drop to
-`scale = 1` for more usable space.
+Scale trades physical pixels for logical space: at 1.5 a 1920x1200 panel gives
+only 1280x800 — fine for glasses or a portable panel, cramped for remote work.
+Drop to `scale = 1` for more usable space.
 
 ### Firewall
 
