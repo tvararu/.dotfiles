@@ -2461,6 +2461,48 @@ Verify: `journalctl -b -g 045e` should show "gamepad detected" not "parse failed
 
 Enable "Xbox Configuration Support" in Steam Settings → Controller.
 
+## Stadia Controller (Bluetooth)
+
+Controller: 18D1:9400 "Stadia Controller rev. A". Works with the kernel's
+built-in `hid-google-stadiaff` driver over both USB (`Bus=0003`) and Bluetooth
+(`Bus=0005`) — the module carries aliases for both buses, so rumble
+(`FF=107030000`) works either way. No extra packages needed.
+
+Stadia controllers shipped with "Gotham" firmware, which only speaks Wi-Fi to
+Google's servers. Google's "Bruce" firmware converts them into a plain BLE HID
+gamepad; the flashing site (`stadia.google.com/controller`) is now 404. **This
+controller already had Bruce firmware**, so no flashing was needed.
+
+Test before assuming a flash is required: unplug, hold **Y + Stadia** for 2
+seconds. Blinking orange means Bruce firmware and it is ready to pair. Nothing
+happening means Gotham, and it needs flashing via the community backup of
+Google's own tool at `luigimannoni.github.io/stadia-controller-flasher` — that
+build bundles the firmware, so it does not depend on Google's dead CDN. Flashing
+needs Chromium plus a `70-` prefixed udev rule tagging `uaccess` on 18d1:9400,
+18d1:946b, 15a2:0073 and 1fc9:0135 across both `hidraw` and `usb` (the `99-`
+prefix used elsewhere in this file is too late — `73-seat-late.rules` is what
+applies the ACL).
+
+### Pairing
+
+```bash
+bluetoothctl scan on
+# hold Y + Stadia for 2s; status light blinks orange
+bluetoothctl pair DC:57:1D:5B:D0:54
+bluetoothctl trust DC:57:1D:5B:D0:54
+bluetoothctl connect DC:57:1D:5B:D0:54
+```
+
+Advertises as `StadiaJZG2-d054` — the suffix is the last four of the USB serial
+(`99050YCAC2JZG2`), which is how to tell two controllers apart. Solid white
+status light means connected.
+
+Verify: `/proc/bus/input/devices` shows `Bus=0005 Vendor=18d1 Product=9400`
+bound to the `stadia` driver. Battery reports through UPower at
+`/org/freedesktop/UPower/devices/gaming_input_dev_DC_57_1D_5B_D0_54`.
+
+In Bluetooth mode the Assistant and Capture buttons do nothing unless remapped.
+
 ## Bulk Storage on /mnt/aux
 
 Secondary 2 TB NVMe (`/dev/nvme0n1p1`, btrfs+zstd) holds bulky replaceable data. Mounted via fstab so symlinks survive reboots.
