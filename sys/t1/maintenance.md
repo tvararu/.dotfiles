@@ -908,9 +908,9 @@ ssh openclaw
 
 ## Sunshine (Game Streaming via Moonlight)
 
-Streams the desktop to a Mac (or anything else running Moonlight). The machine is
-headless for this purpose: an HDMI dummy plug holds an output alive, Hyprland
-renders to it, and Sunshine captures and encodes that output.
+Streams the desktop to a Mac (or anything else running Moonlight). Sunshine
+captures whatever output Hyprland renders to and encodes it — the LG C1 on
+`HDMI-A-2` since the TV arrived, or a dummy plug when the machine runs headless.
 
 ### Firewall
 
@@ -928,9 +928,10 @@ ufw, so Moonlight over the tailnet works regardless of what ufw says. It only
 governs the LAN path. Worth doing because **`47990` is Sunshine's web admin UI**
 and sits inside that range.
 
-**The display lives on the RTX 5090's `HDMI-A-1`.** The AMD iGPU's `HDMI-A-2` is
-unused. This reverses an earlier layout and the reversal matters, because of one
-rule:
+**The display lives on the RTX 5090's `HDMI-A-2`.** The AMD iGPU owns
+`HDMI-A-1`, currently unused. Verified 2026-09-20: `card1` is `amdgpu` and
+carries `HDMI-A-1`; `card2` is `nvidia` and carries `HDMI-A-2`. An earlier
+revision of this section stated the reverse. It matters because of one rule:
 
 > Capture and encode must happen on the **same GPU**. Frames arrive as DMA-BUFs
 > belonging to whichever card owns the scanout; the other card cannot import them.
@@ -1019,9 +1020,9 @@ audio_sink = sink-sunshine-stereo
 ### App config
 
 No `prep-cmd` resolution switching. It existed to flip between 1080p for a TV and
-1920x1200 for remote desktop; the TV is gone, the output is a dummy plug, and
-`monitors.lua` now fixes a single mode. The old `sunshine-res` helper hardcoded
-`HDMI-A-2` and had been silently doing nothing since the cable moved.
+1920x1200 for remote desktop, and was dropped while the only output was a dummy
+plug. It has stayed dropped: `monitors.lua` fixes a single mode and Moonlight's
+own scaling covers the rest.
 
 ```json
 // ~/.config/sunshine/apps.json
@@ -1222,6 +1223,11 @@ while Sunshine fails points at the dmabuf path specifically.
 
 A 4K HDMI dummy plug keeps an output alive so Hyprland has something to render to
 while the machine runs headless.
+
+> **Stale as of 2026-09-20.** `HDMI-A-1` belongs to the **AMD iGPU** (`card1`,
+> `amdgpu`), not the 5090 — which is `card2` and owns `HDMI-A-2`, where the C1
+> now lives. `HDMI-A-1` currently reports `disconnected`, so the forced-EDID
+> claim below is unverified on the present layout. Re-check before relying on it.
 
 It sits on the **RTX 5090's `HDMI-A-1`**. An earlier note in this file claimed the
 plug could not work there because the NVIDIA port ignores its HPD signal — that
