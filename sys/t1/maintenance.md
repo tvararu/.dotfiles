@@ -1061,6 +1061,48 @@ curl -sk -u 'deity:<password>' -X POST https://localhost:47990/api/pin \
 Restarting Sunshine invalidates a pending PIN. Reset lost web credentials with
 `sunshine --creds deity '<password>'` then restart the unit.
 
+#### Pairing succeeds on t1 but Moonlight still says 401
+
+On **2026.906.222525** a client that has ever been paired before cannot re-pair.
+The PIN is accepted, the web UI reports success, a new entry appears in
+`sunshine_state.json` — and Moonlight still fails with *"The client is not
+authorized. Certificate verification failed. (Error 401)"*. The host log fills
+with one line every three seconds:
+
+```
+Warning: SSL Verification error :: Client certificate identity is not enabled
+```
+
+The cause is duplicate certificates. Moonlight reuses **one** X.509 cert for the
+life of its install, but each pairing appends a fresh `named_devices` entry with
+a new UUID. This build's client-identity check fails closed when a cert maps to
+more than one entry, so every repair attempt makes it worse. Six entries here
+shared SHA1 `A0:91:AD:BB:…` — every `huginn` pairing back to February.
+Upstream: [#5696](https://github.com/LizardByte/Sunshine/issues/5696), fixed by
+[#5737](https://github.com/LizardByte/Sunshine/pull/5737), not in this build.
+
+Deduplicate by cert, keeping the newest entry for each. No re-pairing needed —
+the surviving entry is the one the client already holds:
+
+```bash
+cp ~/.config/sunshine/sunshine_state.json{,.pre-dedupe}
+systemctl --user stop app-dev.lizardbyte.app.Sunshine.service
+python3 - <<'EOF'
+import json, hashlib
+p = '/home/deity/.config/sunshine/sunshine_state.json'
+d = json.load(open(p))
+keep = {}
+for x in d['root']['named_devices']:      # later entries win
+    keep[hashlib.sha256(x['cert'].encode()).hexdigest()] = x
+d['root']['named_devices'] = list(keep.values())
+json.dump(d, open(p, 'w'), indent=2)
+EOF
+systemctl --user start app-dev.lizardbyte.app.Sunshine.service
+```
+
+The warning stopping is the confirmation — it repeats on every client poll while
+the rejection stands, and goes silent the moment it does not.
+
 ### Monitor config
 
 > Historical. The live config is in *LG C1 at 4K120* above; the scale literals
@@ -1088,7 +1130,11 @@ sudo ufw allow 47984:48010/udp
 
 ### Moonlight client settings
 
-- Resolution: 1920x1200 (or "Native excluding notch" on Mac)
+- Resolution: **1920x1080**. The C1 is 3840x2160, so 1080p is an exact 2:1
+  downscale of the capture. Do not ask for 1920x1200 — that is 16:10 against a
+  16:9 source, so Moonlight pads it with black bars top and bottom rather than
+  giving more picture. 1920x1200 in an older revision of this file dates from the
+  dummy-plug era, when the output really was 16:10.
 - Connect via the Tailscale IP — auto-uses LAN when on the same network
 - **AV1 is available** on this setup (`av1_nvenc`). The AMD iGPU had no AV1
   encoder at all, so this is new since the move to the 5090.
