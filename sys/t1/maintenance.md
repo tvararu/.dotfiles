@@ -2501,7 +2501,47 @@ Verify: `/proc/bus/input/devices` shows `Bus=0005 Vendor=18d1 Product=9400`
 bound to the `stadia` driver. Battery reports through UPower at
 `/org/freedesktop/UPower/devices/gaming_input_dev_DC_57_1D_5B_D0_54`.
 
-In Bluetooth mode the Assistant and Capture buttons do nothing unless remapped.
+### Assistant and Capture as OS hotkeys
+
+In Bluetooth mode these two buttons emit **no evdev events at all** — verified
+by reading the event node while pressing them. The `stadia` driver drops them.
+But the bits **are** in the raw HID report, so hidraw reaches them:
+
+| | |
+|---|---|
+| Report | 11 bytes, idle `0308000080808080000000` |
+| Assistant | byte 2, bit `0x02` |
+| Capture | byte 2, bit `0x01` |
+
+Mask `byte2 & 0x03` — the upper bits carry the ordinary face buttons.
+
+Because evdev never sees them, **no game or application can**, which makes them
+free OS hotkeys needing no modifier and conflicting with nothing. Verified with
+`lsof`: nothing else holds the node, Steam included. Assistant switches
+workspace, Capture toggles fullscreen, mirroring SUPER+TAB and SUPER+F.
+
+Three pieces, only the udev rule is a system file — **the daemon and unit are
+deliberately not in this repo**:
+
+```
+# /etc/udev/rules.d/70-stadia-hidraw.rules
+# GROUP, not TAG+="uaccess": over Bluetooth the pad is a virtual uhid device
+# with no bus parent and never gets the uaccess ACL (it is tagged "seat" but
+# not "uaccess", unlike USB peers). DRIVERS is the only stable match — there is
+# no idVendor on this path.
+KERNEL=="hidraw*", SUBSYSTEM=="hidraw", DRIVERS=="stadia", GROUP="input", MODE="0660"
+```
+
+- `~/.local/bin/stadia-oskeys` — finds the node by uevent
+  `HID_ID=0005:000018D1:00009400` (never by index; it moves on reconnect),
+  edge-triggers on press, resolves the Hyprland signature per keypress.
+- `~/.config/systemd/user/stadia-oskeys.service` — `WantedBy=graphical-session.target`.
+
+Caveat: Capture during a fullscreen game un-fullscreens it, which also drops the
+C1 out of HDR, since `cm_auto_hdr` keys off fullscreen.
+
+The only other usable button is the Stadia button, `BTN_MODE` (`0x13c`), but
+Steam claims it for Big Picture.
 
 ## Bulk Storage on /mnt/aux
 
