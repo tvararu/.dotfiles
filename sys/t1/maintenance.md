@@ -2906,3 +2906,37 @@ return on their own via `restart: unless-stopped`. A user-level `docker ps`
 cannot trigger socket activation — it is refused at the socket permission
 check — so "docker works when I try it" was never evidence the stack would
 survive a reboot.
+
+## Hard freeze 2026-09-26 (unresolved)
+
+At about 14:48 UTC t1 froze completely: screen, keyboard and SSH to t1 all
+dead, fans at 100%. Power was pulled at about 14:59. The openhubris Incus VM
+(12 vCPUs, 64 GiB) was running a heavy agent and CI load at the time.
+
+What the evidence shows:
+
+- At 14:47:38 the host was normal: memory 67% (about 40 GiB available, zram
+  unused), CPU 39%, package 70 °C. Load rose from 2.8 to 6.4 in the last
+  minute.
+- Every host writer stopped within the same 10 s: journal at 14:47:57, Home
+  Assistant at 14:47:55, MySQL at 14:47:58. No kernel message before that: no
+  OOM, hung task, lockup, MCE, thermal or kvm error. Earlier boots all ended
+  cleanly.
+- Recovery was clean: btrfs tree-log replay, InnoDB started without errors,
+  NVMe media errors 0.
+
+Ruled out: host memory exhaustion (40 GiB free). Not supported: the guest
+running out of memory. KVM contains that, and host CPU at 39% does not fit 12
+thrashing vCPUs.
+
+**Most likely: a host hard lockup under sudden load from CPU/RAM overclock or
+undervolt settings (EXPO, PBO, Curve Optimizer)** — silent stop, no logs,
+fans to maximum. Not proven.
+
+Next steps:
+
+- Record the BIOS OC/UV settings here, then stress-test with error checking
+  (`stress-ng --vm` on all threads, y-cruncher). A freeze under stress points
+  at the settings; back them off one at a time.
+- `kernel.sysrq` is 16 (sync only), so no SysRq dump or reboot was possible
+  during the freeze.
