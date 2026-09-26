@@ -2907,6 +2907,25 @@ cannot trigger socket activation — it is refused at the socket permission
 check — so "docker works when I try it" was never evidence the stack would
 survive a reboot.
 
+## tuicraft factory service
+
+A Bun HTTP service for tuicraft eval runners. It reads and changes offline
+characters of throwaway `FAC…` accounts on the AzerothCore server. It lives in
+`~/srv/tuicraft-factory/service/` (not a repo; the README there has the API). It
+listens on the Tailscale IP, port 7879, plain HTTP, like Ollama. It runs as a user
+unit, which starts at boot through linger:
+
+```bash
+systemctl --user status tuicraft-factory
+journalctl --user -u tuicraft-factory
+```
+
+The unit file is a copy in `~/.config/systemd/user/`, not a symlink. The
+service uses a MySQL user `tcservice@172.%` with limited grants. Its password is
+in `service.env` (mode 600) and not in this repo. The ufw INPUT policy is DROP, and
+no rule names 7879. The tuicraft VM `openhubris` reaches it (tested 2026-09-26).
+Other tailnet peers were not tested.
+
 ## Hard freeze 2026-09-26 (unresolved)
 
 At about 14:48 UTC t1 froze completely: screen, keyboard and SSH to t1 all
