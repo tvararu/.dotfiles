@@ -2812,6 +2812,35 @@ terminal once the headset is connected; `wayvrctl` scripts it.
 Panels are flat by nature — a VR game launched from a WayVR panel still renders
 immersively through xrizer, it just starts from a click inside the headset.
 
+### Titanfall 2 VR (Northstar + CircuitLord mod)
+
+Campaign VR through WiVRn's OpenXR runtime, no xrizer. The official installer
+is a Windows .exe; the Linux launcher and patcher come from
+`polar421/Titanfall-2-VR-linux-fix` (cloned to `~/code`, scripts read before
+use). The Steam game must run once first (Proton Experimental) so Steam
+installs EA Desktop into prefix `compatdata/1237970`.
+
+- **Mod install** is `~/.local/bin/tf2vr-install` (local, not stowed). It
+  mirrors the Windows installer: Northstar 1.31.13 and mod 1.0.8 zips from
+  `~/.cache/tf2vr`, sha256 pinned from the fork's `manifest-v3.json`. Files land
+  in `Titanfall2/TF2VR/`, with `NorthstarLauncher.exe` as
+  `Titanfall2VRLauncher.exe`. `asset_patcher.exe` builds the game-derived
+  assets
+- **`asset_patcher.exe` deadlocks under Proton Experimental 11** (ntsync, zero
+  CPU, no output). It runs under Proton 10.0 in a scratch prefix instead
+- **`mmdevapi.dll` patch**: the mod's audio call returns `0x80070002` and Wine
+  fastfails with `0xC0000409`. `tf2vr-patch-mmdevapi` changes one `je` at
+  offset `0x369e` in Proton Experimental and Hotfix, after a signature check,
+  with `.orig-tf2vr` backups. The launcher re-applies it every start, so a
+  Proton update does not break it
+- **Launcher edits** over the fork's copy in `~/.local/bin/tf2vr`: recreates
+  `active_runtime.json` per launch (`wivrn-server` deletes it on start), and
+  finds `EADesktop.exe` under its versioned folder, because the registered
+  `EA Desktop\EA Desktop` path is an empty dir in this prefix
+- Launch with `tf2vr`, or from the lobby (`tf2vr.desktop` carries
+  `X-WiVRn-VR`). `tf2vr --vanilla` uses official servers
+- Multiplayer is untested upstream
+
 ## Input injection (ydotool)
 
 Synthetic mouse/keyboard events for scripted UI automation (screenshot →
