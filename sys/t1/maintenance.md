@@ -2837,6 +2837,31 @@ installs EA Desktop into prefix `compatdata/1237970`.
   `active_runtime.json` per launch (`wivrn-server` deletes it on start), and
   finds `EADesktop.exe` under its versioned folder, because the registered
   `EA Desktop\EA Desktop` path is an empty dir in this prefix
+- **`SteamGameId=1237970` is required.** Without it Proton's `steam.exe` skips
+  its VR setup, and the game dies at `xrEnumerateInstanceExtensionProperties`
+  (wineopenxr negotiation `-6`, then `-51`, exit `0xC0000409`). Verified on a
+  fresh prefix with `xr_probe.exe` both ways. The launcher exports it with
+  `SteamAppId`
+- **Builtin VC++ runtime for the game only.** EA's installer put native
+  MSVCP140 14.34 in the prefix, and the plugin crashes in it (`+0x13028`). The
+  launcher sets `msvcp140*`/`vcruntime140*` to `b` just before the game `exec`.
+  EA Desktop needs the native one
+- **Render size follows the window size.** The fork's `-w 1832 -h 1919` gives
+  1745x1919 per eye. The launcher uses `-w 2748 -h 3022` (Quest 2
+  recommended). `defaultres`/`defaultresheight` in
+  `AppData/Local/Respawn/Titanfall2_VR/local/videoconfig.txt` must match: a
+  mismatch logs "VGUI screen size override changed" and crashes at start
+- **Never apply video settings in game.** The UI restart divides by zero in
+  `client.dll` (VGUI). Edit `videoconfig.txt` with the game closed. Quality is
+  raised there (`mat_picmip 0`, `stream_memory 4592762`,
+  `r_lod_switch_scale 4`, `fadeDistScale 2.25`). Anti-aliasing stays off, as
+  the mod's `launch.json` forces
+- Frame times are in `TF2VR/plugins/Titanfall2VR-data/frames.csv`. At max
+  detail it holds 90 fps but not 120: the main thread is CPU-bound, the GPU is
+  near idle
+- Debugging from a shell needs `DISPLAY`, or EA's CEF crashes in `libcef.dll`.
+  A stale prefix `wineserver` keeps its first client's environment: reset with
+  Proton's `files/bin/wineserver -k` and `WINEPREFIX=.../1237970/pfx`
 - Launch with `tf2vr`, or from the lobby (`tf2vr.desktop` carries
   `X-WiVRn-VR`). `tf2vr --vanilla` uses official servers
 - Multiplayer is untested upstream
