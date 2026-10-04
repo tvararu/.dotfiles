@@ -5,6 +5,7 @@ codex = "latest"
 gh = "latest"
 node = "lts"
 opencode = "latest"
+"github:stablyai/orca" = { version = "latest", matching = "linux.AppImage", os = ["linux"] }
 python = "latest"
 ruby = "latest"
 rust = "latest"
@@ -20,3 +21,38 @@ compile = false
 
 [settings.upgrade]
 auto_prune = false
+
+[tasks."orca:server:start"]
+description = "Start the global Orca runtime server"
+run = """
+mkdir -p ~/.local/state/orca
+systemctl --user daemon-reload
+systemctl --user enable --now orca-server
+echo "Started orca-server on 0.0.0.0:6768"
+echo "Run 'mise orca:server:pairing' to get the pairing link for a client."
+"""
+
+[tasks."orca:server:stop"]
+description = "Stop the global Orca runtime server"
+run = "systemctl --user stop orca-server"
+
+[tasks."orca:server:restart"]
+description = "Restart the global Orca runtime server"
+run = "systemctl --user restart orca-server"
+
+[tasks."orca:server:status"]
+description = "Show status of the Orca runtime server"
+run = "systemctl --user status orca-server --no-pager"
+
+[tasks."orca:server:logs"]
+description = "Tail logs for the Orca runtime server"
+raw = true
+run = 'journalctl --user -u orca-server -f'
+
+[tasks."orca:server:pairing"]
+description = "Print the Orca pairing links. They are credentials - do not paste them into a chat or a log."
+raw = true
+run = '''
+grep -o '{"type":"orca_server_ready".*}' ~/.local/state/orca/serve.log | tail -1 \
+  | jq -r '"browser: " + .pairing.webClientUrl, "desktop: " + .pairing.url'
+'''
