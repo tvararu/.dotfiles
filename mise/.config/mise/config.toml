@@ -10,6 +10,7 @@ python = "latest"
 ruby = "latest"
 rust = "latest"
 uv = "latest"
+"github:can1357/oh-my-pi" = "latest"
 
 [settings]
 auto_install = false
