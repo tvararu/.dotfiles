@@ -3013,3 +3013,26 @@ Next steps:
   at the settings; back them off one at a time.
 - `kernel.sysrq` is 16 (sync only), so no SysRq dump or reboot was possible
   during the freeze.
+
+## Orca runtime server
+
+Headless Orca server, same pattern as the openhubris VM. Clients pair over
+Tailscale; sessions survive an SSH drop. Set up 2026-10-04.
+
+- Install: mise tool `github:stablyai/orca` (`matching = "linux.AppImage"`,
+  `os = ["linux"]`) in the stowed mise config.
+- Unit: `sys/t1/orca-server.service` plus `orca-server.service.d/`, copied to
+  `~/.config/systemd/user/`. Runs `orca serve --port 6768 --json`; output goes
+  to `~/.local/state/orca/serve.log` (mode 600, holds the pairing credential).
+  The directory must exist before the unit starts.
+- The unit unsets `DISPLAY`, `WAYLAND_DISPLAY` and the Wayland/Ozone hints from
+  the user manager. With them, Electron tries Wayland, skips its own Xvfb and
+  exits ("Failed to initialize Wayland platform"). Needs `xorg-server-xvfb`.
+- TLS: `tailscale serve --bg --https=8443 http://127.0.0.1:6768` (no sudo,
+  `deity` is the Tailscale operator). The web client is blank over plain HTTP.
+- Tasks: `mise orca:server:start|stop|restart|status|logs|pairing`. The pairing
+  links are credentials; never paste them anywhere.
+- Exit code 3 means another Orca owns the profile; `RestartPreventExitStatus=3`
+  stops the restart loop. The SSH-mode relay (`~/.orca-remote`) does not
+  conflict.
+- `orca serve` writes `~/.local/bin/orca` and `orca-ide` dispatchers.

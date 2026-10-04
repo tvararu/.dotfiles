@@ -1,0 +1,22 @@
+[Unit]
+Description=Orca runtime server (global)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+UMask=0077
+# Headless: Orca starts its own Xvfb :99 when DISPLAY is unset, so the server
+# does not depend on the Hyprland session. The Wayland hints from the session
+# would make Electron skip Xvfb and exit.
+UnsetEnvironment=DISPLAY WAYLAND_DISPLAY OZONE_PLATFORM ELECTRON_OZONE_PLATFORM_HINT GDK_BACKEND XDG_SESSION_TYPE
+ExecStart=/bin/sh -c 'exec %h/.local/share/mise/shims/orca.AppImage serve --port 6768 --pairing-address "wss://$(tailscale status --json | jq -r .Self.DNSName | sed s/\\.$//):8443" --json'
+StandardOutput=truncate:%h/.local/state/orca/serve.log
+StandardError=truncate:%h/.local/state/orca/serve.log
+Restart=on-failure
+RestartSec=5
+RestartPreventExitStatus=3
+SuccessExitStatus=143
+
+[Install]
+WantedBy=default.target
