@@ -3036,3 +3036,7 @@ Tailscale; sessions survive an SSH drop. Set up 2026-10-04.
   stops the restart loop. The SSH-mode relay (`~/.orca-remote`) does not
   conflict.
 - `orca serve` writes `~/.local/bin/orca` and `orca-ide` dispatchers.
+- omp (`github:can1357/oh-my-pi` in mise) uses the openhubris settings, stowed
+  from that repo's checkout so both machines share one copy:
+  `stow -d ~/code/openhubris --no-folding -t ~ omp`. omp writes into
+  `config.yml`, so changes land in `~/code/openhubris`; commit them there.
