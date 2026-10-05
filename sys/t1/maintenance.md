@@ -211,10 +211,22 @@ to a normal 8-bit PNG without complaint.
 The Dell (on `DP-4`) has two modes. **SUPER+CTRL+ALT+P** toggles them, and
 **SUPER+SHIFT+T** (wake the TV) always selects `mirror`:
 
-- `mirror` (default, TV + Dell): the Dell mirrors the TV at `3840x2160@119.88`,
-  the only 4K mode near 120 Hz that both have.
-- `dell`: the TV is disabled and the Dell runs at `3840x2160@119.88`, 10-bit. Its
-  `@120` mode is really 119.999 Hz (1097.75 MHz / 4000x2287).
+- `mirror` (default, TV + Dell): the Dell mirrors the TV. The TV runs
+  `@119.88`, the Dell `@120`, so the mirror skips about one frame in 8 s.
+- `dell`: the TV is disabled and the Dell runs at `3840x2160@120`, 10-bit.
+
+**Use `@120` on the Dell, not `@119.88`.** Its `@119.88` is the CTA timing
+(1186.81 MHz, ~28.5 Gbps at 8-bit); `@120` is reduced blanking (1097.75 MHz,
+~26.3 Gbps, really 119.999 Hz). Both exceed DP 1.4's 25.9 Gbps and need DSC.
+With the Dell's HDR mode on (*Smart HDR → DisplayHDR 600*), `@119.88` gives "No
+DP signal" while Hyprland reports success; `@120` works at 10-bit. In that mode
+the EDID advertises PQ and ~630 nits, so `cm_auto_hdr` can engage in `dell`.
+
+Changing the Dell's HDR setting renegotiates the link. If the kernel then
+refuses every mode on DP-4 (EINVAL in `hyprland.log`, even 640x480), turn the
+Dell off and on with its power button; a cable replug does not clear it. A
+failed fallback can blank the TV too: force a new modeset on it with
+`hyprctl eval` and a different mode, then `hyprctl reload`.
 
 `monitors.lua` reads the mode from `~/.local/state/projector-mode` on reload.
 `sys/t1/projector-mode` (linked into `~/.local/bin`) writes it and reloads. It
