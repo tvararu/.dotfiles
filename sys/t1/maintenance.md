@@ -214,7 +214,8 @@ cycles them:
 - `mirror` (default): the Dell mirrors the TV at `3840x2160@119.88`, the only
   4K mode near 120 Hz that both have.
 - `tv`: the Dell is disabled.
-- `dell`: the TV is disabled and the Dell runs at `3840x2160@120`.
+- `dell`: the TV is disabled and the Dell runs at `3840x2160@119.88`. Its
+  `@120` mode is really 119.999 Hz (1097.75 MHz / 4000x2287).
 
 `monitors.lua` reads the mode from `~/.local/state/projector-mode` on reload.
 `sys/t1/projector-mode` (linked into `~/.local/bin`) writes it and reloads.
