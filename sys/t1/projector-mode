@@ -1,41 +1,39 @@
 #!/bin/bash
 
-# Cycle t1's screens like Windows' Win+P: mirror -> tv -> dell -> mirror.
+# Switch t1's screens between mirror (TV + Dell) and dell (Dell only).
 # ~/.config/hypr/monitors.lua reads the mode from the state file on reload.
-# Usage: projector-mode [mirror|tv|dell]
+# Usage: projector-mode [mirror|dell]   (no argument toggles)
 
 STATE="$HOME/.local/state/projector-mode"
-TV="LG Electronics LG TV SSCR2 0x01010101"
 DELL="Dell Inc. DELL U2725QE G5X6PJ4"
-
-connected() {
-  hyprctl monitors all -j | jq -e --arg d "$1" 'any(.[]; .description == $d)' >/dev/null
-}
 
 current=$(cat "$STATE" 2>/dev/null || echo mirror)
 
 if [[ -n $1 ]]; then
   next=$1
+elif [[ $current == dell ]]; then
+  next=mirror
 else
-  case $current in
-    mirror) next=tv ;;
-    tv) next=dell ;;
-    *) next=mirror ;;
-  esac
-  # Skip a single-screen mode whose screen is unplugged or powered off.
-  [[ $next == tv ]] && ! connected "$TV" && next=dell
-  [[ $next == dell ]] && ! connected "$DELL" && next=mirror
+  next=dell
 fi
 
 case $next in
-  mirror) label="Mirror" ;;
-  tv) label="TV only" ;;
-  dell) label="Dell only" ;;
+  mirror) label="TV + Dell" ;;
+  dell)
+    # Disabling the TV with the Dell unplugged or off would blank both.
+    if ! hyprctl monitors all -j | jq -e --arg d "$DELL" 'any(.[]; .description == $d)' >/dev/null; then
+      omarchy-notification-send -g 󰍹 "Dell not connected"
+      exit 1
+    fi
+    label="Dell only"
+    ;;
   *)
-    echo "Usage: $(basename "$0") [mirror|tv|dell]" >&2
+    echo "Usage: $(basename "$0") [mirror|dell]" >&2
     exit 1
     ;;
 esac
+
+[[ $next == "$current" ]] && exit 0
 
 mkdir -p "$(dirname "$STATE")"
 echo "$next" >"$STATE"

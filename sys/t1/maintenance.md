@@ -208,26 +208,24 @@ to a normal 8-bit PNG without complaint.
 
 ### Projector modes (Dell U2725QE)
 
-The Dell (on `DP-4`) has three modes, like Windows' Win+P. **SUPER+CTRL+ALT+P**
-cycles them:
+The Dell (on `DP-4`) has two modes. **SUPER+CTRL+ALT+P** toggles them, and
+**SUPER+SHIFT+T** (wake the TV) always selects `mirror`:
 
-- `mirror` (default): the Dell mirrors the TV at `3840x2160@119.88`, the only
-  4K mode near 120 Hz that both have.
-- `tv`: the Dell is disabled.
+- `mirror` (default, TV + Dell): the Dell mirrors the TV at `3840x2160@119.88`,
+  the only 4K mode near 120 Hz that both have.
 - `dell`: the TV is disabled and the Dell runs at `3840x2160@119.88`. Its
   `@120` mode is really 119.999 Hz (1097.75 MHz / 4000x2287).
 
 `monitors.lua` reads the mode from `~/.local/state/projector-mode` on reload.
-`sys/t1/projector-mode` (linked into `~/.local/bin`) writes it and reloads.
-Cycling skips a single-screen mode whose screen is not connected.
+`sys/t1/projector-mode` (linked into `~/.local/bin`) writes it and reloads. It
+refuses `dell` when the Dell is not connected.
 
-Use a single-screen mode for games. In Hyprland 0.56.2 a mirror has no
-workspace, so `vrr = 2` never turns VRR on for it, and direct scanout is
-blocked on both the mirror and its source. `mirror` takes a connector name,
-not `desc:`.
+A mirror gets no VRR: it has no workspace, so `vrr = 2` never turns VRR on for
+it. Direct scanout is blocked on both the mirror and its source (Hyprland
+0.56.2). Play on the TV with the Dell off, or in `dell` mode. `mirror` takes a
+connector name, not `desc:`.
 
-If the screen goes black in `dell` mode (Dell off at boot), press the key once:
-`dell` goes to `mirror`, which turns the TV back on.
+If the screen goes black in `dell` mode (Dell off at boot), press SUPER+SHIFT+T.
 
 ## Viture Luma Pro Mirror (1920x1200)
 
