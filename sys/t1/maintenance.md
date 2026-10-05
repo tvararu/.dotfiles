@@ -206,6 +206,18 @@ that overestimates by ~7% and wrongly suggests 10-bit 4:4:4 does not fit.
 10-bit does **not** break screen capture here — `grim` captured `XBGR2101010`
 to a normal 8-bit PNG without complaint.
 
+### Dell U2725QE mirror
+
+The Dell (on `DP-4`) mirrors the TV at the same mode. Without a rule it falls
+through to the 1920x1200 catch-all.
+
+```lua
+hl.monitor({ output = "desc:Dell Inc. DELL U2725QE G5X6PJ4", mode = "3840x2160@119.88", scale = omarchy_monitor_scale, mirror = "HDMI-A-2" })
+```
+
+`mirror` takes a connector name. Check with `hyprctl monitors all -j`: the Dell
+shows `mirrorOf` set to the TV's id.
+
 ## Viture Luma Pro Mirror (1920x1200)
 
 > **Stale on Quattro.** `hyprctl keyword` is rejected by the Lua parser
