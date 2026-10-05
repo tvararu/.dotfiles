@@ -206,17 +206,27 @@ that overestimates by ~7% and wrongly suggests 10-bit 4:4:4 does not fit.
 10-bit does **not** break screen capture here — `grim` captured `XBGR2101010`
 to a normal 8-bit PNG without complaint.
 
-### Dell U2725QE mirror
+### Projector modes (Dell U2725QE)
 
-The Dell (on `DP-4`) mirrors the TV at the same mode. Without a rule it falls
-through to the 1920x1200 catch-all.
+The Dell (on `DP-4`) has three modes, like Windows' Win+P. **SUPER+CTRL+ALT+P**
+cycles them:
 
-```lua
-hl.monitor({ output = "desc:Dell Inc. DELL U2725QE G5X6PJ4", mode = "3840x2160@119.88", scale = omarchy_monitor_scale, mirror = "HDMI-A-2" })
-```
+- `mirror` (default): the Dell mirrors the TV at `3840x2160@119.88`, the only
+  4K mode near 120 Hz that both have.
+- `tv`: the Dell is disabled.
+- `dell`: the TV is disabled and the Dell runs at `3840x2160@120`.
 
-`mirror` takes a connector name. Check with `hyprctl monitors all -j`: the Dell
-shows `mirrorOf` set to the TV's id.
+`monitors.lua` reads the mode from `~/.local/state/projector-mode` on reload.
+`sys/t1/projector-mode` (linked into `~/.local/bin`) writes it and reloads.
+Cycling skips a single-screen mode whose screen is not connected.
+
+Use a single-screen mode for games. In Hyprland 0.56.2 a mirror has no
+workspace, so `vrr = 2` never turns VRR on for it, and direct scanout is
+blocked on both the mirror and its source. `mirror` takes a connector name,
+not `desc:`.
+
+If the screen goes black in `dell` mode (Dell off at boot), press the key once:
+`dell` goes to `mirror`, which turns the TV back on.
 
 ## Viture Luma Pro Mirror (1920x1200)
 

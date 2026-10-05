@@ -1,0 +1,43 @@
+#!/bin/bash
+
+# Cycle t1's screens like Windows' Win+P: mirror -> tv -> dell -> mirror.
+# ~/.config/hypr/monitors.lua reads the mode from the state file on reload.
+# Usage: projector-mode [mirror|tv|dell]
+
+STATE="$HOME/.local/state/projector-mode"
+TV="LG Electronics LG TV SSCR2 0x01010101"
+DELL="Dell Inc. DELL U2725QE G5X6PJ4"
+
+connected() {
+  hyprctl monitors all -j | jq -e --arg d "$1" 'any(.[]; .description == $d)' >/dev/null
+}
+
+current=$(cat "$STATE" 2>/dev/null || echo mirror)
+
+if [[ -n $1 ]]; then
+  next=$1
+else
+  case $current in
+    mirror) next=tv ;;
+    tv) next=dell ;;
+    *) next=mirror ;;
+  esac
+  # Skip a single-screen mode whose screen is unplugged or powered off.
+  [[ $next == tv ]] && ! connected "$TV" && next=dell
+  [[ $next == dell ]] && ! connected "$DELL" && next=mirror
+fi
+
+case $next in
+  mirror) label="Mirror" ;;
+  tv) label="TV only" ;;
+  dell) label="Dell only" ;;
+  *)
+    echo "Usage: $(basename "$0") [mirror|tv|dell]" >&2
+    exit 1
+    ;;
+esac
+
+mkdir -p "$(dirname "$STATE")"
+echo "$next" >"$STATE"
+hyprctl reload >/dev/null
+omarchy-notification-send -g 󰍹 "$label"
