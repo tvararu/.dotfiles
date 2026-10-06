@@ -2109,6 +2109,48 @@ ComfyUI via [mmartial/comfyui-nvidia-docker](https://github.com/mmartial/ComfyUI
 - **Models**: `~/models` bind-mounted to `/host_models`, symlinked into `/comfy/mnt/ComfyUI/models` by `user_script.bash`
 - **Plugin bootstrap**: `~/srv/comfyui/user_script.bash` (mmartial auto-runs any file of that name)
 
+### Upgrading ComfyUI
+
+Pulling a new image does not update ComfyUI. The image holds only Ubuntu, CUDA and
+the entrypoint. The code (`~/srv/comfyui/ComfyUI`, a git checkout) and the venv
+stay in the bind mount, so each is upgraded separately. Done 2026-10-06:
+0.20.1 → 0.39.0, torch unchanged at 2.14.1+cu130.
+
+1. Stop the container when `/queue` is empty, and back up: the checkout SHA,
+   `uv pip freeze` from inside the container, `ComfyUI/user`, and a copy of
+   `venv` (7.8 GB, a fast rollback). Tag the old image so it survives a pull.
+2. `docker compose pull comfyui`, then `git fetch --tags` and
+   `git checkout vX.Y.Z` in `ComfyUI/`.
+3. Checkout stops on `models`. The symlink to `/host_models` collides with the
+   tracked `models/` files. Move the symlink away, check out, then put it back.
+   The tracked files show as deleted in `git status`. That is normal, so never
+   `git checkout .` or `git stash` there.
+4. `git pull --ff-only` each custom node, then
+   `docker compose up --no-deps --no-start comfyui` to recreate the container
+   on the new image. Start it and read the log for `IMPORT FAILED`.
+5. The entrypoint runs `uv pip install` for torch and the ComfyUI requirements
+   on every start. It kept torch because 2.14.1 was the newest cu130 build. If
+   a newer torch appears, it upgrades silently. Set `TORCH_LOCK` to prevent it.
+6. Run `docker exec -u 1000` for installs. The default exec user cannot read the
+   custom node files (mode 600).
+
+Things the upgrade showed:
+
+- Builds from 20260906 run `comfy setup --project-dir /basedir` at every start
+  and exit 1 when that path is missing. `docker-compose.yml` mounts a tmpfs
+  there. Nothing reads it back.
+- `LTXVImgToVideoConditionOnly` is not a core node. It comes from
+  `ComfyUI-LTXVideo`, whose directory was renamed `.disabled`. Re-enabling it
+  needs its own requirements (`colour-science` and others), because
+  `user_script.bash` does not list it.
+- `MiniMaxH3SigmaShift` is the shift node in 0.39. There is no
+  `ModelSamplingMiniMaxH3`.
+- Poll port 8188 during tests, not 8189. A test that talks only to the backend
+  looks idle to the proxy, and the container is stopped under it.
+- MiniMax H3 `int8_convrot` (1344×768, 124 frames, 24 fps, audio): base 20
+  steps took 339 s cold, turbo 8 steps took 146 s. VRAM peaks at the full
+  32 GB, with the container at about 44 GiB of RAM.
+
 ### On-demand start (VRAM reclaim)
 
 ComfyUI is not started by docker. `comfyui-proxy.socket` holds port 8188, and the
