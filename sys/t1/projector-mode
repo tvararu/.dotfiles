@@ -37,5 +37,14 @@ esac
 
 mkdir -p "$(dirname "$STATE")"
 echo "$next" >"$STATE"
+
+# Hyprland 0.56.2 does not recreate the wl_output global when a mirror becomes
+# a normal output, so apps see no monitor ("no monitors available"). Disabling
+# the Dell first makes the reload add it back as a new output.
+if [[ $next == dell ]]; then
+  hyprctl eval "hl.monitor({ output = \"desc:$DELL\", disabled = true })" >/dev/null
+  sleep 1
+fi
+
 hyprctl reload >/dev/null
 omarchy-notification-send -g 󰍹 "$label"
