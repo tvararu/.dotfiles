@@ -213,7 +213,8 @@ The Dell has two modes. **SUPER+CTRL+ALT+P** toggles them, and
 
 - `mirror` (default, TV + Dell): the Dell mirrors the TV. The TV runs
   `@119.88`, the Dell `@120`, so the mirror skips about one frame in 8 s.
-- `dell`: the TV is disabled and the Dell runs at `3840x2160@120`, 10-bit.
+- `dell`: the TV is disabled and the Dell runs at `3840x2160@120`, 10-bit, at
+  a fixed 2x scale (`dell_only_scale`; TV + Dell keeps `omarchy_monitor_scale`).
 
 **Use `@120` on the Dell, not `@119.88`.** Its `@119.88` is the CTA timing
 (1186.81 MHz, ~28.5 Gbps at 8-bit); `@120` is reduced blanking (1097.75 MHz,
