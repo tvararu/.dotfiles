@@ -17,6 +17,11 @@ services:
     volumes:
       - ~/srv/comfyui:/comfy/mnt
       - ~/models:/host_models
+    # Builds from 20260906 on run `comfy setup --project-dir /basedir` at every
+    # start and exit 1 when it cannot create it. Nothing reads it back here
+    # (BASE_DIRECTORY is unset), so a throwaway tmpfs is enough.
+    tmpfs:
+      - /basedir:uid=1000,gid=1000
     environment:
       - WANTED_UID=1000
       - WANTED_GID=1000
