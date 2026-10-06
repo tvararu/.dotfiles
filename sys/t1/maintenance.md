@@ -221,16 +221,27 @@ The Dell has two modes. **SUPER+CTRL+ALT+P** toggles them, and
 With the Dell's HDR mode on (*Smart HDR → DisplayHDR 600*), `@119.88` gave "No
 DP signal" while Hyprland reported success; `@120` worked at 10-bit.
 
-**Do not change the Dell's HDR setting while it is connected.** Each change
-renegotiates the link, and on 2026-10-05 this left the NVIDIA driver in a bad
-state. First it refused every mode on DP-4 (EINVAL in `hyprland.log`, even
-640x480). Later DSC also failed on DP-5: 4K60 and 1440p120 worked, but 4K120
-gave "No DP signal" while the kernel showed the mode active. A Dell power cycle
-helped once; logout, replug and a port change did not hold. **Only a reboot
-fixed it.** The driver does not log why NVKMS rejects a mode. Hyprland commits
-all outputs together, so a failing Dell can blank the TV too: power the Dell
-off, force a new modeset on the TV with `hyprctl eval` and a different mode,
-then `hyprctl reload`.
+**Moving a screen between GPU ports can leave a stale CRTC.** When a port is
+unplugged, aquamarine tries to disable it and gets "Cannot commit a
+disconnected output", so the kernel keeps the old connector bound to its CRTC.
+Aquamarine thinks the CRTC is free and gives it to the next port, and NVKMS
+then rejects every mode on that port (EINVAL in `hyprland.log`, even 640x480).
+Check with:
+
+```bash
+sudo cat /sys/kernel/debug/dri/0000:01:00.0/state | grep -A1 '^connector'
+```
+
+A disconnected connector that still shows `crtc=crtc-N` is the fault. Fix
+without a reboot: plug back into the old port, `hyprctl eval 'hl.monitor({
+output = "DP-5", disabled = true })'` (the old port's name), then move the cable.
+A reboot also clears it. Hyprland commits all outputs together, so a failing
+Dell can blank the TV too: power the Dell off, force a new modeset on the TV
+with `hyprctl eval` and a different mode, then `hyprctl reload`.
+
+The Dell's HDR toggles on 2026-10-05 started this, because each one
+renegotiates the link. DSC at 4K120 also failed once (4K60 and 1440p120 worked)
+until the reboot.
 
 HDR on the Dell is off (*Smart HDR → Off*): forced HDR looked washed out,
 worse in fullscreen. Use the C1 for HDR.
