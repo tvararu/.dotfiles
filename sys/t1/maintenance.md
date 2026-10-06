@@ -3088,6 +3088,10 @@ Tailscale; sessions survive an SSH drop. Set up 2026-10-04.
   stops the restart loop. The SSH-mode relay (`~/.orca-remote`) does not
   conflict.
 - `orca serve` writes `~/.local/bin/orca` and `orca-ide` dispatchers.
+- `orca project setup-clone` fails over SSH: the server has no agent socket.
+  Clone with `git clone` into `~/code`, then `orca project
+  setup-existing-folder --project github:<owner>/<repo> --host local --path
+  <dir> --kind git`.
 - omp (`github:can1357/oh-my-pi` in mise) uses the openhubris settings, stowed
   from that repo's checkout so both machines share one copy:
   `stow -d ~/code/openhubris --no-folding -t ~ omp`. omp writes into
