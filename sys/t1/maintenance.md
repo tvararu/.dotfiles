@@ -3066,6 +3066,19 @@ Next steps:
 - `kernel.sysrq` is 16 (sync only), so no SysRq dump or reboot was possible
   during the freeze.
 
+### Second freeze 2026-10-06
+
+At about 10:30 BST t1 froze again and needed a forced power-off. The openhubris
+VM was running. The journal of the previous boot ends at 10:29:47 with no
+kernel error: no OOM, hung task, lockup, MCE, thermal, throttle, amdgpu or NVRM
+message. This is the same signature as the first freeze. No pstore data was
+saved. The host PID counter rose from about 2.7M to 3.86M in the last 15
+minutes, but no per-process history exists to show which process forked.
+
+The BIOS settings are still unrecorded and the stress test is not run (on hold).
+Cause still unproven. No sysstat or atop is installed, so nothing records what
+runs before a freeze.
+
 ## Orca runtime server
 
 Headless Orca server, same pattern as the openhubris VM. Clients pair over
