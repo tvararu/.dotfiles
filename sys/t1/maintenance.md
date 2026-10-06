@@ -208,7 +208,7 @@ to a normal 8-bit PNG without complaint.
 
 ### Projector modes (Dell U2725QE)
 
-The Dell (on `DP-5`) has two modes. **SUPER+CTRL+ALT+P** toggles them, and
+The Dell has two modes. **SUPER+CTRL+ALT+P** toggles them, and
 **SUPER+SHIFT+T** (wake the TV) always selects `mirror`:
 
 - `mirror` (default, TV + Dell): the Dell mirrors the TV. The TV runs
@@ -222,14 +222,15 @@ With the Dell's HDR mode on (*Smart HDR → DisplayHDR 600*), `@119.88` gave "No
 DP signal" while Hyprland reported success; `@120` worked at 10-bit.
 
 **Do not change the Dell's HDR setting while it is connected.** Each change
-renegotiates the link, and twice the NVIDIA driver then refused every mode on
-that connector (EINVAL in `hyprland.log`, even 640x480, or Hyprland reporting
-the mode while the Dell said "No DP signal"). A Dell power cycle cleared it
-once; the second time it survived a logout and a replug, and only moving the
-cable to another GPU port (`DP-4` to `DP-5`) fixed it. A reboot probably also
-frees the old port. Hyprland commits all outputs together, so a failing Dell
-can blank the TV too: power the Dell off, force a new modeset on the TV with
-`hyprctl eval` and a different mode, then `hyprctl reload`.
+renegotiates the link, and on 2026-10-05 this left the NVIDIA driver in a bad
+state. First it refused every mode on DP-4 (EINVAL in `hyprland.log`, even
+640x480). Later DSC also failed on DP-5: 4K60 and 1440p120 worked, but 4K120
+gave "No DP signal" while the kernel showed the mode active. A Dell power cycle
+helped once; logout, replug and a port change did not hold. **Only a reboot
+fixed it.** The driver does not log why NVKMS rejects a mode. Hyprland commits
+all outputs together, so a failing Dell can blank the TV too: power the Dell
+off, force a new modeset on the TV with `hyprctl eval` and a different mode,
+then `hyprctl reload`.
 
 HDR on the Dell is off (*Smart HDR → Off*): forced HDR looked washed out,
 worse in fullscreen. Use the C1 for HDR.
