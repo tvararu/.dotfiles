@@ -3121,6 +3121,29 @@ The BIOS settings are still unrecorded and the stress test is not run (on hold).
 Cause still unproven. No sysstat or atop is installed, so nothing records what
 runs before a freeze.
 
+### Third and fourth freezes 2026-10-06
+
+Two more silent stops the same day, 3 in 12 hours:
+
+- 21:55 BST. The journal ends at 21:55:37. ComfyUI had run since 21:29 (first
+  on-demand run on 0.39.0). At 21:54:52 the kernel logged `BUG: scheduling
+  while atomic` for a uid 1000 `python3` in `sched_yield`, then nothing for 45
+  s. The tainted NVIDIA open module 610.57.04 was loaded. Unproven whether the
+  trace is a cause or a symptom.
+- 22:15 BST, 7 min after the 22:08 boot. The journal ends at 22:15:03 with
+  routine Wi-Fi messages. ComfyUI and the VM did not run, so there was no heavy
+  load. No Xid, MCE, lockup or panic line.
+
+A freeze at light load points at the CPU settings, not at any one workload.
+Suspect Curve Optimizer first: it was -35 all-core, and a typical stable value
+for the 9800X3D is -15 to -30. The earlier 5-minute stress-ng and gpu_burn run
+does not test CO. RAM is 2x64 GB dual-rank DDR5-5600; check whether EXPO is
+on. The GPU limit is 575 W (stock), so it is ruled out.
+
+Planned 2026-10-07: CO to -30 all-core. If it freezes again, try -20.
+Then run a per-core test (CoreCycler). Record the other BIOS OC/UV settings
+here when known.
+
 ## Orca runtime server
 
 Headless Orca server, same pattern as the openhubris VM. Clients pair over
