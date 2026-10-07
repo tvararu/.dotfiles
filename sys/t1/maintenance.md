@@ -2151,6 +2151,25 @@ Things the upgrade showed:
   steps took 339 s cold, turbo 8 steps took 146 s. VRAM peaks at the full
   32 GB, with the container at about 44 GiB of RAM.
 
+### SageAttention (opt-in)
+
+Installed 2026-10-07 for the KJNodes node `MiniMaxH3MemoryEfficientSageAttentionPatch`.
+There is no launch flag, so each workflow chooses it with that node. The 0.39
+backups (`venv-pre-0.39`, `user-backup-20261006`, the pre-upgrade image tag)
+were deleted the same day.
+
+- The woct0rdho wheels are Windows only, and PyPI has 1.0.6 (no sm_120 v2
+  kernels). So it is a source build of `thu-ml/SageAttention` 2.2.0 (`d1a57a5`)
+  for `TORCH_CUDA_ARCH_LIST=12.0`. The clone is `~/srv/comfyui/sageattention-src`.
+- torch 2.14 headers need C++20, but `setup.py` hardcodes `-std=c++17`. Build
+  from a copy in the container's `/tmp` with `sed -i s/c++17/c++20/ setup.py`.
+- Run `pip install --no-build-isolation --no-deps .` as `-u root` (the default
+  exec user cannot write to the venv or read the clone), then
+  `chown -R 1000:1000` the new `sageattention*` directories in `site-packages`.
+- `--no-deps` kept torch at 2.14.1+cu130. The pre-install freeze is
+  `~/comfy-pre-sage-freeze.txt`. Rollback: `uv pip uninstall sageattention`.
+- The package has no `__version__`. Use `importlib.metadata.version`.
+
 ### CDI spec at boot
 
 After a reboot `/etc/cdi/nvidia.yaml` can be stale. The container then exits 1
