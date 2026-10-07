@@ -1,0 +1,15 @@
+[Unit]
+Description=Regenerate the NVIDIA CDI spec
+# After a reboot the spec in /etc/cdi can be stale, and containers then fail with
+# `cuInit` error 999 (ComfyUI: "CUDA unknown error"). Regenerating it at every
+# boot, before docker starts any container, removes the manual step.
+Before=docker.service comfyui.service
+# nvidia-ctk reads the driver, so the module must be loaded first.
+After=systemd-modules-load.service nvidia-persistenced.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/nvidia-ctk cdi generate --output=/etc/cdi/nvidia.yaml
+
+[Install]
+WantedBy=multi-user.target

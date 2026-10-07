@@ -2151,6 +2151,16 @@ Things the upgrade showed:
   steps took 339 s cold, turbo 8 steps took 146 s. VRAM peaks at the full
   32 GB, with the container at about 44 GiB of RAM.
 
+### CDI spec at boot
+
+After a reboot `/etc/cdi/nvidia.yaml` can be stale. The container then exits 1
+with `CUDA unknown error`, and `comfyui.service` stays in "activating".
+`nvidia-cdi-generate.service` (oneshot, before `docker.service`) regenerates
+the spec at every boot. Install it like the other units: copy to
+`/etc/systemd/system/`, `systemctl reenable`, `systemctl start`. Manual fix:
+`sudo nvidia-ctk cdi generate --output=/etc/cdi/nvidia.yaml`, then start the
+container.
+
 ### On-demand start (VRAM reclaim)
 
 ComfyUI is not started by docker. `comfyui-proxy.socket` holds port 8188, and the
