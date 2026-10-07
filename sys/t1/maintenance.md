@@ -3140,7 +3140,7 @@ for the 9800X3D is -15 to -30. The earlier 5-minute stress-ng and gpu_burn run
 does not test CO. RAM is 2x64 GB dual-rank DDR5-5600; check whether EXPO is
 on. The GPU limit is 575 W (stock), so it is ruled out.
 
-Planned 2026-10-07: CO to -30 all-core. If it freezes again, try -20.
+Set 2026-10-07: CO to -30 all-core (user-reported; the OS cannot read it). If it freezes again, try -20.
 Then run a per-core test (CoreCycler). Record the other BIOS OC/UV settings
 here when known.
 
