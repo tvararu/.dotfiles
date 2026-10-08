@@ -3192,6 +3192,29 @@ limit (`nvidia-smi -pl 450`, root) is a second test.
 The job row stays `running` in the ai-toolkit DB after a freeze. Mark it
 stopped in the UI before you start another job.
 
+### Auto-reboot and logging (2026-10-08)
+
+- Hardware watchdog: `/etc/systemd/system.conf.d/watchdog.conf` sets
+  `RuntimeWatchdogSec=30s` (`[Manager]`), applied with `systemctl
+  daemon-reexec`. systemd pings the chipset timer (`sp5100_tco`,
+  `/dev/watchdog0`); if the box hangs, the board resets after 30 s, even with
+  the kernel dead. Check: `systemctl show -p RuntimeWatchdogUSec` and
+  `/sys/class/watchdog/watchdog0/state` = `active`. Not yet proven to fire on
+  this board.
+- `/etc/sysctl.d/90-lockup-panic.conf`: `kernel.hardlockup_panic = 1`,
+  `kernel.softlockup_panic = 1`, `kernel.panic = 10`. A lockup the kernel
+  detects panics, saves to pstore and reboots. The journal had no lockup
+  messages before this, so false triggers are unlikely.
+- atop: `omarchy pkg add atop`, `LOGINTERVAL=60` in `/etc/default/atop`,
+  `systemctl enable --now atop.service`. Logs in `/var/log/atop/`; replay
+  the minutes before a freeze with `atop -r /var/log/atop/atop_YYYYMMDD -b
+  HH:MM`. `atop-rotate.timer` is enabled by the package.
+
+After a freeze: `journalctl --list-boots`, `sudo ls /sys/fs/pstore`, and the
+atop log. A pstore trace means the kernel saw the lockup; a watchdog reset
+with no trace points at hardware or firmware. Auto-reboot makes freezes easy
+to miss, so check the boot list after a gap.
+
 ## Orca runtime server
 
 Headless Orca server, same pattern as the openhubris VM. Clients pair over
