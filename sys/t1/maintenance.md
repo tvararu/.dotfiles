@@ -3203,3 +3203,47 @@ Tailscale; sessions survive an SSH drop. Set up 2026-10-04.
   from that repo's checkout so both machines share one copy:
   `stow -d ~/code/openhubris --no-folding -t ~ omp`. omp writes into
   `config.yml`, so changes land in `~/code/openhubris`; commit them there.
+
+## ai-toolkit image updates
+
+aitoolkit runs `ostris/aitoolkit:latest` from compose. The image has no git
+remote or venv to update in place, so an update is a pull and a recreate. The
+start script does not migrate the DB, so run `prisma db push` by hand:
+
+```bash
+cp -p ~/srv/aitoolkit/aitk_db.db ~/srv/aitoolkit/aitk_db.db.bak-$(date +%Y%m%d)
+docker image tag ostris/aitoolkit:latest ostris/aitoolkit:pre-<date>-backup
+docker pull ostris/aitoolkit:latest
+cd ~ && docker compose -f docker-compose.yml -f docker-compose.override.yml up -d --no-deps aitoolkit
+docker exec aitoolkit sh -c 'cd /app/ai-toolkit/ui && npx prisma db push'
+docker restart aitoolkit
+```
+
+Diff `ui/prisma/schema.prisma` between the two images first. `db push` refuses a
+change that drops data unless told otherwise, but read the diff anyway.
+
+2026-10-08: a513a15 (2026-04-16, torch 2.9.1+cu128) → 60d0c28 (2026-09-24,
+torch 2.13.0+cu130) for Krea 2 (`krea2`). Upstream issue #990 reports a Krea 2
+VRAM regression on torch 2.13 (one report, 24 GB card; 2.11.0 fixed it there).
+We use 2.13 as shipped. Rollback image: `ostris/aitoolkit:pre-krea2-backup`.
+
+The model list now comes from `/api/model_archs` (each package's `ui.tsx`,
+loaded at runtime), not from the `jobs/new` JS chunk. Check that endpoint for a
+new arch.
+
+Jobs get `HF_TOKEN` from the UI settings page (the `Settings` table), not from
+the container env. Gated repos (Krea 2) fail with 401 without it.
+
+The 2026-09 images switch the main DB to WAL. The DB is a single-file bind
+mount, so `aitk_db.db-wal` and `-shm` are created in the container layer, not in
+`~/srv/aitoolkit/`. Writes stay there until a checkpoint and are lost when the
+container is recreated. Compose sets `AI_TOOLKIT_DB_JOURNAL_MODE=DELETE`, which
+the worker applies at start. Before you recreate a container that runs in WAL,
+checkpoint it:
+
+```bash
+docker exec aitoolkit python3 -c "import sqlite3; print(sqlite3.connect('/app/ai-toolkit/aitk_db.db').execute('pragma wal_checkpoint(TRUNCATE)').fetchone())"
+```
+
+Do not open the DB with host `sqlite3` while the container uses WAL. The host
+and the container then use different `-shm` files.

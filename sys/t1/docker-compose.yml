@@ -118,6 +118,9 @@ services:
     environment:
       - NODE_ENV=production
       - TZ=Europe/London
+      # The DB is a single-file bind mount, so WAL's -wal/-shm files would
+      # land in the container layer and be lost on recreate.
+      - AI_TOOLKIT_DB_JOURNAL_MODE=DELETE
     deploy:
       resources:
         reservations:
