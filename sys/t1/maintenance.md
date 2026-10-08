@@ -3173,6 +3173,25 @@ Set 2026-10-07: CO to -30 all-core (user-reported; the OS cannot read it). If it
 Then run a per-core test (CoreCycler). Record the other BIOS OC/UV settings
 here when known.
 
+### Fifth freeze 2026-10-08 (CO -30)
+
+The journal ends at 20:16:52 BST with routine messages and no kernel error.
+An ai-toolkit Krea 2 LoRA job (3000 steps) had run since 16:57 with the GPU at
+its 575 W limit and 97-100% load. It saved the final step at 20:13 and froze
+while it generated sample 4 of 10. Home Assistant values in the last 3
+minutes: CPU package 75-82 °C, CPU load 25-45%, GPU core 83-85 °C, RAM 37%,
+NVMe 80 °C, network controller 82 °C. No thermal-slowdown or power-brake flag.
+No dbus quota event.
+
+So CO -30 did not fix it. The temperatures are normal. This is the first
+freeze under hours of full GPU load; the 10-06 freezes were at light load.
+Set 2026-10-08 after this freeze: CO to -25 all-core (user-reported). If it
+freezes again, try -20. To separate the GPU path, a long run at a lower GPU
+limit (`nvidia-smi -pl 450`, root) is a second test.
+
+The job row stays `running` in the ai-toolkit DB after a freeze. Mark it
+stopped in the UI before you start another job.
+
 ## Orca runtime server
 
 Headless Orca server, same pattern as the openhubris VM. Clients pair over
