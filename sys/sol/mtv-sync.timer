@@ -1,0 +1,10 @@
+[Unit]
+Description=Hourly sync of the MTV YouTube playlist
+
+[Timer]
+OnCalendar=hourly
+RandomizedDelaySec=5m
+Persistent=true
+
+[Install]
+WantedBy=timers.target

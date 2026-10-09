@@ -1,0 +1,9 @@
+[Unit]
+Description=Sync the MTV YouTube playlist into the Jellyfin MTV library
+After=network-online.target
+
+[Service]
+Type=oneshot
+# Holds MTV_PLAYLIST_URL, kept out of this repo, which is public.
+EnvironmentFile=%h/.config/mtv-sync.env
+ExecStart=%h/.local/bin/mtv-sync

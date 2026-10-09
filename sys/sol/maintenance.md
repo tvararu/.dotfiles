@@ -56,6 +56,37 @@ segments per slot, and specials collected into S00E00, legitimately share one
 episode number across genuinely different files. Match on identical base names
 *and* equal runtimes before merging anything.
 
+## MTV playlist sync
+
+Since 2026-10-09 a YouTube playlist is pulled into `/mnt/pool/MTV` (the
+Jellyfin MTV library) every hour. It replaced running `get.sh` in that folder
+by hand.
+
+- **Script**: `sys/sol/mtv-sync.sh`, copied to `~/.local/bin/mtv-sync`. Same
+  layout as `get.sh`: flat `<title>.mkv` with `.info.json`,
+  `.jpg` and `.nfo`. Format is yt-dlp's default, not `get.sh`'s mp4-only filter
+- **Units**: `sys/sol/mtv-sync.{service,timer}`, **user** units copied to
+  `~/.config/systemd/user/`. Linger is on, so they run without a login and need
+  no sudo
+- **Playlist URL**: `~/.config/mtv-sync.env` as `MTV_PLAYLIST_URL`, mode 0600,
+  kept out of this repo
+- **Dedup**: `~/srv/mtv-sync/archive.txt`, outside the library. Seeded from the
+  ids in the existing `.info.json` files, so nothing already there downloads
+  again
+- **Needs `ffmpeg`** to merge formats and convert thumbnails. Without it yt-dlp
+  leaves unmerged `.fNNN.mp4`/`.m4a` pairs, so the script exits first if it is
+  missing
+- **NFO**: `ytdl-nfo` 0.3.0 runs through `uvx --python 3.12 --with
+  'setuptools<81'`. It imports `pkg_resources`, and the old `venv/` in the
+  folder broke when the system Python moved to 3.14
+- No library scan: the MTV library has realtime monitoring and the folder
+  already exists
+
+```bash
+systemctl --user list-timers mtv-sync.timer
+journalctl --user -u mtv-sync.service -n 50
+```
+
 ## HDR: do not enable Jellyfin's tone mapping
 
 HDR10/HDR10+ sources **cannot be tone mapped in hardware on sol.** Every backend is dead on Vega 8 / RADV Raven / Mesa 24.0.9:
